@@ -1,0 +1,255 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Wolf Tolerance Predictor — Interactive App</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <style>
+      /* Small page-specific polish */
+      .hero {
+        display: grid;
+        gap: 1.25rem;
+      }
+      .hero .actions { margin-top: 0.5rem; }
+      .badges { display:flex; flex-wrap:wrap; gap:.5rem; margin:.75rem 0 0 0; }
+      .badge {
+        font-size:.8rem; padding:.2rem .5rem; border-radius:.35rem;
+        background:rgba(0,0,0,.07); display:inline-flex; align-items:center; gap:.4rem;
+      }
+      .stat {
+        display:flex; flex-direction:column; padding:1rem; border:1px solid rgba(0,0,0,.08);
+        border-radius:.5rem; text-align:center;
+      }
+      .stat .k { font-size:1.4rem; font-weight:700; }
+      .grid-3 { display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; }
+      @media (max-width: 980px) { .grid-3 { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body class="is-preload">
+    <div id="wrapper">
+
+      <!-- Main -->
+      <div id="main">
+        <div class="inner">
+
+          <!-- Header -->
+          <header id="header">
+            <a href="index.html" class="logo">Max Birdsong | PhD</a>
+            <ul class="icons">
+              <li><a href="https://github.com/max-birdsong" class="icon brands fa-github"><span class="label">GitHub</span></a></li>
+              <li><a href="https://www.researchgate.net/profile/Max-Birdsong/research" class="icon brands fa-researchgate"><span class="label">ResearchGate</span></a></li>
+            </ul>
+          </header>
+
+          <!-- Hero -->
+          <section class="hero">
+            <header class="major">
+              <h1>Wolf Tolerance Predictor</h1>
+              <p>Interactive ML app for exploring how demographic and wildlife value orientations relate to tolerance toward wolves.</p>
+            </header>
+
+            <span class="image fit">
+              <!-- Use a wide screenshot of the app UI here -->
+              <a href="https://wolf-tolerance-predictor-app.streamlit.app/?utm_source=wolf-app_hero" target="_blank" rel="noopener">
+                <img src="images/wolf.JPG" alt="Wolf Tolerance Predictor preview" loading="lazy">
+              </a>
+            </span>
+
+            <ul class="actions">
+              <li>
+                <a href="https://wolf-tolerance-predictor-app.streamlit.app/?utm_source=wolf-app_cta" target="_blank" rel="noopener" class="button primary icon solid fa-external-link-alt">
+                  Launch App
+                </a>
+              </li>
+              <li><a href="portfolio.html" class="button">Back to Portfolio</a></li>
+            </ul>
+
+            <div class="badges">
+              <span class="badge"><i class="icon solid fa-robot"></i> Logistic Regression</span>
+              <span class="badge"><i class="icon solid fa-sliders-h"></i> 5 inputs</span>
+              <span class="badge"><i class="icon solid fa-balance-scale"></i> ADASYN imbalance handling</span>
+            </div>
+          </section>
+
+          <hr />
+
+          <!-- Overview -->
+          <section>
+            <header class="major">
+              <h2>What it does</h2>
+            </header>
+            <p>
+              The app predicts a binary outcome — Tolerant vs Not tolerant — using a compact feature set designed for practical deployment. 
+              Users adjust inputs and see predicted class and probability, which supports outreach planning and scenario exploration.
+            </p>
+            <div class="grid-3">
+              <div class="stat">
+                <div class="k">~70%</div>
+                <div class="label">Accuracy (holdout)</div>
+              </div>
+              <div class="stat">
+                <div class="k">F1 focus</div>
+                <div class="label">Balanced classes via ADASYN</div>
+              </div>
+              <div class="stat">
+                <div class="k">Fast</div>
+                <div class="label">Realtime inference in Streamlit</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Inputs and Outputs -->
+          <section>
+            <header class="major">
+              <h2>Inputs and outputs</h2>
+            </header>
+            <div class="row gtr-50 gtr-uniform">
+              <div class="col-6 col-12-small">
+                <h3>Model inputs</h3>
+                <ul>
+                  <li><strong>Age</strong> (continuous)</li>
+                  <li><strong>Gender</strong> (categorical)</li>
+                  <li><strong>Stakeholder group</strong> (GenPop, Land, Wolf, Deer)</li>
+                  <li><strong>Mutualism value orientation</strong> (numeric scale)</li>
+                  <li><strong>Utilitarian value orientation</strong> (numeric scale)</li>
+                </ul>
+                <p style="opacity:.85; font-size:.95rem;">
+                  Inputs align to notebook features: Q36 (age), Q37 (gender), group, MUT_WVO, UT_WVO.
+                </p>
+              </div>
+              <div class="col-6 col-12-small">
+                <h3>Outputs</h3>
+                <ul>
+                  <li>Predicted class: Tolerant or Not tolerant</li>
+                  <li>Class probability</li>
+                </ul>
+                <p style="opacity:.85; font-size:.95rem;">
+                  Designed to be interpretable for policy and outreach audiences.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Model Card -->
+          <section>
+            <header class="major">
+              <h2>Model card</h2>
+            </header>
+            <h3>Algorithm</h3>
+            <p>Logistic Regression with standardized numeric features and one-hot encoded categorical features.</p>
+            <h3>Imbalance handling</h3>
+            <p>
+              Compared class weights, SMOTE, ADASYN, and random oversampling. Selected ADASYN with logistic regression based on cross-validated F1 macro and holdout performance, with attention to minority class detection.
+            </p>
+            <h3>Training summary</h3>
+            <ul>
+              <li>Pipeline: ColumnTransformer (StandardScaler + OneHotEncoder) → ADASYN → LogisticRegression</li>
+              <li>CV: Stratified K-fold with grid search over regularization</li>
+              <li>Holdout metrics: about 70 percent accuracy, balanced F1 emphasis</li>
+            </ul>
+            <h3>Known limitations</h3>
+            <ul>
+              <li>Compact feature set trades some raw accuracy for deployability</li>
+              <li>Linear decision boundary, no interactions modeled</li>
+              <li>Precision on Not tolerant class is moderate; threshold tuning may be useful for certain use cases</li>
+            </ul>
+            <p style="opacity:.85; font-size:.95rem;">
+              See notebook for full details and comparisons.
+            </p>
+          </section>
+
+          <!-- Links -->
+          <section>
+            <header class="major">
+              <h2>Explore</h2>
+            </header>
+            <ul class="actions">
+              <li>
+                <a href="https://wolf-tolerance-predictor-app.streamlit.app/?utm_source=wolf-app_explore" target="_blank" rel="noopener" class="button primary icon solid fa-external-link-alt">
+                  Launch App
+                </a>
+              </li>
+              <!-- Optional: link to code repo if you host it -->
+              <!-- <li><a href="https://github.com/your-repo" target="_blank" rel="noopener" class="button icon brands fa-github">View Code</a></li> -->
+            </ul>
+          </section>
+
+          <hr />
+          <p style="font-size:.9rem; opacity:.8;">
+            Note: Some hosts block embedding in iframes, so this page opens the app in a new tab for the best experience.
+          </p>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div id="sidebar">
+        <div class="inner">
+
+          <!-- Search -->
+          <section id="search" class="alt">
+            <form method="post" action="#"><input type="text" name="query" id="query" placeholder="Search" /></form>
+          </section>
+
+          <!-- Menu -->
+          <nav id="menu">
+            <header class="major"><h2>Menu</h2></header>
+            <ul>
+              <li><a href="index.html">Homepage</a></li>
+              <li><a href="portfolio.html">Portfolio</a></li>
+              <li>
+                <span class="opener">Interactive Apps</span>
+                <ul>
+                  <li><a href="https://wolf-tolerance-predictor-app.streamlit.app/?utm_source=wolf-app_menu" target="_blank" rel="noopener" class="icon solid fa-external-link-alt">Wolf Tolerance Predictor</a></li>
+                </ul>
+              </li>
+              <li>
+                <span class="opener">Specific Projects</span>
+                <ul>
+                  <li><a href="wolf.html">Wolf Survey: Longitudinal Analysis with SQL + Python Pipelines</a></li>
+                  <li><a href="mtb.html">Mountain Biking Behavior: Feature Engineering &amp; Predictive Modeling</a></li>
+                  <li><a href="social.html">Social Identity &amp; Tolerance: Structural Equation Modeling</a></li>
+                  <li><a href="catch_sat.html">Angler Satisfaction: GLM &amp; Mixed-Effects Models</a></li>
+                  <li><a href="hunting.html">Hunting Socialization: Pathway Modeling &amp; Cohort Analysis</a></li>
+                  <li><a href="harvest.html">Harvest Behavior: Cultural Context &amp; Predictive Modeling</a></li>
+                  <li><a href="feedback.html">Fishermen Feedback: Sentiment Analysis &amp; Spatial Visualization</a></li>
+                  <li><a href="meta.html">Evidence Synthesis: Meta-Analysis &amp; Data Integration</a></li>
+                </ul>
+              </li>
+              <li><a href="experience.html">Resume</a></li>
+            </ul>
+          </nav>
+
+          <!-- Featured App (sidebar) -->
+          <section>
+            <header class="major"><h2>Featured App</h2></header>
+            <div class="mini-posts">
+              <article>
+                <a href="https://wolf-tolerance-predictor-app.streamlit.app/?utm_source=wolf-app_sidebar" target="_blank" rel="noopener" class="image">
+                  <img src="images/wolf_app.JPG" alt="Wolf Tolerance Predictor App preview" loading="lazy" />
+                </a>
+                <p>Interactive classifier for Tolerant vs Not tolerant using 5 practical inputs. Built with Python and Streamlit.</p>
+                <ul class="actions">
+                  <li><a href="https://wolf-tolerance-predictor-app.streamlit.app/?utm_source=wolf-app_sidebar_cta" target="_blank" rel="noopener" class="button primary icon solid fa-external-link-alt">Launch App</a></li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <!-- Footer -->
+          <footer id="footer">
+            <p class="copyright">&copy; You. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+          </footer>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/browser.min.js"></script>
+    <script src="assets/js/breakpoints.min.js"></script>
+    <script src="assets/js/util.js"></script>
+    <script src="assets/js/main.js"></script>
+  </body>
+</html>
