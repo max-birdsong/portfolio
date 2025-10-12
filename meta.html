@@ -183,16 +183,9 @@
 			<h2>Background</h2>
 
 		
-			<p>
-			Our stakeholders, fisheries managers faced a fragmented evidence base: more than 20 peer-reviewed studies on angler satisfaction existed, 
-			but they used different measures, reported results inconsistently, and often pointed in conflicting directions. 
-			Without a synthesis, it was impossible to know which factors reliably shaped satisfaction or to base policy on 
-			more than isolated findings. I conducted a <strong>multilevel meta-analysis</strong> to standardize results into 
-			a common effect-size metric, account for multiple outcomes per study, and test variation across contexts with 
-			subgroup analyses and meta-regressions. Reliability checks like funnel plots and sensitivity analyses further 
-			strengthened confidence. The outcome was a <strong>coherent, decision-ready knowledge base</strong> that distilled 
-			scattered research into clear priorities managers could trust when designing policies and programs.
-			</p>
+<p>
+    Our stakeholders, fisheries managers, faced a fragmented evidence base: more than 20 peer-reviewed studies on angler satisfaction existed, but they used different measures, reported results inconsistently, and often pointed in conflicting directions. Without a synthesis, it was impossible to know which factors reliably shaped satisfaction or to base policy on more than isolated findings. I built a <strong>multilevel meta-regression model</strong> to standardize results into a common effect-size metric, account for statistical dependencies between studies, and quantify how context shapes satisfaction drivers. The outcome was a <strong>coherent, decision-ready predictive framework</strong> that distilled scattered research into clear priorities managers could trust when designing policies and programs.
+</p>
 
 
 
@@ -209,20 +202,13 @@
 			clear, evidence-based picture of what drives satisfaction across settings.
 			</p>
 
-			<p>
-			The analysis revealed that <strong>catch-related components—catch success, harvest, and fish size—
-			consistently show the strongest positive effects</strong> on satisfaction. 
-			Two non-catch factors, <strong>space and congestion</strong>, also emerged as significant and influential, 
-			while <strong>relaxation, facilities, aesthetics, and mastery</strong> showed moderate but reliable relationships. 
-			By contrast, <strong>social quality and water quality perceptions</strong> were not consistently significant.
-			</p>
+<p>
+    The analysis revealed that <strong>catch-related components—catch success, harvest, and fish size—consistently show the strongest positive effects (effect sizes >0.4)</strong> on satisfaction. Two non-catch factors, <strong>space and congestion</strong>, also emerged as significant and influential, while <strong>relaxation, facilities, aesthetics, and mastery</strong> showed moderate but reliable relationships. By contrast, <strong>social quality and water quality perceptions</strong> were not consistently significant.
+</p>
 
-			<p>
-			Moderator analyses highlighted that <strong>species, country, and satisfaction metric</strong> shape how strongly 
-			different components matter. For example, <strong>aesthetics, mastery, and relaxation are especially important 
-			to freshwater anglers and in German studies</strong>, while catch-related factors remain universally strong 
-			across all contexts. A publication bias check showed no significant evidence of distortion.
-			</p>
+<p>
+    Moderator analyses highlighted that <strong>species, country, and satisfaction metric</strong> shape how strongly different components matter. For example, <strong>aesthetics, mastery, and relaxation are especially important to freshwater anglers and in German studies</strong>, while catch-related factors remain universally strong across all contexts. <strong>Model diagnostics confirmed no evidence of publication bias</strong>, with symmetric funnel plots and robust sensitivity checks supporting the reliability of these findings.
+</p>
 
 			<p>
 			Taken together, these results provide <strong>managers and policymakers with clear, defensible insights</strong>: 
@@ -254,27 +240,21 @@
               </span>
 			  </div>
 
-			<p>
-			Effect sizes were transformed into a standardized <strong>Fisher’s z</strong>, ensuring comparability across study designs and 
-			metrics. To account for non-independence of multiple results per study, we fitted a <strong>three-level random-effects model</strong> 
-			using restricted maximum likelihood with Knapp–Hartung adjustment, nesting effect sizes within studies. Subgroup analyses 
-			classified satisfaction determinants into categories such as <em>catch, harvest, size, congestion, facilities, aesthetics, relaxation, mastery, 
-			social quality, space,</em> and <em>water quality</em>. We also tested <strong>moderator effects</strong> of country, species, satisfaction metric, 
-			and fishery type (wild vs. put-and-take) through univariate meta-regressions.
-			</p>
+<p>
+    Effect sizes were transformed into a standardized <strong>Fisher's z</strong>, ensuring comparability across study designs and metrics. To account for non-independence of multiple results per study, we fitted a <strong>three-level random-effects model</strong> using restricted maximum likelihood, nesting effect sizes within studies. This hierarchical structure properly partitions variance and produces unbiased estimates when studies contribute multiple outcomes. Subgroup analyses classified satisfaction determinants into categories such as <em>catch, harvest, size, congestion, facilities, aesthetics, relaxation, mastery, social quality, space,</em> and <em>water quality</em>. We also tested <strong>moderator effects</strong> of country, species, satisfaction metric, and fishery type through univariate meta-regressions.
+</p>
 
-			<p>
-			To assess robustness, we conducted <strong>sensitivity checks</strong> (e.g., reversing direction of negative indicators such as crowding) and 
-			examined <strong>publication bias</strong> with funnel plots and Begg–Mazumdar rank correlation tests. Analyses were implemented in R using 
-			the <code>metafor</code> package, ensuring reproducibility and transparency.
-			</p>
+<p>
+    To assess robustness, we conducted <strong>sensitivity analyses</strong> and examined <strong>publication bias</strong> with funnel plots and Begg–Mazumdar rank correlation tests. All analyses were implemented in R using the <code>metafor</code> package, ensuring reproducibility and transparency.
+</p>
+
 			<hr class="major" />
 
 		<!-- ======================= -->
 		<!-- Findings: Deep Dive -->
 		<!-- ======================= -->
 	
-		<h2>Insights: Deep Dive</h2>
+		<h2>Key Findings: What the Model Reveals</h2>
 
 		<p>
 		The meta-analysis unpacked hundreds of effect sizes into a clear picture of what consistently drives angler satisfaction, 
@@ -282,12 +262,9 @@
 		</p>
 
 		<!-- Subgroup Effects -->
-		<h3>Which Experience Components Drive Satisfaction?</h3>
-
+		<h3>Feature Importance: Which Components Drive Satisfaction?</h3>
 		<p>
-		To understand which components of an angling experience mattered most, we compared 
-		<strong>11 experience components</strong> against overall satisfaction across studies. 
-		The chart below shows the pooled effect size for each factor, with confidence intervals.
+			To understand which components of an angling experience mattered most, we estimated <strong>pooled effect sizes for 11 experience components</strong> against overall satisfaction across studies. The chart below shows the effect magnitude for each factor, with confidence intervals indicating precision.
 		</p>
 
 		<div style="max-width:700px; margin: 0 auto; text-align:center;">
@@ -310,14 +287,10 @@
 		</style>
 
 		<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.5;">
-		<li><strong>Catch-related factors dominated:</strong> Catch, harvest, and fish size consistently showed 
-			the strongest positive effects on overall satisfaction.</li>
-		<li><strong>Space and congestion mattered too:</strong> Anglers valued room on the water and disliked crowding; 
-			both emerged as strong non-catch determinants.</li>
-		<li><strong>Moderate but meaningful effects:</strong> Relaxation, aesthetics, facilities, and mastery all showed 
-			moderate yet significant relationships with satisfaction.</li>
-		<li><strong>No consistent effect:</strong> Social quality and perceived water quality were not significantly related 
-			to satisfaction across studies.</li>
+			<li><strong>Catch-related factors dominated:</strong> Catch, harvest, and fish size consistently showed the strongest positive effects on overall satisfaction—these are the highest-leverage variables for improvement.</li>
+			<li><strong>Space and congestion mattered too:</strong> Anglers valued room on the water and disliked crowding; both emerged as strong non-catch determinants with effect sizes comparable to biological factors.</li>
+			<li><strong>Moderate but meaningful effects:</strong> Relaxation, aesthetics, facilities, and mastery all showed moderate yet significant relationships with satisfaction.</li>
+			<li><strong>No consistent effect:</strong> Social quality and perceived water quality were not significantly related to satisfaction across studies—confidence intervals included zero.</li>
 		</ul>
 
 		<!-- Meta-Regression -->
@@ -344,10 +317,7 @@
 		</div>
 
 		<p>
-		For managers, the key takeaway is that <strong>evidence can be filtered by the contexts most 
-		relevant to their fishery</strong>. This makes it possible to identify which levers are most 
-		likely to improve satisfaction in their setting—whether that means emphasizing catch, investing 
-		in facilities, or addressing congestion.
+			For managers, the key takeaway is that <strong>evidence can be filtered by the contexts most relevant to their fishery</strong>. This makes it possible to identify which levers are most likely to improve satisfaction in their setting—whether that means emphasizing catch, investing in facilities, or addressing congestion. <strong>The model essentially provides context-specific predictions rather than one-size-fits-all recommendations.</strong>
 		</p>
 
 
@@ -385,12 +355,12 @@
 			<h2>Recommendations</h2>
 
 			<section>
-			<h3>Evidence-Based Priority Setting</h3>
-			<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.5;">
-				<li><strong>Elevate catch-related factors:</strong> Consistently strong effects of catch, size, and harvest mean these remain the most reliable levers for improving angler satisfaction across contexts.</li>
-				<li><strong>Don’t overlook non-catch drivers:</strong> Space and congestion also had major effects—showing that crowding can offset biological success and should be a management priority.</li>
-				<li><strong>Support the “whole experience” view:</strong> Facilities, aesthetics, and relaxation carried moderate but significant influence, reminding managers that quality infrastructure and environment matter as much as fish.</li>
-			</ul>
+				<h3>Priority Ranking Based on Effect Sizes</h3>
+				<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.5;">
+					<li><strong>Elevate catch-related factors:</strong> Consistently large effect sizes mean these remain the most reliable levers for improving angler satisfaction across contexts—optimize here first.</li>
+					<li><strong>Don't overlook non-catch drivers:</strong> Space and congestion also had major effects—showing that crowding can offset biological success and should be a co-equal management priority.</li>
+					<li><strong>Support the "whole experience" view:</strong> Facilities, aesthetics, and relaxation carried moderate but significant influence, reminding managers that quality infrastructure and environment matter as much as fish.</li>
+				</ul>
 			</section>
 
 			<section>
@@ -433,6 +403,8 @@
 			</ul>
 			</section>
 
+
+
 			<section>
 			<h3>Assumptions</h3>
 			<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.5;">
@@ -443,11 +415,11 @@
 			</section>
 
 			<section>
-			<h3>Caveats</h3>
+			<h3>Model Limitations</h3>
 			<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.5;">
-				<li><strong>Geographic bias:</strong> Most studies were from the U.S., Germany, and Canada—limiting generalizability elsewhere.</li>
-				<li><strong>Context dependence:</strong> Moderator results show that drivers of satisfaction vary by species, country, and metric; findings are not one-size-fits-all.</li>
-				<li><strong>Scope limitations:</strong> Excluding certain traditions (e.g., purely economic valuation) narrows the lens but strengthens comparability.</li>
+				<li><strong>Linear assumptions:</strong> The model assumes additive effects; potential interactions or nonlinear relationships (e.g., threshold effects for crowding) were not tested.</li>
+				<li><strong>Observational data:</strong> All underlying studies are correlational—causal claims require experimental validation.</li>
+				<li><strong>Generalization bounds:</strong> Predictions are most reliable within the range of observed contexts (primarily U.S., Germany, Canada); extrapolation to underrepresented regions should be done cautiously.</li>
 			</ul>
 			</section>
 
