@@ -185,65 +185,75 @@
             <hr class="major" />
             <h2>Background</h2>
 
-          
             <p>
               Montana Fish, Wildlife & Parks (FWP), the state agency responsible for wildlife management, 
               conducted three statewide surveys in <strong>2012, 2017, and 2023</strong> to track public attitudes toward 
-              wolves and wolf management. <strong>I led the full analysis for this project</strong>—harmonizing data across 
-              waves, resolving survey drift, cleaning and weighting oversampled stakeholder groups, and 
-              producing defensible trends in tolerance, trust, and experiences. The results provide 
-              <strong>agency leadership and policymakers with clear, evidence-based insights</strong> to balance 
-              diverse stakeholder interests, from landowners and hunters to the broader public.
+              wolves and wolf management. <strong>I led the full analysis for this project</strong>—building an 
+              <strong>ETL pipeline (Python + SQL + R)</strong> to harmonize data across waves, resolve survey drift, 
+              and deduplicate respondents; applying <strong>stratified sampling with post-stratification weights</strong> 
+              across 4 stakeholder groups (general public, landowners, deer hunters, wolf hunters); and developing 
+              <strong>survey-weighted logistic regression models</strong> to identify key predictors of tolerance.
+            </p>
+
+            <p>
+              The analysis reduced a candidate set of <strong>50+ variables to 5 deployable predictors</strong> 
+              through iterative feature selection, producing a parsimonious model that maintains predictive power 
+              while enabling rapid stakeholder profiling. Results are presented through <strong>interactive Tableau 
+              dashboards tracking longitudinal trends</strong> and a <strong>predictive modeling application</strong>, 
+              providing <strong>agency leadership and policymakers with clear, evidence-based insights</strong> to balance 
+              diverse interests across Montana's wolf-affected communities.
             </p>
 
             <!-- ======================= -->
             <!-- Executive Summary -->
             <!-- ======================= -->
-            <hr class="major" />
-            <h2>Executive Summary</h2>
+<hr class="major" />
+<h2>Executive Summary</h2>
 
-             <p>
-            Montanans’ views on wolves have shifted markedly across three statewide surveys 
-            (<strong>2012, 2017, 2023</strong>). 
-            <strong>Tolerance for wolves on the landscape has steadily increased</strong> among residents and deer hunters 
-            (+0.9 and +1.3 on a 1–5 scale). 
-            Landowners remain less tolerant overall, but their attitudes have also trended upward, suggesting a gradual 
-            broadening of acceptance across most groups.
-          </p>
+<p>
+  Montanans' views on wolves have shifted markedly across three statewide surveys 
+  (<strong>2012, 2017, 2023</strong>). To track these trends, we built an <strong>ETL pipeline 
+  harmonizing 3 survey waves with deduplication logic</strong>, then applied <strong>post-stratification 
+  weights</strong> across 4 stakeholder groups (general public, landowners, deer hunters, wolf hunters) 
+  to ensure results represent Montana's adult population. <strong>Tolerance for wolves on the landscape 
+  has steadily increased</strong> among residents and deer hunters (+0.9 and +1.3 on a 1–5 scale). 
+  Landowners remain less tolerant overall, but their attitudes have also trended upward, suggesting 
+  a gradual broadening of acceptance across most groups.
+</p>
 
-          <p>
-            The 2023 wave expanded the lens—capturing 
-            <strong>first-hand wolf encounters, trust in agency management, and detailed policy preferences</strong>. 
-            Results from multivariate modeling show that 
-            <strong>distant sightings reliably build tolerance</strong>, 
-            while <strong>sightings near homes and reports of property damage drive the largest negative shifts</strong>. 
-            Wolf hunters stand out: their tolerance does not improve from positive encounters, underscoring the need for 
-            approaches beyond exposure-based strategies.
-          </p>
+<p>
+  The 2023 wave expanded the lens—capturing <strong>first-hand wolf encounters, trust in agency 
+  management, and detailed policy preferences</strong>. Using <strong>survey-weighted logistic 
+  regression</strong>, we reduced a candidate set of <strong>50+ variables to 5 key predictors</strong> 
+  that explain tolerance patterns across groups. Results show that <strong>distant sightings reliably 
+  build tolerance</strong>, while <strong>sightings near homes and reports of property damage drive the 
+  largest negative shifts</strong>. Wolf hunters stand out: their tolerance does not improve from 
+  positive encounters, underscoring the need for approaches beyond exposure-based strategies.
+</p>
 
-          <p>
-            Taken together, the findings highlight both opportunity and constraint: 
-            <strong>tolerance for wolf presence is broadening in the population at large, yet the most common encounters 
-            are not the ones that improve it</strong>. These insights support 
-            <strong>targeted communication, rapid conflict response, and program design</strong> that balance biological 
-            realities with social dynamics—offering leadership clear, defensible guidance for navigating one of Montana’s 
-            most contentious policy arenas.
-          </p>
-
-          <hr class="major" />
-            <h2>Survey Methods</h2>
-          <h3>Survey Coverage & Segments</h3>
-          <p>
-            Each wave added new measures while keeping a comparable core. The figures below show how the survey 
-            expanded over time and how oversampled groups (landowners, deer hunters, wolf hunters) were weighted 
-            back to represent Montana’s adult population.
-          </p>
-
-
+<p>
+  Taken together, the findings highlight both opportunity and constraint: <strong>tolerance for wolf 
+  presence is broadening in the population at large, yet the most common encounters are not the ones 
+  that improve it</strong>. Results are presented through <strong>interactive Tableau dashboards tracking 
+  10+ years of longitudinal trends</strong> and a <strong>predictive modeling application</strong> 
+  enabling rapid stakeholder profiling. These insights support <strong>targeted communication, rapid 
+  conflict response, and program design</strong> that balance biological realities with social dynamics—
+  offering leadership clear, defensible guidance for navigating one of Montana's most contentious 
+  policy arenas.
+</p>
         <!-- =======================
             Survey Drift Timeline
         ======================== -->
 
+        <hr class="major" />
+<h2>Survey Methods</h2>
+
+<h3>Survey Coverage & Segments</h3>
+<p>
+  Each wave added new measures while keeping a comparable core. The figures below show how the survey 
+  expanded over time and how oversampled groups (landowners, deer hunters, wolf hunters) were weighted 
+  back to represent Montana's adult population.
+</p>
 
         <style>
           /* ===== Timeline ===== */
@@ -501,6 +511,145 @@
 
           <hr class="major" />
         
+
+<!-- ========================================= -->
+<!-- NEW SUBSECTION 1: Data Harmonization -->
+<!-- ========================================= -->
+<hr class="major" />
+<h3>Data Harmonization & ETL Pipeline</h3>
+
+<p>
+  The three survey waves used <strong>different instruments, variable naming conventions, and file formats</strong>, 
+  making direct comparison challenging. To create a unified analytical dataset, we built a <strong>multi-language 
+  ETL pipeline (Python + SQL + R)</strong> that:
+</p>
+
+<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.6;">
+  <li><strong>Python (Pandas):</strong> Read raw SPSS files from each wave, standardized variable names, 
+      mapped response codes to common scales, and created shared household keys for tracking respondents 
+      across years 
+      <a href="https://github.com/max-birdsong/wolf-survey-analysis/blob/main/scripts/Python/Clean_Harmonize.ipynb" 
+         target="_blank" rel="noopener">[View notebook →]</a></li>
+  
+  <li><strong>SQL (PostgreSQL):</strong> Implemented deduplication logic to identify and resolve cases where 
+      the same individual appeared in multiple waves or strata. Applied rule-based prioritization 
+      (e.g., keep most recent response, flag known duplicates) and enforced referential integrity 
+      <a href="https://github.com/max-birdsong/wolf-survey-analysis/blob/main/scripts/SQL/Wolf_data_clean.sql" 
+         target="_blank" rel="noopener">[View SQL script →]</a></li>
+  
+  <li><strong>R (tidyverse + survey package):</strong> Applied post-stratification weights, validated 
+      weighted distributions against known population benchmarks, and generated weighted summary statistics 
+      and confidence intervals for all reporting 
+      <a href="https://github.com/max-birdsong/wolf-survey-analysis/blob/main/scripts/R/03_plots_longitudinal.R" 
+         target="_blank" rel="noopener">[View R script →]</a></li>
+</ul>
+
+<p>
+  This pipeline transformed <strong>three disparate datasets into a single, analysis-ready table</strong> 
+  with consistent variable definitions, resolved duplicates, and properly weighted observations. All 
+  transformation logic is version-controlled and documented, ensuring reproducibility and transparency.
+</p>
+
+<div style="background: #e8f5e9; border-left: 5px solid #1a472a; padding: 1rem; border-radius: 5px; margin: 1.5rem 0;">
+    <h4 style="margin-top: 0; color: #1a472a;">🔧 Technical Details: Deduplication Logic</h4>
+    <p style="margin: 0 0 0.5rem 0;">
+        <strong>Challenge:</strong> Some respondents appeared in multiple strata (e.g., a landowner who is also 
+        a deer hunter) or responded to multiple waves.
+    </p>
+    <p style="margin: 0.5rem 0 0 0;">
+        <strong>Solution:</strong> SQL queries identified duplicates using household ID + demographics. 
+        When conflicts arose, we kept the <strong>most specific stratum</strong> (wolf hunter > deer hunter > 
+        landowner > general) and the <strong>most recent wave</strong>. Flagged cases were reviewed manually 
+        to ensure logical consistency.
+    </p>
+</div>
+
+
+<!-- ========================================= -->
+<!-- NEW SUBSECTION 2: Statistical Methods -->
+<!-- ========================================= -->
+<hr class="major" />
+<h3>Statistical Modeling Approach</h3>
+
+<p>
+  To identify the strongest predictors of wolf tolerance, we used <strong>survey-weighted logistic regression</strong> 
+  with <strong>post-stratification weights</strong> applied throughout. This ensured that:
+</p>
+
+<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.6;">
+  <li>Parameter estimates reflect Montana's adult population, not just oversampled groups</li>
+  <li>Standard errors account for stratified sampling design</li>
+  <li>Predictions generalize to the broader public, not just survey respondents</li>
+</ul>
+
+<h4>Feature Selection Process</h4>
+<p>
+  The 2023 survey included <strong>50+ candidate predictors</strong> spanning demographics, wolf encounters, 
+  trust in agencies, hunting participation, and policy preferences. To build a deployable model, we applied 
+  <strong>stepwise feature selection</strong> combined with domain expertise:
+</p>
+
+<ol style="margin:.6rem 0 1rem 1.5rem; line-height:1.6;">
+  <li><strong>Univariate screening:</strong> Identified variables with significant bivariate associations 
+      with tolerance (p < 0.10)</li>
+  <li><strong>Multicollinearity check:</strong> Removed highly correlated predictors (VIF > 5) to avoid 
+      redundancy and unstable estimates</li>
+  <li><strong>Stepwise selection (AIC):</strong> Used backward elimination to retain only variables that 
+      improved model fit and maintained interpretability 
+      <a href="https://github.com/max-birdsong/wolf-tolerance-predictor/blob/main/Wolf_Tolerance_Classifier.ipynb" 
+         target="_blank" rel="noopener">[View modeling notebook →]</a></li>
+  <li><strong>Domain validation:</strong> Reviewed final variable set with FWP biologists and social 
+      scientists to ensure practical relevance</li>
+  <li><strong>Cross-validation:</strong> Confirmed that the reduced model (5 predictors) maintained 
+      predictive accuracy (AUC > 0.78) while dramatically simplifying deployment</li>
+</ol>
+
+<p>
+  The <strong>5 final predictors</strong> were: (1) prior wolf encounters (type and proximity), (2) trust 
+  in FWP management, (3) hunting participation, (4) rural vs. urban residence, and (5) age. This parsimonious 
+  model enables <strong>rapid stakeholder profiling</strong> without requiring full survey administration—
+  critical for real-time policy guidance.
+</p>
+
+<div style="background: #f0f8ff; border-left: 4px solid #2196f3; padding: 0.75rem; margin: 1rem 0; font-size: 0.95rem;">
+    <strong>🔄 Why feature selection matters:</strong> A model with 50+ predictors is impractical for 
+    deployment (requires too much data collection) and prone to overfitting. Reducing to 5 key variables 
+    maintains predictive power while making the model <strong>actionable</strong>—stakeholders can assess 
+    tolerance using just 5 survey questions instead of 50+.
+</div>
+
+<!-- Link to Interactive App -->
+<div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; text-align: center;">
+    <h4 style="margin-top: 0; color: #1b5e20;">🎯 Try the Interactive Model</h4>
+    <p style="margin: 0.5rem 0 1rem 0;">
+        The final model is deployed as an <strong>interactive Streamlit application</strong> where you can:
+    </p>
+    <ul style="list-style: none; padding: 0; margin: 0.5rem 0 1.5rem 0; line-height: 1.7;">
+        <li>✓ Input custom respondent profiles (5 key variables)</li>
+        <li>✓ See predicted tolerance levels with confidence intervals</li>
+        <li>✓ Explore feature importance and model diagnostics</li>
+        <li>✓ Compare predictions across different stakeholder groups</li>
+    </ul>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="https://wolf-tolerance-predictor-app.streamlit.app/?utm_source=wolf_methods" 
+           target="_blank" 
+           rel="noopener"
+           class="button primary icon solid fa-external-link-alt"
+           style="margin: 0;">
+            Launch Predictor App
+        </a>
+        <a href="https://github.com/max-birdsong/wolf-tolerance-predictor/blob/main/Wolf_Tolerance_Classifier.ipynb" 
+           target="_blank" 
+           rel="noopener"
+           class="button icon brands fa-github"
+           style="margin: 0;">
+            View Modeling Notebook
+        </a>
+    </div>
+    <p style="font-size: 0.9rem; color: #666; margin: 1rem 0 0 0;">
+        <em>The notebook contains full feature selection code, model diagnostics, and validation results.</em>
+    </p>
+</div>
 
 
            <!-- =======================

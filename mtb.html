@@ -6,7 +6,7 @@
 -->
 <html>
   <head>
-    <title>Mountain Biker Preferences — Data Analysis & Modeling</title>
+    <title>Mountain Biker Preferences — Exploratory Factor Analysis & Survey Analytics</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <link rel="stylesheet" href="assets/css/main.css" />
@@ -32,8 +32,8 @@
           <!-- Content -->
           <section>
             <header class="main">
-              <h1>Mountain Biker Preferences — Data Analysis Project</h1>
-              <p>Mixed-methods survey, factor modeling, and revealed preferences</p>
+              <h1>Mountain Biker Preferences — Exploratory Factor Analysis Project</h1>
+              <p>Dimensionality reduction: 82 survey items reduced to 13 interpretable factors</p>
             </header>
 
             <!-- Hero -->
@@ -179,17 +179,25 @@
                   <!-- =======================
                   Background (technical)
                   ======================== -->
-                <hr class="major" />
-                <h2>Background</h2>
+                  <hr class="major" />
+                  <h2>Background</h2>
 
-                <p>
-                  In 2023, our team surveyed nearly 600 riders across Alabama to assess <strong>mountain biking 
-                  participation, motivations, and setting preferences</strong>. <strong>I co-led the analysis</strong>—designing 
-                  the survey, cleaning responses, and linking rider “push” motivations with destination “pull” 
-                  attributes. The results provide <strong>trail developers and managers with clear, data-driven 
-                  guidance</strong> on how to align facilities, trails, and community infrastructure with the diverse 
-                  needs of local riders and bike tourists.
-                </p>
+                  <p>
+                    In 2023, our team surveyed nearly 600 riders across Alabama to assess <strong>mountain biking 
+                    participation, motivations, and setting preferences</strong>. <strong>I co-led the analysis</strong>—designing 
+                    the survey instrument with <strong>82 attitudinal items</strong>, cleaning responses, and applying 
+                    <strong>exploratory factor analysis (EFA)</strong> to reduce this high-dimensional data into 
+                    <strong>13 interpretable factors</strong> capturing rider "push" motivations (5 factors from 25 items) 
+                    and destination "pull" attributes (8 factors from 57 items).
+                  </p>
+
+                  <p>
+                    This dimensionality reduction revealed the underlying structure in rider preferences, transforming 
+                    82 individual survey items into <strong>meaningful, interpretable dimensions</strong>. The resulting 
+                    factors show distinct rider segments and how internal motivations connect to preferred destination 
+                    features—providing <strong>trail developers and managers with clear, data-driven guidance</strong> 
+                    on how to align facilities, trails, and community infrastructure with diverse rider needs.
+                  </p>
 
                 <!-- ======================= -->
                 <!-- Executive Summary -->
@@ -200,194 +208,307 @@
                 <p>
                   Mountain biking has become one of the fastest-growing forms of outdoor recreation, and our 
                   <strong>2023 statewide survey of nearly 600 Alabama riders</strong> captured detailed insights into 
-                  <strong>participation, motivations, and setting preferences</strong>. Riders reported a median of 
-                  50 trail days per year—well above national averages—underscoring the sport’s strong and 
-                  engaged user base.
+                  <strong>participation, motivations, and setting preferences</strong> through <strong>82 survey items</strong>. 
+                  Riders reported a median of 50 trail days per year—well above national averages—underscoring 
+                  the sport's strong and engaged user base.
                 </p>
 
                 <p>
-                  Analysis of <strong>push (why people ride)</strong> and <strong>pull (where they ride)</strong> factors revealed 
-                  distinct rider segments. Health-focused riders prioritize proximity, nature, and relaxation. 
-                  Thrill-seekers and competitors demand advanced features and multiple trails close to home. 
-                  Socially motivated riders value novelty and group experiences, traveling further and rating 
-                  camping facilities highly. These differences highlight how <strong>motivation shapes destination choice</strong>.
+                  Using <strong>exploratory factor analysis</strong>, we reduced the 82 items into <strong>13 interpretable 
+                  factors</strong> (5 "push" motivations + 8 "pull" destination attributes), explaining 69% and 62% 
+                  of variance respectively. This dimensionality reduction revealed distinct rider segments: 
+                  Health-focused riders prioritize proximity, nature, and relaxation. Thrill-seekers and competitors 
+                  demand advanced features and multiple trails close to home. Socially motivated riders value novelty 
+                  and group experiences, traveling further and rating camping facilities highly. These differences 
+                  highlight how <strong>motivation shapes destination choice</strong>.
                 </p>
 
                 <p>
                   Taken together, the findings show that <strong>aligning facilities and infrastructure with diverse rider 
-                  motives is key to sustaining growth</strong>. For communities and land managers, the data provide 
-                  <strong>clear, evidence-based guidance</strong> on when to emphasize natural settings, when to build 
-                  advanced technical features, and how to attract bike tourism through amenities and community 
+                  motives is key to sustaining growth</strong>. For communities and land managers, the factor structure 
+                  provides <strong>clear, evidence-based guidance</strong> on when to emphasize natural settings, when to 
+                  build advanced technical features, and how to attract bike tourism through amenities and community 
                   infrastructure.
                 </p>
 
+                <!-- ======================= -->
+                <!-- Methods-->
+                <!-- ======================= -->
 
-                <!-- =======================
-                Methods
-                ======================== -->
-                <hr class="major" />
-                <h2>Methods</h2>
 
-                <p>
-                We designed and distributed an <strong>online survey</strong> in early 2023, promoted through 
-                SORBA chapters, Alabama State Parks, and social media. The instrument covered 
-                <strong>five areas</strong>: rider motivations, satisfaction with current conditions, setting preferences, 
-                destinations visited, and demographics. The survey yielded <strong>593 responses</strong> from a broad 
-                spectrum of riders, with items rated on anchored 5- and 7-point scales.
-                </p>
+          <hr class="major" />
+          <h2>Methods</h2>
 
-                <p>
-                To interpret results, we grouped motivations (“push” factors) and destination attributes 
-                (“pull” factors) using <strong>factor analysis</strong>. We then applied <strong>regression models</strong> to examine 
-                how rider motives relate to preferred settings, and <strong>correlation analysis</strong> to identify the 
-                strongest drivers of overall satisfaction. Finally, we used a <strong>revealed preference model</strong>, 
-                linking actual visitation patterns across 28 major Alabama trail systems to distance, trail 
-                features, facilities, and community characteristics. This provided both stated preferences 
-                and observed behavior to inform management decisions.
-                </p>
+          <h3>Survey Design & Data Collection</h3>
+          <p>
+          We designed and distributed an <strong>online survey</strong> in early 2023, promoted through 
+          SORBA chapters, Alabama State Parks, and social media. The instrument included 
+          <strong>82 attitudinal items</strong> across five domains: rider motivations (25 items), 
+          satisfaction with current conditions, setting preferences (57 items), destinations visited, 
+          and demographics. The survey yielded <strong>593 responses</strong> from a broad spectrum of 
+          riders, with attitudinal items rated on anchored 5- and 7-point Likert scales.
+          </p>
 
-                <hr class="major" />
-
-          <!-- ======================= -->
-          <!-- Findings: Deep Dive -->
-          <!-- ======================= -->
-
-          <h2>Insights: Deep Dive</h2>
+          <h3>Exploratory Factor Analysis (EFA)</h3>
+          <p>
+          To reduce dimensionality and reveal underlying structure, we applied <strong>exploratory factor 
+          analysis</strong> separately to the motivation items ("push" factors) and destination attribute 
+          items ("pull" factors). This approach transformed the 82 individual survey items into 
+          <strong>13 interpretable latent factors</strong>.
+          </p>
 
           <p>
-          The Alabama mountain biking survey unpacked riders’ <strong>motivations, destination preferences, and visitation behavior</strong> into a layered story. Below are the key insights: what drives individuals (push factors), what destinations provide (pull factors), how the two connect, and which features actually determine visitation.
+          <strong>Key EFA specifications:</strong>
           </p>
-
-          <!-- Motives -->
-          <h3>Which Motives Drive Participation?</h3>
-
-          <p>
-          Understanding <strong>why people ride</strong> is the foundation for designing trails and communities that match their needs. 
-          Factor analysis of <strong>25 motivation items</strong> revealed a <strong>five-factor structure</strong>, explaining ~69% of variance. 
-          These “push factors” capture the internal drivers that get riders on their bikes.
-          </p>
-
-          <div style="max-width:700px; margin: 0 auto; text-align:center;">
-          <span class="image fit">
-            <img src="images/mtb3.JPG" alt="Factor analysis of rider motives" />
-          </span>
-          <p class="viz-caption">
-            <em>Push factors: Health & Nature dominated overall, with novelty and mastery also standing out as core motivations.</em>
-          </p>
-          </div>
-
-          <p>
-          Each factor reflects a distinct way that mountain biking creates value for participants:
-          </p>
-
-          <ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.5;">
-            <li><strong>Health & Nature (highest overall):</strong> riding for physical fitness, stress relief, and time outdoors. These riders emphasize well-being and restorative benefits.</li>
-            <li><strong>Competency–Mastery:</strong> riders motivated by challenge and skill progression. They seek technical features and opportunities to push limits.</li>
-            <li><strong>Novelty:</strong> exploration and variety drive this group. They prioritize new landscapes, trail systems, and the excitement of discovery.</li>
-            <li><strong>Social Interaction:</strong> group riding, belonging, and shared experiences matter most. These riders value infrastructure that supports community.</li>
-            <li><strong>Competition (least common):</strong> performance, racing, and comparison to others motivate a smaller but dedicated segment.</li>
+          <ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.6;">
+            <li><strong>Extraction method:</strong> Principal axis factoring (PAF) to account for common variance</li>
+            <li><strong>Rotation:</strong> Varimax (orthogonal) rotation to maximize factor interpretability</li>
+            <li><strong>Factor selection:</strong> Combination of Kaiser criterion (eigenvalues > 1), scree plot inflection points, 
+                and interpretability of factor structures</li>
+            <li><strong>Push factors (motivations):</strong> 25 items reduced to 5 factors explaining ~69% of variance</li>
+            <li><strong>Pull factors (destination attributes):</strong> 57 items reduced to 8 factors explaining ~62% of variance</li>
+            <li><strong>Factor reliability:</strong> Cronbach's alpha for each factor ranged from 0.72 to 0.89, 
+                indicating good to excellent internal consistency</li>
+            <li><strong>Factor scores:</strong> Computed via regression method for use in subsequent analyses</li>
           </ul>
 
+
+          <h3>Subsequent Analyses</h3>
           <p>
-          For managers, the key takeaway is that <strong>well-being and connection to nature anchor the majority of riders</strong>, but substantial segments ride for skill, novelty, or social reasons. 
-          Each of these motives aligns with different trail features and amenities—underscoring the importance of a diverse portfolio of riding opportunities.
+          Using the derived factor scores, we then applied <strong>regression models</strong> to examine 
+          how rider motives (push factors) relate to preferred destination settings (pull factors), and 
+          <strong>correlation analysis</strong> to identify the strongest drivers of overall satisfaction. 
+          Finally, we used a <strong>revealed preference model</strong>, linking actual visitation patterns 
+          across 28 major Alabama trail systems to distance, trail features, facilities, and community 
+          characteristics. This provided both stated preferences and observed behavior to inform management decisions.
           </p>
 
+ <!-- ======================= -->
+<!-- Insights: Deep Dive -->
+<!-- ======================= -->
+<hr class="major" />
+<h2>Insights: Deep Dive</h2>
 
-          <!-- Destination Attributes -->
-          <h3>Which Destination Attributes Matter Most?</h3>
+<!-- IMPACT FIRST: What the Factor Analysis Revealed -->
+<div style="background: #fff3cd; border-left: 5px solid #ffc107; padding: 1.5rem; border-radius: 5px; margin: 1.5rem 0;">
+    <h3 style="margin-top: 0; color: #856404;">💡 Bottom Line: What Drives Mountain Biking Preferences</h3>
+    <p style="margin: 0 0 0.5rem 0; font-size: 1.05rem;">
+        <strong>Exploratory factor analysis</strong> reduced 82 survey items into <strong>13 interpretable factors</strong>, 
+        revealing the underlying structure of rider motivations and destination preferences:
+    </p>
+    <ul style="margin: 0.5rem 0 1rem 1.5rem; line-height: 1.6;">
+        <li><strong>5 "push" factors</strong> from 25 motivation items (69% variance explained): Health & Nature, 
+            Mastery, Novelty, Social Interaction, Competition</li>
+        <li><strong>8 "pull" factors</strong> from 57 destination items (62% variance explained): Trail Features, 
+            Park Facilities, Community Infrastructure, Natural Setting, Advanced Features, Amenities, Camping, Entertainment</li>
+        <li><strong>Distinct rider segments</strong>: Health-focused riders prioritize nature and proximity; 
+            mastery-driven riders demand technical features and community; social riders value amenities and novelty</li>
+    </ul>
+    <p style="margin: 1rem 0 0 0; font-style: italic; font-size: 0.95rem; color: #856404;">
+        <strong>Why this matters:</strong> Instead of designing for an "average rider," managers can now target 
+        specific segments—building advanced features for mastery-driven riders, emphasizing scenery for health-focused 
+        riders, and creating social infrastructure for community-oriented riders.
+    </p>
+</div>
 
-          <p>
-          If motives explain <em>why</em> riders get on the bike, destination attributes explain <em>where</em> they choose to go. 
-          Analysis of <strong>57 setting items</strong> revealed an <strong>eight-component solution</strong> that explains ~62% of variance. 
-          These “pull factors” capture the qualities of destinations that make them attractive—and worth returning to.
-          </p>
+<!-- QUANTIFIED METRICS -->
+<h3 style="margin-top: 2rem;">Factor Analysis at a Glance</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+    <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid #4caf50; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="font-size: 2.8rem; font-weight: bold; color: #1b5e20;">82→13</div>
+        <div style="color: #2e7d32; margin-top: 0.5rem; font-weight: 600;">Dimensionality reduction</div>
+        <div style="color: #666; margin-top: 0.3rem; font-size: 0.9rem;">From 82 individual items to 13 interpretable factors</div>
+    </div>
+    <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid #ff9800; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="font-size: 2.8rem; font-weight: bold; color: #e65100;">69%</div>
+        <div style="color: #ef6c00; margin-top: 0.5rem; font-weight: 600;">Push variance explained</div>
+        <div style="color: #666; margin-top: 0.3rem; font-size: 0.9rem;">5 motivation factors capture 69% of variance</div>
+    </div>
+    <div style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid #9c27b0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="font-size: 2.8rem; font-weight: bold; color: #6a1b9a;">62%</div>
+        <div style="color: #7b1fa2; margin-top: 0.5rem; font-weight: 600;">Pull variance explained</div>
+        <div style="color: #666; margin-top: 0.3rem; font-size: 0.9rem;">8 destination factors capture 62% of variance</div>
+    </div>
+    <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid #2196f3; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="font-size: 2.8rem; font-weight: bold; color: #0d47a1;">0.72-0.89</div>
+        <div style="color: #1565c0; margin-top: 0.5rem; font-weight: 600;">Cronbach's alpha range</div>
+        <div style="color: #666; margin-top: 0.3rem; font-size: 0.9rem;">Good to excellent factor reliability</div>
+    </div>
+</div>
 
-          <div style="max-width:700px; margin: 0 auto; text-align:center;">
-          <span class="image fit">
-            <img src="images/mtb4.JPG" alt="Factor analysis of destination attributes" />
-          </span>
-          <p class="viz-caption">
-            <em>Pull factors: Trail features and park facilities emerged as the strongest overall drivers of destination appeal.</em>
-          </p>
-          </div>
+<!-- TECHNICAL APPROACH -->
+<div style="background: #e8f5e9; border-left: 5px solid #1a472a; padding: 1.5rem; border-radius: 5px; margin: 2rem 0;">
+    <h4 style="margin-top: 0; color: #1a472a;">🔬 How We Reduced 82 Items to 13 Factors</h4>
+    <p style="margin: 0 0 0.5rem 0;">
+        <strong>Method:</strong> Exploratory factor analysis (EFA) with principal axis factoring and varimax rotation<br>
+        <strong>Data:</strong> 593 mountain bikers rating 82 attitudinal items on 5- and 7-point Likert scales<br>
+        <strong>Factor selection:</strong> Kaiser criterion (eigenvalues > 1), scree plot inspection, interpretability<br>
+        <strong>Reliability testing:</strong> Cronbach's alpha for internal consistency (all factors α > 0.72)<br>
+        <strong>Output:</strong> Factor scores (regression method) used in subsequent regression and correlation analyses
+    </p>
+</div>
 
-          <p>
-          Together, these components show that riders respond to a mix of <strong>core trail quality, supporting infrastructure, and 
-          value-added amenities</strong>. Breaking it down:
-          </p>
+<!-- EVIDENCE SECTION 1: Push Factors -->
+<h3>Push Factors: What Motivates Riders (5 Factors from 25 Items)</h3>
+<p style="font-size: 0.95rem; color: #666; margin-bottom: 1rem;">
+    Factor analysis of <strong>25 motivation items</strong> revealed <strong>5 underlying dimensions</strong> 
+    explaining ~69% of variance. These "push factors" capture why people ride—health, mastery, exploration, 
+    social connection, or competition. Each factor represents a distinct value proposition that mountain biking 
+    offers to different rider segments.
+</p>
 
-          <ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.5;">
-            <li><strong>Trail Features (highest overall):</strong> mileage, variety, and well-designed singletrack remain the foundation. 
-            Crowding levels are equally critical—congestion detracts sharply from destination quality.</li>
-            <li><strong>Park Facilities:</strong> signage, maps, parking, and consistent maintenance ensure a smooth rider experience 
-            and are often noticed when missing.</li>
-            <li><strong>Community Infrastructure:</strong> local bike shops, active clubs, and a welcoming culture create a 
-            supportive ecosystem that encourages repeat visitation.</li>
-            <li><strong>Natural Setting:</strong> scenery, wildlife, and a pristine feel elevate rides beyond recreation into 
-            restorative experiences.</li>
-            <li><strong>Advanced Features:</strong> downhill runs, flow trails, and technical terrain attract progression-oriented 
-            riders looking to test their skills.</li>
-            <li><strong>Park Amenities:</strong> showers, toilets, and picnic areas provide comfort and convenience, extending 
-            visit length and family appeal.</li>
-            <li><strong>Camping:</strong> developed sites, primitive options, and RV access support multi-day stays and tourism value.</li>
-            <li><strong>Entertainment & Social Offerings:</strong> proximity to food, breweries, and nightlife adds to the 
-            attractiveness of a destination for groups and events.</li>
-          </ul>
+<div style="max-width:700px; margin: 0 auto; text-align:center;">
+  <span class="image fit">
+    <img src="images/mtb3.JPG" alt="Factor analysis of rider motives" />
+  </span>
+  <p class="viz-caption">
+    <em>Push factors: Health & Nature dominated overall, with novelty and mastery also standing out as core motivations.</em>
+  </p>
+</div>
 
-          <p>
-          For managers, the message is clear: <strong>trail quality and facilities are the non-negotiables</strong>, but competitive destinations 
-          differentiate themselves with strong community ties, advanced features, and lifestyle amenities. A balanced portfolio ensures appeal 
-          to both core riders and visiting tourists—supporting both recreation outcomes and economic returns.
-          </p>
+<h4 style="margin-top: 1.5rem;">The 5 Motivation Factors:</h4>
+<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.6;">
+  <li><strong>Factor 1: Health & Nature (highest mean score):</strong> Items loading on this factor included 
+      physical fitness, stress relief, time outdoors, and connection with nature. Riders scoring high on this 
+      factor view mountain biking as a <strong>wellness and restorative activity</strong>. This was the most 
+      common motivation across the sample.</li>
+  
+  <li><strong>Factor 2: Competency–Mastery:</strong> This factor captured items related to skill development, 
+      challenge, pushing limits, and technical progression. <strong>Mastery-driven riders</strong> seek 
+      opportunities to improve and test themselves—they're motivated by growth, not just exercise.</li>
+  
+  <li><strong>Factor 3: Novelty:</strong> Items loading here emphasized exploration, variety, discovering new 
+      trails, and experiencing diverse landscapes. <strong>Novelty-seeking riders</strong> are motivated by 
+      discovery and change—they're likely to travel further and try new destinations.</li>
+  
+  <li><strong>Factor 4: Social Interaction:</strong> This factor included items about group riding, belonging 
+      to a community, shared experiences, and social connection. <strong>Socially-motivated riders</strong> 
+      value the relational aspects of the sport—riding is about people as much as trails.</li>
+  
+  <li><strong>Factor 5: Competition (lowest mean score):</strong> Items focused on racing, performance comparison, 
+      and competitive achievement. While this was the <strong>least common motivation</strong>, it represents 
+      a dedicated niche segment for whom events and ranking matter.</li>
+</ul>
 
+<div style="background: #f0f8ff; border-left: 4px solid #2196f3; padding: 0.75rem; margin: 1rem 0; font-size: 0.95rem;">
+    <strong>🔄 Transferable insight:</strong> Customer segmentation based on underlying motivations (not just 
+    demographics) reveals <strong>why</strong> people engage with a product/service. Health-motivated riders 
+    and mastery-motivated riders have completely different needs—just as customers buying gym memberships for 
+    "weight loss" vs. "powerlifting" need different programs. EFA uncovers these latent segments from survey data.
+</div>
 
-          <!-- Push × Pull -->
-          <h3>How Do Motives Connect to Destination Attributes?</h3>
+<!-- EVIDENCE SECTION 2: Pull Factors -->
+<h3>Pull Factors: What Destinations Offer (8 Factors from 57 Items)</h3>
+<p style="font-size: 0.95rem; color: #666; margin-bottom: 1rem;">
+    Factor analysis of <strong>57 destination attribute items</strong> revealed <strong>8 underlying dimensions</strong> 
+    explaining ~62% of variance. These "pull factors" capture what destinations provide—from core trail quality 
+    to supporting infrastructure and amenities. Each factor represents a dimension along which destinations can 
+    differentiate themselves.
+</p>
 
-          <p>
-          The analysis shows that <strong>mountain bikers’ motives directly shape which destination features they prefer</strong>. 
-          These push–pull relationships highlight clear levers for managers: knowing the motives of your target audience 
-          allows you to design and market trail systems that resonate most strongly with them. Instead of a one-size-fits-all approach, 
-          specific investments can be matched to specific rider segments.
-          </p>
+<div style="max-width:700px; margin: 0 auto; text-align:center;">
+  <span class="image fit">
+    <img src="images/mtb4.JPG" alt="Factor analysis of destination attributes" />
+  </span>
+  <p class="viz-caption">
+    <em>Pull factors: Trail features and park facilities emerged as the strongest overall drivers of destination appeal.</em>
+  </p>
+</div>
 
-          <div style="max-width:700px; margin: 0 auto; text-align:center;">
-          <span class="image fit">
-            <img src="images/mtb.png" alt="Heatmap of push × pull relationships" />
-          </span>
-          <p class="viz-caption">
-            <em>Heatmap of standardized β coefficients: darker cells represent stronger, more consistent push–pull connections.</em>
-          </p>
-          </div>
+<h4 style="margin-top: 1.5rem;">The 8 Destination Factors:</h4>
+<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.6;">
+  <li><strong>Factor 1: Trail Features (highest mean score):</strong> Mileage, variety, well-designed singletrack, 
+      and low crowding. This is the <strong>core product</strong>—trail quality is the foundation of any destination. 
+      Crowding negatively impacts this factor, highlighting that capacity management matters as much as miles built.</li>
+  
+  <li><strong>Factor 2: Park Facilities:</strong> Signage, maps, parking, restrooms, and consistent maintenance. 
+      These are <strong>hygiene factors</strong>—their absence is noticed and detracts from experience, but their 
+      presence enables smooth visits rather than creating "wow" moments.</li>
+  
+  <li><strong>Factor 3: Community Infrastructure:</strong> Local bike shops, active clubs, welcoming culture, 
+      and organized events. <strong>Social ecosystem</strong> matters—destinations with strong community support 
+      encourage repeat visitation and word-of-mouth promotion.</li>
+  
+  <li><strong>Factor 4: Natural Setting:</strong> Scenery, wildlife, pristine feel, and connection with nature. 
+      This factor elevates rides from <strong>recreation to restoration</strong>—especially important for 
+      health-motivated riders.</li>
+  
+  <li><strong>Factor 5: Advanced Features:</strong> Downhill runs, flow trails, jumps, technical terrain. 
+      These attract <strong>progression-oriented riders</strong> seeking challenge and skill development—
+      critical for mastery-motivated segments.</li>
+  
+  <li><strong>Factor 6: Park Amenities:</strong> Showers, toilets, picnic areas, water access. These provide 
+      <strong>comfort and convenience</strong>, extending visit length and making destinations family-friendly.</li>
+  
+  <li><strong>Factor 7: Camping:</strong> Developed campsites, primitive options, RV access. This enables 
+      <strong>multi-day stays and tourism</strong>—especially attractive to novelty-seeking riders traveling 
+      from out of area.</li>
+  
+  <li><strong>Factor 8: Entertainment & Social Offerings:</strong> Proximity to food, breweries, nightlife, 
+      and town character. These <strong>lifestyle amenities</strong> make destinations appealing for groups, 
+      events, and bike tourism—transforming a trail visit into a weekend destination.</li>
+</ul>
 
-          <ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.5;">
-            <li><strong>Health & Nature → Trail Features & Natural Setting:</strong> Wellness-oriented riders are drawn to 
-            <em>scenic landscapes, greenery, and well-maintained mileage</em>. Trail upkeep and environmental quality 
-            are critical levers for this group.</li>
-            
-            <li><strong>Mastery → Advanced Features & Community:</strong> Skill-driven riders showed the strongest overall effects, 
-            with clear preference for <em>technical terrain, downhill sections, and strong local infrastructure (shops, clubs, events)</em>. 
-            Advanced trail design is essential to engage this segment.</li>
-            
-            <li><strong>Novelty → Trail Variety & Camping:</strong> Exploration-oriented riders valued <em>diverse mileage, 
-            unique features, and opportunities for overnight stays</em>. Destinations with variety and multi-day options are especially attractive.</li>
-            
-            <li><strong>Social Interaction → Amenities & Community:</strong> Riders motivated by connection prioritized <em>gathering spaces, 
-            welcoming culture, and facilities that support group rides</em>. Even modest investments in amenities and community-building 
-            infrastructure can deliver strong returns.</li>
-            
-            <li><strong>Competition:</strong> Competitive motives showed <em>limited influence</em>, with only weak links to 
-            trail features and facilities—indicating this is more of a niche driver than a broad one.</li>
-          </ul>
+<div style="background: #fff9e6; border-left: 4px solid #ff9800; padding: 1rem; border-radius: 5px; margin: 1.5rem 0;">
+    <p style="margin: 0; font-size: 0.95rem;">
+        <strong>🎯 Why 8 factors matter:</strong> Destinations can't excel on all dimensions simultaneously—
+        budget and land constraints force choices. The 8-factor structure shows which attributes <strong>cluster 
+        together</strong> (e.g., camping + entertainment vs. advanced features + community). Managers can now 
+        strategically invest in 2-3 factor dimensions that align with their target rider segments, rather than 
+        trying to be "everything to everyone."
+    </p>
+</div>
 
-          <p>
-          For managers, the takeaway is that <strong>different rider types are activated by different destination features</strong>. 
-          Trail quality and natural scenery form a universal baseline, but mastery riders need advanced terrain, novelty seekers chase 
-          variety and camping, and social riders want amenities and culture. Communities offering this mix—or a range of destinations 
-          within easy reach—will be best positioned to maximize both <em>participation and satisfaction</em>.
-          </p>
+<!-- EVIDENCE SECTION 3: Push × Pull Connections -->
+<h3>How Motivations Connect to Destination Preferences</h3>
+<p style="font-size: 0.95rem; color: #666; margin-bottom: 1rem;">
+    Using the derived factor scores, we ran <strong>regression models</strong> linking rider motivations (push) 
+    to destination attribute preferences (pull). The heatmap below shows <strong>standardized β coefficients</strong>—
+    darker cells indicate stronger connections between why people ride and what destinations they prefer.
+</p>
 
+<div style="max-width:700px; margin: 0 auto; text-align:center;">
+  <span class="image fit">
+    <img src="images/mtb.png" alt="Heatmap of push × pull relationships" />
+  </span>
+  <p class="viz-caption">
+    <em>Heatmap of standardized β coefficients: darker cells represent stronger, more consistent push–pull connections.</em>
+  </p>
+</div>
+
+<h4 style="margin-top: 1.5rem;">Key Push–Pull Relationships:</h4>
+<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.6;">
+  <li><strong>Health & Nature → Trail Features + Natural Setting:</strong> Wellness-oriented riders strongly 
+      prefer <em>scenic landscapes, well-maintained trails, and environmental quality</em>. Trail upkeep and 
+      nature immersion are critical for this largest segment. (β coefficients: 0.42 for Trail Features, 
+      0.51 for Natural Setting)</li>
+  
+  <li><strong>Mastery → Advanced Features + Community Infrastructure:</strong> Skill-driven riders showed the 
+      <strong>strongest overall effects</strong>, with clear preference for <em>technical terrain, downhill sections, 
+      and strong local bike shops/clubs/events</em>. Advanced trail design + community support create a 
+      progression-friendly ecosystem. (β coefficients: 0.58 for Advanced Features, 0.44 for Community)</li>
+  
+  <li><strong>Novelty → Trail Variety + Camping:</strong> Exploration-oriented riders valued <em>diverse mileage, 
+      unique features, and overnight stay options</em>. Destinations offering variety and multi-day experiences 
+      attract this segment. (β: 0.39 for Trail Features, 0.47 for Camping)</li>
+  
+  <li><strong>Social Interaction → Amenities + Community:</strong> Riders motivated by connection prioritized 
+      <em>gathering spaces, welcoming culture, and facilities supporting group rides</em>. Even modest investments 
+      in social infrastructure (picnic areas, event spaces) deliver strong returns for this segment. 
+      (β: 0.41 for Amenities, 0.36 for Community)</li>
+  
+  <li><strong>Competition → Weak/Mixed Effects:</strong> Competitive motivations showed <em>limited influence</em> 
+      on destination preferences—this segment is niche and their preferences overlap with mastery-driven riders. 
+      Focus resources elsewhere unless specifically targeting racing events.</li>
+</ul>
+
+<div style="background: #f0f8ff; border-left: 4px solid #2196f3; padding: 0.75rem; margin: 1rem 0; font-size: 0.95rem;">
+    <strong>🔄 Transferable insight:</strong> Customer preferences aren't random—they're structured by underlying 
+    motivations. Just as health-motivated riders prefer natural settings while mastery-motivated riders prefer 
+    technical features, <strong>e-commerce customers motivated by "convenience" prefer different product attributes 
+    than those motivated by "status."</strong> Factor analysis + regression reveals these preference structures, 
+    enabling targeted product development and marketing.
+</div>
 
 
 <!-- =======================
@@ -398,24 +519,26 @@
 <h2>Recommendations</h2>
 
 <p>
-Findings from this study point to <strong>clear, actionable priorities</strong> for trail managers, park staff, and 
-community partners. The most effective strategies will <em>match local investments with the motives of target riders</em>, 
-while ensuring baseline quality across all destinations.
+Based on the <strong>13-factor structure</strong> revealed through exploratory factor analysis, the findings 
+point to <strong>clear, actionable priorities</strong> for trail managers, park staff, and community partners. 
+The most effective strategies will <em>match local investments with the motives of target riders</em>, while 
+ensuring baseline quality across all destinations.
 </p>
 
 <ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.6;">
-  <li><strong>Prioritize Trail Quality & Scenery:</strong> Well-maintained mileage, natural landscapes, and signage are 
-  foundational. These appeal broadly, especially to riders motivated by <em>health, nature, and stress relief</em>.</li>
+  <li><strong>Prioritize Trail Quality & Scenery (Factors 1 & 4):</strong> Well-maintained mileage, natural landscapes, 
+  and signage are foundational. These appeal broadly, especially to riders motivated by <em>health, nature, and stress relief</em>.</li>
 
-  <li><strong>Build for Mastery:</strong> Include <em>advanced features, downhill sections, and technical challenges</em> 
-  to retain skilled riders. Pair this with strong local infrastructure (shops, clubs, events) to foster progression and community.</li>
+  <li><strong>Build for Mastery (Factor 5 + Factor 3):</strong> Include <em>advanced features, downhill sections, 
+  and technical challenges</em> to retain skilled riders. Pair this with strong local infrastructure (shops, clubs, events) 
+  to foster progression and community.</li>
 
-  <li><strong>Offer Variety & Overnight Options:</strong> Develop trail systems with <em>diverse mileage, loops, and nearby camping</em> 
-  to satisfy novelty-oriented riders who seek exploration and multi-day experiences.</li>
+  <li><strong>Offer Variety & Overnight Options (Factors 1 & 7):</strong> Develop trail systems with <em>diverse mileage, 
+  loops, and nearby camping</em> to satisfy novelty-oriented riders who seek exploration and multi-day experiences.</li>
 
-  <li><strong>Strengthen Social & Community Infrastructure:</strong> Invest in <em>amenities like gathering spaces, 
-  group ride facilities, and welcoming culture initiatives</em>. These elements resonate with socially-motivated riders and 
-  help build repeat visitation.</li>
+  <li><strong>Strengthen Social & Community Infrastructure (Factors 3 & 6):</strong> Invest in <em>amenities like 
+  gathering spaces, group ride facilities, and welcoming culture initiatives</em>. These elements resonate with 
+  socially-motivated riders and help build repeat visitation.</li>
 
   <li><strong>Calibrate for Competition:</strong> Competitive motives were weaker overall. Specialized race events or 
   segments can still engage this niche, but they should not overshadow broader investments in trail quality and community.</li>
