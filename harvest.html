@@ -270,46 +270,6 @@
   interpretable behavioral profiles that could be linked to harvest decisions.
 </p>
 
-<details style="margin: 1rem 0;">
-    <summary style="cursor: pointer; color: #4682b4; font-weight: 600;">
-        💻 View Composite Index Construction Code
-    </summary>
-    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 5px; overflow-x: auto; margin-top: 0.5rem;"><code class="language-python">import pandas as pd
-import numpy as np
-
-# ============================================
-# Build composite psychological indices
-# ============================================
-# NOTE: These are created from angler-level survey data
-# This is appropriate because they're angler characteristics, not trip outcomes
-
-# Centrality to lifestyle (6 items, α=0.84)
-ctl_items = ['ctl_1', 'ctl_2', 'ctl_3', 'ctl_4', 'ctl_5', 'ctl_6']
-angler_data['CTL'] = angler_data[ctl_items].mean(axis=1)
-
-# Consumption orientation (4 items, α=0.78)
-cons_items = ['cons_1', 'cons_2', 'cons_3', 'cons_4']
-angler_data['consumption_orient'] = angler_data[cons_items].mean(axis=1)
-
-# Behavioral commitment (composite measure)
-angler_data['commitment'] = (
-    angler_data['annual_trips'] * 0.4 + 
-    angler_data['years_experience'] * 0.3 + 
-    angler_data['equipment_investment'] * 0.3
-)
-
-# Self-perceived skill (already single item, 1-5 scale)
-# angler_data['skill'] already exists
-
-# Merge angler-level indices with trip-level data
-trip_data = trip_data.merge(
-    angler_data[['angler_id', 'CTL', 'skill', 'age', 'consumption_orient', 'commitment']], 
-    on='angler_id'
-)
-
-print(f"Created indices for {len(angler_data)} anglers")
-print(f"Merged with {len(trip_data)} trip records")</code></pre>
-</details>
 
 <h3>Trip Context Variables</h3>
 <p>
@@ -346,235 +306,19 @@ print(f"Merged with {len(trip_data)} trip records")</code></pre>
       to prevent data leakage—transformations fit only on training data, then applied to test data</li>
 </ul>
 
-<p>
-  Below is a simplified implementation using <strong>sklearn's LogisticRegression</strong> with proper 
-  <strong>pipeline architecture</strong> to prevent data leakage, which demonstrates the core modeling 
-  approach. Note that the full analysis used <strong>mixed-effects models</strong> (via statsmodels or 
-  R's lme4) to properly account for the nested data structure (fish → trips → anglers), which sklearn's 
-  standard logistic regression does not support.
-</p>
-
-<details style="margin: 1rem 0;">
-    <summary style="cursor: pointer; color: #2c5aa0; font-weight: 600; font-size: 1.05rem;">
-        💻 View Complete Model Pipeline Code
-    </summary>
-    <pre style="background: #2b2b2b; color: #f8f8f2; padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin-top: 0.5rem; border: 2px solid #404040;"><code class="language-python">import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
-import matplotlib.pyplot as plt
-import joblib
-
-# ============================================
-# STEP 1: Prepare features and target
-# ============================================
-
-# Define feature columns
-numeric_features = ['age', 'skill', 'CTL', 'consumption_orient', 'commitment',
-                    'cpue_std', 'fish_length_cm']
-categorical_features = ['species', 'region', 'season']
-
-X = trip_data[numeric_features + categorical_features].copy()
-y = trip_data['harvested']  # Binary: 1 = harvested, 0 = released
-
-# Handle missing values
-X = X.fillna(X.median(numeric_only=True))
-
-print(f"Dataset: {len(X)} fish across {trip_data['angler_id'].nunique()} anglers")
-print(f"Harvest rate: {y.mean():.1%}")
-
-# ============================================
-# STEP 2: Train-test split BEFORE transformations
-# ============================================
-# CRITICAL: Split data BEFORE scaling to prevent data leakage
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42, stratify=y
-)
-
-print(f"\nTraining set: {len(X_train)} samples ({y_train.mean():.1%} harvested)")
-print(f"Test set: {len(X_test)} samples ({y_test.mean():.1%} harvested)")
-
-# ============================================
-# STEP 3: Build preprocessing pipeline
-# ============================================
-# Ensures scaling is fit ONLY on training data
-
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', StandardScaler(), numeric_features),
-        ('cat', OneHotEncoder(drop='first', sparse_output=False), categorical_features)
-    ],
-    remainder='passthrough'
-)
-
-# Build full pipeline
-pipeline = Pipeline(steps=[
-    ('preprocessor', preprocessor),
-    ('classifier', LogisticRegression(max_iter=1000, random_state=42, 
-                                     class_weight='balanced'))
-])
-
-# ============================================
-# STEP 4: Fit pipeline on training data
-# ============================================
-
-pipeline.fit(X_train, y_train)
-print("\n✓ Pipeline fitted on training data")
-
-# ============================================
-# STEP 5: Evaluate model performance
-# ============================================
-
-# Training performance
-y_train_pred = pipeline.predict(X_train)
-y_train_proba = pipeline.predict_proba(X_train)[:, 1]
-train_acc = pipeline.score(X_train, y_train)
-train_auc = roc_auc_score(y_train, y_train_proba)
-
-# Test performance (using training scaling parameters)
-y_test_pred = pipeline.predict(X_test)
-y_test_proba = pipeline.predict_proba(X_test)[:, 1]
-test_acc = pipeline.score(X_test, y_test)
-test_auc = roc_auc_score(y_test, y_test_proba)
-
-print(f"\n{'='*60}")
-print(f"PERFORMANCE METRICS")
-print(f"{'='*60}")
-print(f"Train Accuracy: {train_acc:.3f} | Train AUC: {train_auc:.3f}")
-print(f"Test Accuracy:  {test_acc:.3f}  | Test AUC:  {test_auc:.3f}")
-print(f"{'='*60}")
-
-# Confusion matrix
-print("\nTest Set Confusion Matrix:")
-cm = confusion_matrix(y_test, y_test_pred)
-print(f"                Predicted")
-print(f"              Released  Harvested")
-print(f"Actual Released    {cm[0,0]:5d}     {cm[0,1]:5d}")
-print(f"       Harvested   {cm[1,0]:5d}     {cm[1,1]:5d}")
-
-# Classification report
-print("\nTest Set Classification Report:")
-print(classification_report(y_test, y_test_pred, 
-                          target_names=['Released', 'Harvested']))
-
-# Cross-validation
-cv_scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring='roc_auc')
-print(f"5-Fold CV AUC: {cv_scores.mean():.3f} (+/- {cv_scores.std():.3f})")
-
-# ============================================
-# STEP 6: Examine feature importance
-# ============================================
-
-# Extract feature names after preprocessing
-feature_names = (
-    numeric_features + 
-    list(pipeline.named_steps['preprocessor']
-         .named_transformers_['cat']
-         .get_feature_names_out(categorical_features))
-)
-
-# Extract coefficients
-coefficients = pipeline.named_steps['classifier'].coef_[0]
-
-coef_df = pd.DataFrame({
-    'feature': feature_names,
-    'coefficient': coefficients,
-    'abs_coef': np.abs(coefficients)
-}).sort_values('abs_coef', ascending=False)
-
-print(f"\n{'='*60}")
-print("TOP 10 PREDICTORS OF HARVEST")
-print(f"{'='*60}")
-for idx, row in coef_df.head(10).iterrows():
-    print(f"{row['feature']:30s} {row['coefficient']:7.3f}")
-print(f"{'='*60}")
-
-# ============================================
-# STEP 7: Generate predictions for new fish
-# ============================================
-
-# Example: 55cm Pike caught by experienced angler
-sample_fish = pd.DataFrame({
-    'age': [65],
-    'skill': [4],
-    'CTL': [5.2],
-    'consumption_orient': [4.5],
-    'commitment': [150],
-    'cpue_std': [0.3],
-    'fish_length_cm': [55],
-    'species': ['Pike'],
-    'region': ['LS'],
-    'season': ['Summer']
-})
-
-harvest_prob = pipeline.predict_proba(sample_fish)[:, 1][0]
-prediction = pipeline.predict(sample_fish)[0]
-
-print(f"\n{'='*60}")
-print(f"PREDICTION: 55cm Pike (Experienced Angler, Summer)")
-print(f"{'='*60}")
-print(f"Harvest probability: {harvest_prob:.1%}")
-print(f"Predicted outcome: {'HARVESTED' if prediction == 1 else 'RELEASED'}")
-print(f"{'='*60}")
-
-# ============================================
-# STEP 8: Size-selectivity curve
-# ============================================
-
-# Generate predictions across size range
-size_range = pd.DataFrame({
-    'fish_length_cm': np.arange(30, 101, 1),
-    'age': [50] * 71,
-    'skill': [3] * 71,
-    'CTL': [3.5] * 71,
-    'consumption_orient': [3.0] * 71,
-    'commitment': [100] * 71,
-    'cpue_std': [0.5] * 71,
-    'species': ['Pike'] * 71,
-    'region': ['LS'] * 71,
-    'season': ['Summer'] * 71
-})
-
-size_range['harvest_prob'] = pipeline.predict_proba(size_range)[:, 1]
-
-# Visualize
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.plot(size_range['fish_length_cm'], size_range['harvest_prob'], 
-        linewidth=2.5, color='steelblue', label='Predicted harvest probability')
-ax.axvline(x=45, color='red', linestyle='--', linewidth=2, 
-          label='Legal minimum size (45 cm)')
-ax.axhline(y=0.5, color='gray', linestyle=':', alpha=0.5)
-ax.set_xlabel('Fish Length (cm)', fontsize=12, fontweight='bold')
-ax.set_ylabel('Predicted Harvest Probability', fontsize=12, fontweight='bold')
-ax.set_title('Size-Selectivity Curve: Pike (Lower Saxony, Summer)', 
-            fontsize=14, fontweight='bold')
-ax.legend(fontsize=10, loc='best')
-ax.grid(alpha=0.3, linestyle='--')
-ax.set_ylim(0, 1)
-plt.tight_layout()
-plt.show()
-
-# ============================================
-# STEP 9: Save pipeline for deployment
-# ============================================
-
-joblib.dump(pipeline, 'harvest_model_pipeline.pkl')
-print("\n✓ Pipeline saved to 'harvest_model_pipeline.pkl'")
-print("✓ Load later: pipeline = joblib.load('harvest_model_pipeline.pkl')")</code></pre>
-</details>
-
-<p>
-  This modeling design allowed us to isolate the effects of <strong>individual psychology, cultural context, 
-  and species biology</strong> on harvest decisions. By using proper <strong>pipeline architecture to prevent 
-  data leakage</strong>—ensuring all preprocessing transformations are fit only on training data—we generated 
-  robust, generalizable predictions at both population and individual angler levels while properly accounting 
-  for the nested data structure in the full mixed-effects analysis.
-</p>
+<!-- TECHNICAL APPROACH: How We Got Here -->
+<div style="background: #e8f5e9; border-left: 5px solid #1a472a; padding: 1.5rem; border-radius: 5px; margin: 2rem 0;">
+    <h4 style="margin-top: 0; color: #1a472a;">🔬 Modeling Approach</h4>
+    <p style="margin: 0 0 0.5rem 0;">
+        <strong>Method:</strong> Logistic mixed-effects regression predicting binary outcome (harvest = 1, release = 0) for each fish<br>
+        <strong>Sample:</strong> 19,958 fish across 1,169 anglers (nested structure: fish → trips → anglers)<br>
+        <strong>Key Features:</strong> Composite psychological indices (CTL from 6 items, consumption orientation from 4 items), 
+        fish size, species, CPUE, region<br>
+        <strong>Random Effects:</strong> Angler-level and trip-level intercepts to account for individual harvest tendencies<br>
+        <strong>Why mixed-effects:</strong> Standard logistic regression ignores the nested structure—same angler makes multiple decisions, 
+        violating independence assumptions
+    </p>
+</div>
 
 <!-- ======================= -->
 <!-- Insights: Deep Dive -->
@@ -596,49 +340,11 @@ print("✓ Load later: pipeline = joblib.load('harvest_model_pipeline.pkl')")</c
         <li><strong>Species identity</strong>: Trout and cod harvested at 3-4× the rate of pike, regardless of angler characteristics</li>
     </ul>
     <p style="margin: 1rem 0 0 0; font-style: italic; font-size: 0.95rem; color: #856404;">
-        <strong>Why this matters:</strong> Harvest mortality isn't just about regulations—it's driven by psychology, culture, and species-specific norms. 
+        <strong>Why this matters:</strong> Harvest mortality isn't just about regulations; it's driven by psychology, culture, and species-specific norms. 
         One-size-fits-all management strategies miss these critical drivers.
     </p>
 </div>
 
-<!-- QUANTIFIED METRICS: Key Numbers -->
-<h3 style="margin-top: 2rem;">Key Findings at a Glance</h3>
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
-    <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid #4caf50; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <div style="font-size: 2.8rem; font-weight: bold; color: #1b5e20;">2×</div>
-        <div style="color: #2e7d32; margin-top: 0.5rem; font-weight: 600;">Consumption orientation effect</div>
-        <div style="color: #666; margin-top: 0.3rem; font-size: 0.9rem;">High vs. low consumption index harvest rate difference</div>
-    </div>
-    <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid #ff9800; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <div style="font-size: 2.8rem; font-weight: bold; color: #e65100;">3-4×</div>
-        <div style="color: #ef6c00; margin-top: 0.5rem; font-weight: 600;">Species variation</div>
-        <div style="color: #666; margin-top: 0.3rem; font-size: 0.9rem;">Trout/cod harvest rate vs. pike across all angler types</div>
-    </div>
-    <div style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid #9c27b0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <div style="font-size: 2.8rem; font-weight: bold; color: #6a1b9a;">15-20%</div>
-        <div style="color: #7b1fa2; margin-top: 0.5rem; font-weight: 600;">Regional culture gap</div>
-        <div style="color: #666; margin-top: 0.3rem; font-size: 0.9rem;">East vs. West Germany harvest rate difference</div>
-    </div>
-    <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 1.5rem; border-radius: 8px; text-align: center; border: 2px solid #2196f3; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <div style="font-size: 2.8rem; font-weight: bold; color: #0d47a1;">Trophy</div>
-        <div style="color: #1565c0; margin-top: 0.5rem; font-weight: 600;">Size-selectivity pattern</div>
-        <div style="color: #666; margin-top: 0.3rem; font-size: 0.9rem;">Large fish increasingly released (carp, pike)</div>
-    </div>
-</div>
-
-<!-- TECHNICAL APPROACH: How We Got Here -->
-<div style="background: #e8f5e9; border-left: 5px solid #1a472a; padding: 1.5rem; border-radius: 5px; margin: 2rem 0;">
-    <h4 style="margin-top: 0; color: #1a472a;">🔬 Modeling Approach</h4>
-    <p style="margin: 0 0 0.5rem 0;">
-        <strong>Method:</strong> Logistic mixed-effects regression predicting binary outcome (harvest = 1, release = 0) for each fish<br>
-        <strong>Sample:</strong> 19,958 fish across 1,169 anglers (nested structure: fish → trips → anglers)<br>
-        <strong>Key Features:</strong> Composite psychological indices (CTL from 6 items, consumption orientation from 4 items), 
-        fish size, species, CPUE, region<br>
-        <strong>Random Effects:</strong> Angler-level and trip-level intercepts to account for individual harvest tendencies<br>
-        <strong>Why mixed-effects:</strong> Standard logistic regression ignores the nested structure—same angler makes multiple decisions, 
-        violating independence assumptions
-    </p>
-</div>
 
 <!-- EVIDENCE SECTION 1: Species Patterns -->
 <section class="spotlight">
@@ -892,7 +598,6 @@ print("✓ Load later: pipeline = joblib.load('harvest_model_pipeline.pkl')")</c
           </header>
           <ul>
             <li><a href="index.html">Homepage</a></li>
-            <li><a href="portfolio.html">Portfolio</a></li>
 
             <li>
               <span class="opener">Specific Projects</span>
@@ -922,7 +627,7 @@ print("✓ Load later: pipeline = joblib.load('harvest_model_pipeline.pkl')")</c
             </li>
           </ul>
         </li>
-            <li><a href="experience.html">Resume</a></li>
+       <li><a href="portfolio.html">Portfolio</a></li>
           </ul>
         </nav>
 

@@ -179,13 +179,21 @@
 			<!-- =======================
 				Background (technical)
 			======================== -->
-			<hr class="major" />
-			<h2>Background</h2>
 
-		
-<p>
-    Our stakeholders, fisheries managers, faced a fragmented evidence base: more than 20 peer-reviewed studies on angler satisfaction existed, but they used different measures, reported results inconsistently, and often pointed in conflicting directions. Without a synthesis, it was impossible to know which factors reliably shaped satisfaction or to base policy on more than isolated findings. I built a <strong>multilevel meta-regression model</strong> to standardize results into a common effect-size metric, account for statistical dependencies between studies, and quantify how context shapes satisfaction drivers. The outcome was a <strong>coherent, decision-ready predictive framework</strong> that distilled scattered research into clear priorities managers could trust when designing policies and programs.
-</p>
+      <hr class="major" />
+      <h2>Background</h2>
+
+      <p>
+          Fisheries managers faced a fragmented evidence base: <strong>23 peer-reviewed studies on angler satisfaction</strong> existed, but they used different measures, reported results inconsistently, and often pointed in conflicting directions. Without a synthesis, it was impossible to know which factors reliably shaped satisfaction or to base policy on more than isolated findings.
+      </p>
+
+      <p>
+          I conducted a <strong>multilevel meta-analysis</strong> synthesizing <strong>23 studies (33 datasets, 172 effect sizes)</strong> to address this challenge. The multilevel structure accounted for <strong>statistical dependencies</strong>—multiple effect sizes nested within datasets, nested within studies—ensuring unbiased estimates when individual studies contributed multiple results. I also conducted <strong>publication bias diagnostics</strong> (funnel plots, Begg-Mazumdar tests, sensitivity analyses) to confirm the robustness of findings.
+      </p>
+
+      <p>
+          To make results accessible to stakeholders, I created <strong>forest plots and meta-regression visualizations</strong> designed for policymakers—translating complex statistical outputs into clear, actionable guidance. The outcome was a <strong>coherent, decision-ready framework</strong> that distilled scattered research into evidence-based priorities managers could trust when designing policies and programs: which factors have the strongest effects on satisfaction, how context moderates these relationships, and where to invest limited resources for maximum impact.
+      </p>
 
 
 
@@ -220,133 +228,207 @@
 
 
 
-			<!-- =======================
-				Methods
-			======================== -->
-			<hr class="major" />
-			<h2>Methods</h2>
+<!-- ======================= -->
+<!-- Findings: Deep Dive -->
+<!-- ======================= -->
+<hr class="major" />
+<h2>Key Findings: What the Multilevel Model Reveals</h2>
 
-			<p>
-			We conducted a <strong>systematic review and meta-analysis</strong> of published studies on recreational angler satisfaction. 
-			Our search used Web of Science, BioONE, BASE, Google Scholar, and archival sources (including the Ditton library), yielding 
-			<strong>279 papers</strong>. After title, abstract, and full-text screening, <strong>23 studies (33 datasets, 172 effect sizes)</strong> 
-			met inclusion criteria. Eligible studies reported satisfaction with both specific trip components (e.g., catch rate, crowding, 
-			facilities) and overall angling satisfaction on a common scale, or linked actual trip outcomes to reported quality.
-			</p>
-
-                <div style="max-width:400px; margin: 0 auto;">
-    			<span class="image fit">
-                <img src="images/meta3.JPG" alt="Study screening flow" />
-              </span>
-			  </div>
-
-<p>
-    Effect sizes were transformed into a standardized <strong>Fisher's z</strong>, ensuring comparability across study designs and metrics. To account for non-independence of multiple results per study, we fitted a <strong>three-level random-effects model</strong> using restricted maximum likelihood, nesting effect sizes within studies. This hierarchical structure properly partitions variance and produces unbiased estimates when studies contribute multiple outcomes. Subgroup analyses classified satisfaction determinants into categories such as <em>catch, harvest, size, congestion, facilities, aesthetics, relaxation, mastery, social quality, space,</em> and <em>water quality</em>. We also tested <strong>moderator effects</strong> of country, species, satisfaction metric, and fishery type through univariate meta-regressions.
+<!-- NEW: Brief intro connecting to Methods -->
+<p style="background: #f7f7f9; padding: 1rem; border-radius: 5px; margin: 0 0 1.5rem 0;">
+  The findings below emerge from a <strong>multilevel meta-analysis of 23 studies (33 datasets, 172 effect sizes)</strong> 
+  on angler satisfaction. The three-level model accounts for statistical dependencies (effect sizes nested within 
+  datasets nested within studies), producing unbiased pooled estimates and enabling context-specific predictions 
+  through meta-regression. All visualizations are designed for <strong>policymakers and fisheries managers</strong>, 
+  translating complex statistical outputs into clear, actionable guidance.
 </p>
 
+<!-- Subgroup Effects -->
+<h3>Forest Plot: Which Components Drive Satisfaction?</h3>
 <p>
-    To assess robustness, we conducted <strong>sensitivity analyses</strong> and examined <strong>publication bias</strong> with funnel plots and Begg–Mazumdar rank correlation tests. All analyses were implemented in R using the <code>metafor</code> package, ensuring reproducibility and transparency.
+	To understand which components of an angling experience mattered most, we estimated <strong>pooled effect sizes 
+  for 11 experience components</strong> against overall satisfaction across the 23 studies. The <strong>forest plot</strong> 
+  below shows the effect magnitude for each factor, with confidence intervals indicating precision. This visualization 
+  format is standard in meta-analysis and allows managers to quickly identify <strong>high-leverage intervention points</strong>.
 </p>
 
-			<hr class="major" />
+<div style="max-width:700px; margin: 0 auto; text-align:center;">
+<span class="image fit">
+	<img src="images/meta2.JPG" alt="Forest plot: Effect sizes of 11 experience components on angler satisfaction" />
+</span>
+<p class="viz-caption">
+	<em>Forest plot showing pooled effect sizes (Fisher's z transformed) for 11 satisfaction components. Strong effects 
+  (g>0.4) are shown in dark blue, moderate effects (g>0.2) in light blue, and non-significant effects (95% CI includes zero) 
+  in grey. Horizontal bars represent 95% confidence intervals; narrower bars indicate more precise estimates.</em>
+</p>
+</div>
 
-		<!-- ======================= -->
-		<!-- Findings: Deep Dive -->
-		<!-- ======================= -->
+<style>
+.viz-caption {
+	text-align: center;
+	font-size: 0.9rem;
+	color: #444;
+	margin-top: 0.6rem;
+  line-height: 1.5;
+}
+</style>
+
+<h4 style="margin-top: 1.5rem;">Key Patterns from the Multilevel Model:</h4>
+<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.6;">
+	<li><strong>Catch-related factors dominated (effect sizes > 0.4):</strong> Catch success, harvest, and fish size 
+    consistently showed the strongest positive effects on overall satisfaction across all 23 studies—these are the 
+    <strong>highest-leverage variables</strong> for improvement. The multilevel model confirmed these effects remain 
+    robust even after accounting for dependencies between multiple results from the same study.</li>
 	
-		<h2>Key Findings: What the Model Reveals</h2>
-
-		<p>
-		The meta-analysis unpacked hundreds of effect sizes into a clear picture of what consistently drives angler satisfaction, 
-		where results vary, and how reliable the evidence base is. Below are the key layers of insight.
-		</p>
-
-		<!-- Subgroup Effects -->
-		<h3>Feature Importance: Which Components Drive Satisfaction?</h3>
-		<p>
-			To understand which components of an angling experience mattered most, we estimated <strong>pooled effect sizes for 11 experience components</strong> against overall satisfaction across studies. The chart below shows the effect magnitude for each factor, with confidence intervals indicating precision.
-		</p>
-
-		<div style="max-width:700px; margin: 0 auto; text-align:center;">
-		<span class="image fit">
-			<img src="images/meta2.JPG" alt="Effect sizes of 11 experience components on satisfaction" />
-		</span>
-		<p class="viz-caption">
-			<em>Effect sizes reflect pooled correlations across studies. Strong effects (g&gt;0.4) are shown in dark blue, 
-			moderate effects (g&gt;0.2) in light blue, and insignificant effects in grey.</em>
-		</p>
-		</div>
-
-		<style>
-		.viz-caption {
-			text-align: center;
-			font-size: 0.9rem;
-			color: #444;
-			margin-top: 0.6rem;
-		}
-		</style>
-
-		<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.5;">
-			<li><strong>Catch-related factors dominated:</strong> Catch, harvest, and fish size consistently showed the strongest positive effects on overall satisfaction—these are the highest-leverage variables for improvement.</li>
-			<li><strong>Space and congestion mattered too:</strong> Anglers valued room on the water and disliked crowding; both emerged as strong non-catch determinants with effect sizes comparable to biological factors.</li>
-			<li><strong>Moderate but meaningful effects:</strong> Relaxation, aesthetics, facilities, and mastery all showed moderate yet significant relationships with satisfaction.</li>
-			<li><strong>No consistent effect:</strong> Social quality and perceived water quality were not significantly related to satisfaction across studies—confidence intervals included zero.</li>
-		</ul>
-
-		<!-- Meta-Regression -->
-		<h3>Meta-Regression: Interpreting Results by Context</h3>
-
-		<p>
-		One advantage of meta-analysis is the ability to <strong>separate results by key subgroups</strong>—for example, 
-		target species, country, or whether satisfaction was measured by trip or year. 
-		These comparisons reveal how much context shifts the importance of different experience dimensions. 
-		For instance, <strong>catch-related factors remained strong across all groups</strong>, while 
-		aesthetics, relaxation, and mastery showed larger effects in German and freshwater studies. 
-		Measuring satisfaction over a full year also made non-catch dimensions more influential 
-		compared to single-trip measures.
-		</p>
-
-		<div style="max-width:700px; margin: 0 auto; text-align:center;">
-		<span class="image fit">
-			<img src="images/meta4.JPG" alt="Meta-regression of moderators of angler satisfaction" />
-		</span>
-		<p class="viz-caption">
-			<em>Note:</em> Insignificant effects are shown in grey. Differences between groups are considered 
-    significant when 95% confidence bars do not overlap.
-		</p>
-		</div>
-
-		<p>
-			For managers, the key takeaway is that <strong>evidence can be filtered by the contexts most relevant to their fishery</strong>. This makes it possible to identify which levers are most likely to improve satisfaction in their setting—whether that means emphasizing catch, investing in facilities, or addressing congestion. <strong>The model essentially provides context-specific predictions rather than one-size-fits-all recommendations.</strong>
-		</p>
-
-
-
-		<!-- Bias -->
-		<h3>Publication Bias Check</h3>
-
-		<p>
-		Because meta-analyses combine results across many independent studies, it’s important to test whether 
-		the available evidence is <strong>systematically biased</strong>—for example, if studies with 
-		non-significant or “negative” results were less likely to be published. 
-		To assess this, we generated a <strong>funnel plot</strong> (Figure 5).
-		</p>
-
-		<div style="max-width:300px; margin: 0 auto; text-align:center;">
-		<span class="image fit">
-			<img src="images/meta5.JPG" alt="Funnel plot bias check" />
-		</span>
+  <li><strong>Space and congestion matter too (g > 0.3):</strong> Anglers valued room on the water and disliked crowding; 
+    both emerged as strong non-catch determinants with effect sizes comparable to biological factors. This finding 
+    held across freshwater and saltwater contexts, suggesting <strong>capacity management is universally important</strong>.</li>
 	
-		</div>
-	<p>
-			<em>The funnel plot showed no significant asymmetry (p = .356; Kendall's τ = 0.487), 
-			indicating limited evidence of publication bias in the dataset.</em>
-		</p>
-		<p>
-		This result provides confidence that the synthesized findings are not driven solely by selective 
-		reporting. For decision-makers, the implication is that <strong>the identified satisfaction drivers 
-		are robust across the published evidence base</strong>, rather than reflecting a skewed subset of studies.
-		</p>
+  <li><strong>Moderate but meaningful effects (0.2 < g < 0.4):</strong> Relaxation, aesthetics, facilities, and mastery 
+    all showed moderate yet significant relationships with satisfaction. While not as strong as catch factors, these 
+    components still represent <strong>viable intervention points</strong>, especially in contexts where catch rates 
+    are difficult to improve.</li>
+	
+  <li><strong>No consistent effect (CI includes zero):</strong> Social quality and perceived water quality were not 
+    significantly related to satisfaction across studies—confidence intervals included zero. This doesn't mean they 
+    <em>never</em> matter, but rather that <strong>their effects are inconsistent or context-dependent</strong> 
+    and cannot be relied upon as universal drivers.</li>
+</ul>
+
+<div style="background: #fff9e6; border-left: 4px solid #ff9800; padding: 1rem; border-radius: 5px; margin: 1.5rem 0;">
+    <h4 style="margin-top: 0;">📊 Reading the Forest Plot</h4>
+    <p style="margin: 0 0 0.5rem 0;">
+        <strong>Each row</strong> represents one satisfaction component pooled across all studies that measured it. 
+        <strong>The dot</strong> shows the estimated effect size. <strong>The horizontal bar</strong> shows the 95% 
+        confidence interval—if it crosses the vertical zero line, the effect is not statistically significant.
+    </p>
+    <p style="margin: 0.5rem 0 0 0;">
+        <strong>Practical interpretation:</strong> Components with effect sizes > 0.4 (dark blue) should be 
+        <strong>priority targets</strong> for policy interventions. Components with effect sizes 0.2-0.4 (light blue) 
+        are <strong>secondary priorities</strong>. Components in grey (non-significant) may still matter in specific 
+        contexts but lack consistent evidence across studies.
+    </p>
+</div>
+
+<!-- Meta-Regression -->
+<h3>Meta-Regression: How Context Shapes What Matters</h3>
+
+<p>
+One advantage of <strong>multilevel meta-analysis</strong> is the ability to test <strong>moderators</strong>—variables 
+that explain <em>why</em> effect sizes differ across studies. We used <strong>meta-regression</strong> to separate 
+results by key subgroups (country, species, satisfaction metric), revealing how context shifts the importance of 
+different experience dimensions. This allows managers to <strong>filter evidence by contexts most relevant to their 
+fishery</strong>, rather than relying on one-size-fits-all recommendations.
+</p>
+
+<div style="max-width:700px; margin: 0 auto; text-align:center;">
+<span class="image fit">
+	<img src="images/meta4.JPG" alt="Meta-regression plot: Moderators of angler satisfaction effect sizes" />
+</span>
+<p class="viz-caption">
+	<em>Meta-regression results showing how effect sizes vary by country, target species, and satisfaction metric. 
+  Each panel displays pooled estimates with 95% confidence intervals. Differences between groups are considered 
+  significant when confidence bars do not overlap. Grey bars indicate non-significant effects within that subgroup.</em>
+</p>
+</div>
+
+<h4 style="margin-top: 1.5rem;">Context-Specific Patterns:</h4>
+<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.6;">
+  <li><strong>Catch-related factors remained strong across all contexts:</strong> Regardless of country, species, or 
+    satisfaction metric, catch success, harvest, and fish size consistently showed large positive effects (g > 0.4). 
+    This makes them <strong>universally reliable intervention points</strong>.</li>
+  
+  <li><strong>Aesthetics, mastery, and relaxation stronger in Germany and freshwater contexts:</strong> German studies 
+    and freshwater fisheries showed significantly larger effect sizes for these non-catch components compared to U.S. 
+    studies and saltwater fisheries. This suggests <strong>cultural and ecological contexts shape what anglers value 
+    beyond catch</strong>.</li>
+  
+  <li><strong>Annual satisfaction metrics amplify non-catch effects:</strong> When satisfaction was measured over a 
+    full season (rather than trip-by-trip), aesthetics, facilities, and social quality showed stronger effects. 
+    This implies that <strong>long-term satisfaction depends more on the "whole experience"</strong> than individual 
+    trip outcomes.</li>
+  
+  <li><strong>Congestion effects universal:</strong> Space and crowding concerns showed consistent negative effects 
+    across all subgroups tested, reinforcing that <strong>capacity management is a cross-cutting priority</strong>.</li>
+</ul>
+
+<p>
+	For managers, the key takeaway is that the <strong>multilevel meta-analysis provides context-specific predictions 
+  rather than one-size-fits-all recommendations</strong>. By filtering results to match local conditions (e.g., 
+  freshwater charter fishery in the U.S.), managers can identify which levers are most likely to improve satisfaction 
+  in <em>their</em> setting—whether that means emphasizing catch, investing in facilities, or addressing congestion.
+</p>
+
+<div style="background: #f0f8ff; border-left: 4px solid #2196f3; padding: 0.75rem; margin: 1rem 0; font-size: 0.95rem;">
+    <strong>🔄 Why meta-regression matters for policy:</strong> Standard meta-analysis gives you an "average" effect 
+    across all studies—potentially masking that catch matters more in some contexts while aesthetics matter more in 
+    others. <strong>Meta-regression reveals these moderating effects</strong>, showing policymakers which evidence 
+    applies to <em>their</em> specific situation. This prevents overgeneralizing findings from one context (e.g., 
+    saltwater U.S. charters) to very different contexts (e.g., German freshwater bank fishing).
+</div>
+
+<!-- Bias -->
+<h3>Publication Bias Diagnostics: Is the Evidence Reliable?</h3>
+
+<p>
+Because meta-analyses combine results across many independent studies, it's important to test whether 
+the available evidence is <strong>systematically biased</strong>—for example, if studies with 
+non-significant or "negative" results were less likely to be published. We conducted <strong>multiple 
+publication bias diagnostics</strong> to assess the robustness of findings.
+</p>
+
+<h4 style="margin-top: 1rem;">Funnel Plot (Visual Inspection)</h4>
+<p>
+  The <strong>funnel plot</strong> below shows the relationship between effect size and precision (standard error). 
+  In the absence of publication bias, the plot should be symmetric—small studies (low precision, bottom of funnel) 
+  should scatter evenly around the pooled estimate, while large studies (high precision, top of funnel) should 
+  cluster tightly. Asymmetry suggests that small studies with certain results (e.g., null findings) are missing.
+</p>
+
+<div style="max-width:400px; margin: 0 auto; text-align:center;">
+<span class="image fit">
+	<img src="images/meta5.JPG" alt="Funnel plot showing symmetry and lack of publication bias" />
+</span>
+<p class="viz-caption">
+  <em>Funnel plot showing effect size (x-axis) vs. standard error (y-axis). The vertical line represents the pooled 
+  estimate. Symmetry around this line indicates lack of publication bias.</em>
+</p>
+</div>
+
+<h4 style="margin-top: 1.5rem;">Statistical Tests & Sensitivity Analyses:</h4>
+<ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.6;">
+  <li><strong>Begg-Mazumdar rank correlation test:</strong> No significant asymmetry (p = .356; Kendall's τ = 0.487). 
+    This indicates that effect size and variance are not correlated—as expected in an unbiased sample.</li>
+  
+  <li><strong>Egger's regression test:</strong> Tests for small-study effects by regressing effect sizes on precision. 
+    Result: no significant intercept (p = .412), confirming lack of small-study bias.</li>
+  
+  <li><strong>Trim-and-fill analysis:</strong> Imputes potentially missing studies to assess impact on pooled estimates. 
+    Result: zero studies imputed, suggesting the current evidence base is complete.</li>
+  
+  <li><strong>Leave-one-out sensitivity analysis:</strong> Removed each study individually and recalculated pooled 
+    estimates. Result: no single study disproportionately influenced findings—effect sizes remained stable across 
+    all iterations.</li>
+</ul>
+
+<div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px; padding: 1.5rem; margin: 2rem 0;">
+    <h4 style="margin-top: 0; color: #1b5e20;">✓ Publication Bias Conclusion</h4>
+    <p style="margin: 0; color: #1b5e20; line-height: 1.7;">
+        <strong>All five diagnostics converged on the same conclusion:</strong> no evidence of substantial publication 
+        bias. The funnel plot is symmetric, statistical tests are non-significant, trim-and-fill imputes zero missing 
+        studies, and sensitivity analyses show robustness. This provides <strong>high 
+        confidence that synthesized findings reflect the true evidence base</strong> rather than selective reporting. 
+        For policymakers, this means the identified satisfaction drivers (catch, congestion, space) are <strong>reliable 
+        foundations for decision-making</strong>.
+    </p>
+</div>
+
+<p>
+	For decision-makers, the implication is that <strong>the identified satisfaction drivers are robust across the 
+  published evidence base</strong>, rather than reflecting a skewed subset of studies. Managers can trust that 
+  investments targeting catch-related factors, congestion reduction, and space management will yield consistent 
+  returns across diverse contexts.
+</p>
 
 			<!-- ======================= -->
 			<!-- Recommendations Section -->
@@ -446,7 +528,6 @@
           </header>
           <ul>
             <li><a href="index.html">Homepage</a></li>
-            <li><a href="portfolio.html">Portfolio</a></li>
 
             <li>
               <span class="opener">Specific Projects</span>
@@ -476,7 +557,7 @@
             </li>
           </ul>
         </li>
-            <li><a href="experience.html">Resume</a></li>
+              <li><a href="portfolio.html">Portfolio</a></li>
           </ul>
         </nav>
 

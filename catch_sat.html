@@ -259,42 +259,6 @@ collection protocols</strong>. I harmonized these datasets into a unified analyt
 resolving inconsistencies in species codes, effort metrics, and survey items.
 </p>
 
-<details style="margin: 1rem 0;">
-    <summary style="cursor: pointer; color: #4682b4; font-weight: 600;">
-        💻 View Data Harmonization Code
-    </summary>
-    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 5px; overflow-x: auto; margin-top: 0.5rem;"><code class="language-python">import pandas as pd
-import numpy as np
-
-# Harmonize species codes across datasets
-species_mapping_mv = {
-    'PIK': 'Pike', 'PIKE': 'Pike', 'Esox': 'Pike',
-    'PER': 'Perch', 'PERCH': 'Perch', 'Perca': 'Perch',
-    'ZAN': 'Zander', 'ZANDER': 'Zander', 'Sander': 'Zander'
-}
-
-species_mapping_ls = {
-    'Hecht': 'Pike', 'H': 'Pike',
-    'Barsch': 'Perch', 'B': 'Perch',
-    'Zander': 'Zander', 'Z': 'Zander'
-}
-
-mv_data['species_std'] = mv_data['species_code'].map(species_mapping_mv)
-ls_data['species_std'] = ls_data['art'].map(species_mapping_ls)
-
-# Standardize effort metrics (MV used hours, LS used minutes)
-ls_data['effort_hours'] = ls_data['effort_min'] / 60
-
-# Merge datasets with unified schema
-combined_data = pd.concat([
-    mv_data[['angler_id', 'trip_date', 'effort_hours', 'species_std', 
-             'catch_count', 'harvest_count', 'max_length', 'satisfaction']],
-    ls_data[['angler_id', 'trip_date', 'effort_hours', 'species_std', 
-             'catch_count', 'harvest_count', 'max_length', 'satisfaction']]
-], ignore_index=True)
-
-combined_data['region'] = np.where(combined_data['angler_id'] < 5000, 'MV', 'LS')</code></pre>
-</details>
 
 <h3>Feature Engineering</h3>
 <p>
@@ -305,87 +269,12 @@ From the raw trip diaries, I created several engineered features to capture beha
       to test how prior outcomes influence current satisfaction</li>
 </ul>
 
-<details style="margin: 1rem 0;">
-    <summary style="cursor: pointer; color: #4682b4; font-weight: 600;">
-        💻 View Temporal Sequence Code
-    </summary>
-    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 5px; overflow-x: auto; margin-top: 0.5rem;"><code class="language-python">import pandas as pd
-import numpy as np
-
-# Sort by angler and date
-trip_data = trip_data.sort_values(['angler_id', 'trip_date'])
-
-# Flag blank trips (no catch)
-trip_data['blank_trip'] = (trip_data['catch_count'] == 0).astype(int)
-
-# Count consecutive blank trips before current trip
-def count_consecutive_blanks(group):
-    """Count consecutive blank trips leading up to each trip"""
-    blanks = []
-    for i in range(len(group)):
-        if i == 0:
-            blanks.append(0)
-        else:
-            # Count consecutive 1s from position i-1 backwards
-            count = 0
-            for j in range(i-1, -1, -1):
-                if group.iloc[j] == 1:
-                    count += 1
-                else:
-                    break
-            blanks.append(count)
-    return blanks
-
-trip_data['catch_deprivation'] = trip_data.groupby('angler_id')['blank_trip'].transform(
-    count_consecutive_blanks
-)
-
-# Create lagged variables
-trip_data['satisfaction_lag1'] = trip_data.groupby('angler_id')['satisfaction'].shift(1)
-trip_data['cpue'] = trip_data['catch_count'] / trip_data['effort_hours']
-trip_data['cpue_lag1'] = trip_data.groupby('angler_id')['cpue'].shift(1)</code></pre>
-</details>
 
 <ul style="margin:.6rem 0 1rem 1.2rem; line-height:1.5;">
   <li><strong>Species-normalized fish size:</strong> Standardized the largest fish caught by species-specific 
       size distributions, enabling meaningful comparisons across species (e.g., a 50cm pike vs. a 30cm perch)</li>
 </ul>
 
-<details style="margin: 1rem 0;">
-    <summary style="cursor: pointer; color: #4682b4; font-weight: 600;">
-        💻 View Species Normalization Code
-    </summary>
-    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 5px; overflow-x: auto; margin-top: 0.5rem;"><code class="language-python">import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-
-# Calculate species-specific size distributions
-species_stats = trip_data[trip_data['max_length'].notna()].groupby('species_std').agg(
-    mean_length=('max_length', 'mean'),
-    sd_length=('max_length', 'std'),
-    median_length=('max_length', 'median'),
-    q75_length=('max_length', lambda x: x.quantile(0.75))
-).reset_index()
-
-# Merge species stats back to trip data
-trip_data = trip_data.merge(species_stats, on='species_std', how='left')
-
-# Z-score normalization (standardize within species)
-trip_data['size_normalized'] = (
-    (trip_data['max_length'] - trip_data['mean_length']) / trip_data['sd_length']
-)
-
-# Percentile-based normalization (0-1 scale)
-trip_data['size_percentile'] = (
-    (trip_data['max_length'] - trip_data['median_length']) / 
-    (trip_data['q75_length'] - trip_data['median_length'])
-)
-
-# Example: A 50cm pike vs 30cm perch
-# Pike: mean=45cm, sd=8cm -> z-score = (50-45)/8 = 0.625
-# Perch: mean=25cm, sd=4cm -> z-score = (30-25)/4 = 1.25
-# The perch is actually "bigger" relative to its species!</code></pre>
-</details>
 
 <ul style="margin:.6rem 0 1rem 1.2rm; line-height:1.5;">
   <li><strong>Catch outcome metrics:</strong> Catch per unit effort (CPUE), harvest proportion, and species diversity</li>
@@ -404,38 +293,6 @@ To identify <strong>differential response patterns across angler types</strong>,
   <li><strong>Catch orientation:</strong> Relative importance of size/quantity vs. harvest/consumption</li>
 </ul>
 
-<details style="margin: 1rem 0;">
-    <summary style="cursor: pointer; color: #4682b4; font-weight: 600;">
-        💻 View Specialization Index Code
-    </summary>
-    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 5px; overflow-x: auto; margin-top: 0.5rem;"><code class="language-python">import pandas as pd
-import numpy as np
-from scipy.stats import cronbach_alpha  # Or use pingouin library
-
-# Create centrality to lifestyle index (6-item scale)
-lifestyle_items = ['q12_1', 'q12_2', 'q12_3', 'q12_4', 'q12_5', 'q12_6']
-
-# Calculate mean across 6 items (1-5 scale)
-angler_data['lifestyle_centrality'] = angler_data[lifestyle_items].mean(axis=1)
-
-# Categorize specialization level
-angler_data['specialization_level'] = pd.cut(
-    angler_data['lifestyle_centrality'],
-    bins=[0, 3.0, 4.0, 5.0],
-    labels=['Casual', 'Moderately Specialized', 'Highly Specialized']
-)
-
-# Create binary high/low specialization
-angler_data['high_specialization'] = (angler_data['lifestyle_centrality'] >= 3.5).astype(int)
-
-# Reliability check (Cronbach's alpha)
-# Using pingouin library: pip install pingouin
-import pingouin as pg
-alpha_result = pg.cronbach_alpha(data=angler_data[lifestyle_items].dropna())
-# α = 0.84 (good internal consistency)
-print(f"Cronbach's alpha: {alpha_result[0]:.3f}")</code></pre>
-</details>
-
 <h3>Analytical Approach</h3>
 <p>
 I used <strong>ordinal regression</strong> (proportional odds model) to analyze the 10-point 
@@ -451,79 +308,6 @@ satisfaction scale, preserving the ordered nature of satisfaction ratings. Key m
   <li><strong>Regional comparison models</strong> isolating state-level differences while 
       controlling for catch conditions</li>
 </ul>
-
-<details style="margin: 1rem 0;">
-    <summary style="cursor: pointer; color: #4682b4; font-weight: 600;">
-        💻 View Ordinal Regression Model Code
-    </summary>
-    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 5px; overflow-x: auto; margin-top: 0.5rem;"><code class="language-python">import pandas as pd
-import numpy as np
-from sklearn.preprocessing import PolynomialFeatures
-from mord import LogisticAT  # pip install mord (ordinal regression)
-# Alternative: statsmodels.miscmodels.ordinal_model
-
-# Create polynomial features for quadratic terms
-poly = PolynomialFeatures(degree=2, include_bias=False)
-
-# Select features for polynomial expansion
-catch_features = ['cpue', 'size_normalized']
-X_poly = poly.fit_transform(trip_data[catch_features])
-
-# Create feature names
-poly_feature_names = poly.get_feature_names_out(catch_features)
-# Results in: ['cpue', 'size_normalized', 'cpue^2', 'cpue size_normalized', 'size_normalized^2']
-
-# Add other features
-other_features = ['harvest_proportion', 'species_diversity', 'catch_deprivation', 
-                  'season_spring', 'season_summer', 'region_LS']
-
-X_full = np.hstack([
-    X_poly,
-    trip_data[other_features].values
-])
-
-feature_names = list(poly_feature_names) + other_features
-
-# Fit ordinal regression model
-model = LogisticAT(alpha=1.0)  # alpha is regularization parameter
-model.fit(X_full, trip_data['satisfaction'])
-
-# Predictions
-y_pred = model.predict(X_full)
-y_pred_proba = model.predict_proba(X_full)
-
-# Feature importance (coefficients)
-coef_df = pd.DataFrame({
-    'feature': feature_names,
-    'coefficient': model.coef_
-}).sort_values('coefficient', key=abs, ascending=False)
-
-print("\nTop predictors:")
-print(coef_df.head(10))
-
-# Specialization interaction model
-# Create interaction terms
-trip_data['cpue_x_spec'] = trip_data['cpue'] * trip_data['high_specialization']
-trip_data['cpue2_x_spec'] = (trip_data['cpue'] ** 2) * trip_data['high_specialization']
-trip_data['size_x_spec'] = trip_data['size_normalized'] * trip_data['high_specialization']
-
-interaction_features = catch_features + other_features + \
-                       ['cpue_x_spec', 'cpue2_x_spec', 'size_x_spec']
-
-X_interact = trip_data[interaction_features].values
-
-model_interact = LogisticAT(alpha=1.0)
-model_interact.fit(X_interact, trip_data['satisfaction'])
-
-# Model comparison (using information criteria)
-from sklearn.metrics import log_loss
-base_ll = -log_loss(trip_data['satisfaction'], model.predict_proba(X_full), labels=range(1, 11))
-interact_ll = -log_loss(trip_data['satisfaction'], model_interact.predict_proba(X_interact), labels=range(1, 11))
-
-print(f"\nBase model log-likelihood: {base_ll:.2f}")
-print(f"Interaction model log-likelihood: {interact_ll:.2f}")
-print(f"Improvement: {interact_ll - base_ll:.2f}")</code></pre>
-</details>
 
 <p>
 This design allowed us to capture <strong>both trip-level variation and between-angler differences</strong>, 
@@ -780,7 +564,6 @@ isolating how outcomes, contexts, and specialization interact to shape satisfact
   </header>
   <ul>
     <li><a href="index.html">Homepage</a></li>
-    <li><a href="portfolio.html">Portfolio</a></li>
 
     <li>
       <span class="opener">Specific Projects</span>
@@ -810,7 +593,7 @@ isolating how outcomes, contexts, and specialization interact to shape satisfact
     </li>
   </ul>
 </li>
-    <li><a href="experience.html">Resume</a></li>
+      <li><a href="portfolio.html">Portfolio</a></li>
   </ul>
 </nav>
 
