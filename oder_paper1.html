@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper 1: Post-Disaster Recovery Trajectory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Inter:wght@400;500&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            line-height: 1.7;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        
+        header {
+            margin-bottom: 4rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+        }
+        
+        .meta {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        
+        .target-journal {
+            display: inline-block;
+            background: #f0f7ff;
+            color: #2B5F7C;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+        
+        h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 3rem 0 1.5rem;
+            letter-spacing: -0.01em;
+        }
+        
+        h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 2rem 0 0.75rem;
+        }
+        
+        h4 {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2B5F7C;
+            margin: 1.5rem 0 0.5rem;
+        }
+        
+        p {
+            margin-bottom: 1.25rem;
+            color: #333;
+        }
+        
+        ul, ol {
+            margin: 1rem 0 1.5rem 2rem;
+            color: #333;
+        }
+        
+        li {
+            margin-bottom: 0.75rem;
+        }
+        
+        .section-box {
+            background: #f9f9f9;
+            border-left: 4px solid #2B5F7C;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-radius: 4px;
+        }
+        
+        .hypothesis-box {
+            background: #fff9e6;
+            border-left: 4px solid #d4a574;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .hypothesis-box h4 {
+            color: #7c5c3a;
+            margin-top: 0;
+        }
+        
+        .data-source {
+            background: #f0f7ff;
+            border: 2px solid #2B5F7C;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+        
+        .data-source-label {
+            font-weight: 600;
+            color: #2B5F7C;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .code-comment {
+            color: #6a9955;
+        }
+        
+        .code-keyword {
+            color: #569cd6;
+        }
+        
+        .code-string {
+            color: #ce9178;
+        }
+        
+        .code-function {
+            color: #dcdcaa;
+        }
+        
+        .code-number {
+            color: #b5cea8;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #f9f9f9;
+            font-weight: 600;
+            color: #2B5F7C;
+        }
+        
+        .back-link {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .back-link a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .code-block {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="meta">Paper 1 of 3 • OderAngeln Catch Log Analysis</p>
+            <h1>Post-Disaster Recovery Trajectory: Recreational Fishing Effort and Satisfaction Following the 2022 Oder River Fish Kill</h1>
+            <div class="target-journal">Target Journals: North American Journal of Fisheries Management, Fisheries Research</div>
+            
+            <!-- INTERVIEW KEY BOX -->
+            <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 3px solid #2196f3; border-radius: 8px; padding: 1.5rem; margin-top: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem; color: #0d47a1; font-size: 1.1rem;">🎤 INTERVIEW KEY - Key Updates</h4>
+                <ul style="margin: 0; padding-left: 1.5rem; color: #424242; line-height: 1.7; font-size: 0.9rem;">
+                    <li style="margin-bottom: 0.5rem;"><strong>Framework:</strong> Landon et al. (2026) integrated model—satisfaction as outcome of fulfilling preferences shaped by cognitions + identity</li>
+                    <li style="margin-bottom: 0.5rem;"><strong>Your meta-analysis:</strong> Birdsong et al. (2021) cited as THE satisfaction reference in Pope et al. (2026)</li>
+                    <li style="margin-bottom: 0.5rem;"><strong>Longitudinal design strength:</strong> Most studies examine short-term responses, not multi-year recovery (literature gap)</li>
+                    <li style="margin-bottom: 0;"><strong>Sample size:</strong> 30-40 survey days/year minimum per de Kerckhove et al. (2026) for adequate precision</li>
+                </ul>
+            </div>
+        </header>
+        
+        <main>
+            <h2>Abstract</h2>
+            <p>The 2022 Oder River fish kill represented one of Europe's most severe freshwater ecological disasters in recent decades, with massive fish mortality affecting both biological communities and recreational fisheries. Using longitudinal catch log data from German anglers (2023-2025), we examine recovery trajectories in both ecological (catch rates, species composition) and social (fishing effort, satisfaction) dimensions. Mixed-effects models reveal [findings TBD]. Notably, recovery patterns differ by angler specialization, with highly specialized anglers showing [pattern TBD] compared to casual anglers. Results inform management strategies for maintaining angler participation during ecological recovery and identify vulnerable stakeholder segments requiring targeted engagement.</p>
+            
+            <h2>Introduction & Background</h2>
+            
+            <h3>The 2022 Oder River Disaster</h3>
+            <p>In August 2022, a massive fish kill occurred along approximately 500 km of the Oder River, affecting both German and Polish sections of this major transboundary waterway. Estimated fish mortality exceeded 300 tons, with complete extirpation observed in some river sections. The event resulted from toxic golden algae (Prymnesium parvum) bloom facilitated by high water temperatures, low flow conditions, elevated salinity from industrial discharges, and nutrient pollution. The disaster not only devastated aquatic ecosystems but also disrupted recreational fisheries that provide significant cultural and economic value to riverside communities.</p>
+            
+            <p>Unlike marine harmful algal blooms which have extensive documentation of socio-economic impacts (Backer 2009), large-scale freshwater fish kills and their effects on recreational fishing remain understudied. The Oder event provides a rare opportunity to document both ecological and social recovery trajectories in a major river system supporting substantial recreational fishing pressure.</p>
+            
+            <h3>Recreational Fishing & Environmental Disturbances</h3>
+            <p>Recreational anglers respond to environmental disturbances through multiple pathways: reduced participation (effort), spatial substitution (fishing elsewhere), temporal substitution (fishing at different times), or activity substitution (abandoning fishing entirely). Understanding these responses requires examining both objective changes (catch rates, effort) and subjective experiences (satisfaction, motivation).</p>
+            
+            <p>Meta-analytic evidence (Birdsong et al. 2021) demonstrates that catch-related components (catch rate, size of largest fish, fish harvested) are more strongly related to angling satisfaction than non-catch components (environmental quality, social factors). However, previous research on fishery closures (Ritzman et al. 2018) and HAB events (Willis et al. 2018) suggests satisfaction can decline independently of catch rates when anglers perceive environmental degradation. Most studies examine short-term responses rather than multi-year recovery dynamics.</p>
+            
+            <p>The recreational specialization framework (Bryan 1977, Ditton et al. 1992) suggests highly specialized anglers—those with greater skill, experience, and psychological commitment—may respond differently to ecological disturbances than casual participants. Empirical work in German fisheries contexts (Birdsong et al. 2022) confirms that the relevance of catch outcomes to satisfaction varies systematically across angler types and social-ecological contexts, with specialization serving as a key moderator of the catch-satisfaction relationship.</p>
+            
+            <h3>Research Gap</h3>
+            <p>While numerous studies document biological recovery following fish kills (La and Cooke 2011), few track parallel recovery in human dimensions. Previous work has established that satisfaction determinants vary across angler types and contexts (Birdsong et al. 2021, 2022), but these studies examined stable fishery systems rather than post-disaster recovery. The Oder disaster presents a unique case for several reasons: (1) unprecedented scale in a major European river system, (2) existence of standardized catch log data collection beginning shortly after the event, (3) known catastrophic starting point enabling clear before/after comparison, and (4) active management interventions (restocking, habitat restoration) whose social impacts can be assessed.</p>
+            
+            <p>This study extends previous specialization research by examining whether established patterns hold under ecological stress, and whether satisfaction-catch relationships identified in meta-analysis persist during recovery conditions when catch rates are universally depressed.</p>
+            
+            <h2>Research Questions</h2>
+            <ol>
+                <li><strong>RQ1:</strong> How have fishing effort (trips/year, hours/trip) and catch rates (fish/hour) changed from 2023-2025?</li>
+                <li><strong>RQ2:</strong> What is the trajectory of angler satisfaction over the recovery period?</li>
+                <li><strong>RQ3:</strong> Do satisfaction trends track with catch rate recovery, or do they diverge?</li>
+                <li><strong>RQ4:</strong> Do recovery patterns differ by angler specialization level (casual vs. committed vs. highly specialized)?</li>
+            </ol>
+            
+            <h2>Hypotheses</h2>
+            
+            <div class="hypothesis-box">
+                <h4>H1: Temporal Recovery (Main Effect)</h4>
+                <p><strong>H1a:</strong> Catch rates (CPUE) will increase from 2023 to 2025 as fish populations recover through natural reproduction and restocking.</p>
+                <p><strong>H1b:</strong> Fishing effort (trips/year) will remain stable or increase slightly, as anglers who persisted through the disaster maintain participation.</p>
+                <p><strong>H1c:</strong> Angler satisfaction will increase over time, though potentially lagging behind biological recovery.</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H2: Catch-Satisfaction Relationship</h4>
+                <p><strong>H2a:</strong> Catch success will positively predict satisfaction at all time points (established effect).</p>
+                <p><strong>H2b:</strong> The strength of the catch-satisfaction relationship will decrease over time as anglers recalibrate expectations to post-disaster conditions.</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H3: Specialization as Moderator</h4>
+                <p><strong>H3a:</strong> Highly specialized anglers will show less satisfaction decline than casual anglers, as they possess skills to adapt to challenging conditions and maintain catch success.</p>
+                <p><strong>H3b:</strong> Highly specialized anglers will show more stable effort over time, demonstrating commitment despite poor fishing quality.</p>
+                <p><strong>H3c:</strong> Casual anglers will show greater attrition (reduced effort) but those who remain will show faster satisfaction recovery, as they have lower catch expectations.</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H4: Seasonal Patterns</h4>
+                <p><strong>H4:</strong> Recovery will be stronger in spring/summer (prime fishing seasons) compared to fall/winter, both in catch rates and satisfaction, due to seasonal variation in fish activity and angler expectations.</p>
+            </div>
+            
+            <h2>Data Requirements</h2>
+            
+            <h3>Primary Data Source: OderAngeln Catch Log Study</h3>
+            <p>The OderAngeln project, conducted by the Leibniz Institute for Freshwater Ecology and Inland Fisheries (IFB) in partnership with USUMA GmbH, collects standardized catch log data from German anglers holding annual permits for the Oder River.</p>
+            
+            <div class="data-source">
+                <div class="data-source-label">Annual Permit Holders (Longitudinal Sample)</div>
+                <p><strong>Background questions (one-time):</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>Years fishing (experience)</li>
+                    <li>Annual fishing days (behavioral commitment)</li>
+                    <li>Club membership (yes/no)</li>
+                    <li>Equipment value (proxy for investment)</li>
+                    <li>Fishing as hobby importance (1-5 scale, psychological commitment)</li>
+                </ul>
+                
+                <p><strong>Per-trip logging:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>Date and start time</li>
+                    <li>Hours fished (effort)</li>
+                    <li>Location (river section/km marker)</li>
+                    <li>Fishing method (spin, still, fly)</li>
+                    <li>Target species</li>
+                    <li>Fish caught (count by species)</li>
+                    <li>Fish lengths (for kept fish ≥20cm)</li>
+                    <li>Fish harvested vs. released</li>
+                    <li>Trip satisfaction (1-5 scale)</li>
+                </ul>
+                
+                <p><strong>Temporal coverage needed:</strong> 2023, 2024, 2025 (minimum 2 years for longitudinal analysis)</p>
+            </div>
+            
+            <div class="data-source">
+                <div class="data-source-label">Day/Week Permit Holders (Cross-Sectional)</div>
+                <p><strong>Online survey completed after fishing:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>Same core trip data as annual holders</li>
+                    <li>Additional context: distance traveled, expenses, trip purpose</li>
+                    <li>Background: years fishing, typical annual days, skill level</li>
+                </ul>
+                
+                <p><strong>Analytical use:</strong> Cross-sectional comparison across years, validation of annual holder patterns</p>
+            </div>
+            
+            <h3>Derived Variables</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Calculation</th>
+                        <th>Source Fields</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>CPUE</strong></td>
+                        <td>Total fish caught / hours fished</td>
+                        <td>Trip count + hours</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Harvest rate</strong></td>
+                        <td>Fish kept / fish caught</td>
+                        <td>Kept count + caught count</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Specialization index</strong></td>
+                        <td>Z-score composite: years + days/year + importance + equipment</td>
+                        <td>Background questions</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Trip success</strong></td>
+                        <td>Binary: caught ≥1 fish</td>
+                        <td>Trip count</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Season</strong></td>
+                        <td>Spring (Mar-May), Summer (Jun-Aug), Fall (Sep-Nov), Winter (Dec-Feb)</td>
+                        <td>Trip date</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Year since disaster</strong></td>
+                        <td>2023=1, 2024=2, 2025=3</td>
+                        <td>Trip date</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Sample Size Requirements</h3>
+            <p><strong>Minimum for longitudinal analysis:</strong> 200 anglers with ≥5 trips logged in each of 2 years (400 angler-years, ~2,000+ trip observations)</p>
+            <p><strong>Ideal:</strong> 500+ anglers with 2-3 years of data, enabling robust mixed-effects models and specialization subgroup analyses</p>
+            
+            <h2>Analytical Approach</h2>
+            
+            <h3>Step 1: Descriptive Temporal Trends</h3>
+            <p>Visualize changes over time in key metrics aggregated by year and season. Generate summary statistics and identify outliers.</p>
+            
+            <h3>Step 2: Specialization Segmentation</h3>
+            <p>Create specialization index as standardized composite of years fishing, days/year, equipment value, and importance rating. Classify anglers into tertiles: low (casual), medium (committed), high (specialized). Validate segments via cluster analysis.</p>
+            
+            <h3>Step 3: Mixed-Effects Models</h3>
+            
+            <h4>Model 1: CPUE Recovery</h4>
+            <p><strong>Outcome:</strong> Log(CPUE + 0.01) [continuous]</p>
+            <p><strong>Fixed effects:</strong> Year (2023/2024/2025), Season (4 levels), Specialization (3 levels), Year × Specialization</p>
+            <p><strong>Random effects:</strong> (1 | Angler ID), (1 | Location)</p>
+            <p><strong>Tests H1a, H3a, H4</strong></p>
+            
+            <h4>Model 2: Satisfaction</h4>
+            <p><strong>Outcome:</strong> Satisfaction (1-5 ordinal)</p>
+            <p><strong>Fixed effects:</strong> Year, Season, Specialization, CPUE, Trip success (binary), Year × Specialization, CPUE × Year</p>
+            <p><strong>Random effects:</strong> (1 | Angler ID)</p>
+            <p><strong>Tests H1c, H2a, H2b, H3a</strong></p>
+            
+            <h4>Model 3: Fishing Effort</h4>
+            <p><strong>Outcome:</strong> Annual trips (count)</p>
+            <p><strong>Fixed effects:</strong> Year, Specialization, Mean CPUE (angler-level), Year × Specialization</p>
+            <p><strong>Random effects:</strong> (1 | Angler ID)</p>
+            <p><strong>Distribution:</strong> Negative binomial (overdispersion expected)</p>
+            <p><strong>Tests H1b, H3b, H3c</strong></p>
+            
+            <h3>Step 4: Sensitivity Analyses</h3>
+            <ul>
+                <li>Alternative specialization specifications (4-class, continuous index)</li>
+                <li>Subset to high-frequency anglers (≥10 trips/year) to test robustness</li>
+                <li>Club membership as additional moderator</li>
+                <li>Include method (spin vs. still) as predictor for CPUE</li>
+            </ul>
+            
+            <h2>Expected Results & Interpretation</h2>
+            
+            <h3>Scenario A: Recovery Trajectory</h3>
+            <p>If H1 is supported, we expect to see statistically significant positive coefficients for year effects in CPUE model, indicating biological recovery. Effect sizes of 0.3-0.5 log-units per year would suggest meaningful improvement (roughly 35-65% increase in catch rates). Satisfaction should improve but potentially lag CPUE by 6-12 months as anglers recalibrate expectations.</p>
+            
+            <h3>Scenario B: Differential Recovery by Specialization</h3>
+            <p>Significant Year × Specialization interactions would indicate specialized anglers adapt differently. We might find specialized anglers maintain higher CPUE throughout (baseline skill advantage) but show slower satisfaction recovery (higher expectations). Conversely, casual anglers who persist may show steeper satisfaction improvements as they compare current fishing to the post-disaster nadir rather than pre-2022 conditions.</p>
+            
+            <h3>Scenario C: Incomplete Recovery</h3>
+            <p>If 2025 CPUE remains significantly below pre-2022 levels (if such data exist) or below regional benchmarks, this indicates ongoing ecological impacts requiring continued management intervention. Policy implications include extended restocking programs, habitat restoration prioritization, and angler retention efforts.</p>
+            
+            <h2>Discussion Points</h2>
+            <ul>
+                <li><strong>Management implications:</strong> Which angler segments need targeted communication? Are satisfaction levels sustainable for maintaining participation?</li>
+                <li><strong>Comparison to other systems:</strong> How does Oder recovery compare to documented cases like the Yellowstone River fish kill (2016) or Lake Erie algal blooms?</li>
+                <li><strong>Limitations:</strong> Survivorship bias (we only observe anglers who continued fishing), lack of pre-2022 individual-level data, potential for weather/seasonal confounds</li>
+                <li><strong>Future research:</strong> Integration with resident ES survey to understand non-angler perceptions of recovery, Polish-German comparison when Polish data available</li>
+            </ul>
+            
+            <div class="back-link">
+                <a href="oder_papers.html">← Back to Publication Strategy</a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>OderTogether Research Project — January 2026</p>
+        </footer>
+    </div>
+</body>
+</html>

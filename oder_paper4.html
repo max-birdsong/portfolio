@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper 4: Resident Ecosystem Services Valuation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            line-height: 1.7;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        
+        header {
+            margin-bottom: 4rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+        }
+        
+        .meta {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        
+        .target-journal {
+            display: inline-block;
+            background: #f0f7ff;
+            color: #2B5F7C;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+        
+        h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 3rem 0 1.5rem;
+            letter-spacing: -0.01em;
+        }
+        
+        h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 2rem 0 0.75rem;
+        }
+        
+        h4 {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2B5F7C;
+            margin: 1.5rem 0 0.5rem;
+        }
+        
+        p {
+            margin-bottom: 1.25rem;
+            color: #333;
+        }
+        
+        ul, ol {
+            margin: 1rem 0 1.5rem 2rem;
+            color: #333;
+        }
+        
+        li {
+            margin-bottom: 0.75rem;
+        }
+        
+        .section-box {
+            background: #f9f9f9;
+            border-left: 4px solid #2B5F7C;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-radius: 4px;
+        }
+        
+        .hypothesis-box {
+            background: #fff9e6;
+            border-left: 4px solid #d4a574;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .hypothesis-box h4 {
+            color: #7c5c3a;
+            margin-top: 0;
+        }
+        
+        .data-source {
+            background: #f0f7ff;
+            border: 2px solid #2B5F7C;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+        
+        .data-source-label {
+            font-weight: 600;
+            color: #2B5F7C;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #f9f9f9;
+            font-weight: 600;
+            color: #2B5F7C;
+        }
+        
+        .theory-box {
+            background: #f0f7f0;
+            border: 2px solid #6B8F71;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 6px;
+        }
+        
+        .theory-box h4 {
+            color: #4A7C3A;
+            margin-top: 0;
+        }
+        
+        .back-link {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .back-link a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="meta">Paper 4 • Resident Ecosystem Services Survey</p>
+            <h1>Whose River, Which Values? Transboundary Ecosystem Service Priorities Following the 2022 Oder River Disaster</h1>
+            <div class="target-journal">Target Journals: Ecosystem Services, Environmental Management, Ecological Economics</div>
+            
+            <!-- INTERVIEW KEY BOX -->
+            <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 3px solid #ff9800; border-radius: 8px; padding: 1.5rem; margin-top: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem; color: #e65100; font-size: 1.1rem;">🎤 INTERVIEW KEY - Methodological Rigor</h4>
+                <ul style="margin: 0; padding-left: 1.5rem; color: #424242; line-height: 1.7; font-size: 0.9rem;">
+                    <li style="margin-bottom: 0.5rem;"><strong>Follows Kochalski et al. 2022 framework:</strong> Builds on IGB's salmon ES study methodology (Sophia Kochalski is your supervisor's colleague). Uses 5-point Likert scales, factor analysis, importance ratings plus tradeoff measures.</li>
+                    <li style="margin-bottom: 0.5rem;"><strong>Co-production concept:</strong> "ES perception is co-produced by ecology and society"—Kochalski et al. 2022 key finding. Ecological recovery can foster development of perceived ES.</li>
+                    <li style="margin-bottom: 0.5rem;"><strong>Content analysis:</strong> Open-ended responses analyzed per Kochalski et al. (2026) Pope et al. chapter—theoretical saturation (~80-100 responses), inter-coder reliability (Kappa ≥0.70), hybrid deductive-inductive coding.</li>
+                    <li style="margin-bottom: 0.5rem;"><strong>Translation rigor:</strong> TRAPD protocol with cognitive interviews (n=10 per language) per Vaske et al. (2026) survey guidelines.</li>
+                    <li style="margin-bottom: 0;"><strong>Sample size:</strong> n=1,200 (600 DE, 600 PL) provides adequate power for cross-country factor analysis and measurement invariance testing (5-10 respondents per item guideline from Kyle et al. 2026).</li>
+                </ul>
+            </div>
+        </header>
+        
+        <main>
+            <h2>Abstract</h2>
+            <p>Environmental disasters disrupt not only ecological functions but also the perceived availability and importance of ecosystem services (ES) to affected communities. Following the catastrophic 2022 Oder River fish kill, we surveyed residents in Germany and Poland (N = ~1,200) to examine how the general public values cultural, provisioning, regulating, and supporting ES three years post-disaster. Using factor analysis on 14 ES importance items, we identify [X] distinct ES dimensions: [TBD - likely 3-4 factors such as intrinsic-ecological, provisioning-extractive, recreation-cultural, and regulating services]. Results show [findings TBD]. German and Polish residents differ significantly in their ES prioritization, with [patterns TBD]. Awareness of the 2022 disaster predicts higher valuation of [specific ES TBD], suggesting that ecological crises can heighten public recognition of river ecosystem importance. Personal characteristics (biospheric values, education, proximity to river) and activity patterns (river recreation, angling) strongly predict ES valuation. Notably, [specific finding about tradeoffs/priorities TBD]. Findings demonstrate that ES perception is co-produced by ecological conditions, cultural context, and personal experience—even residents of the same river system value its services differently based on national identity and lived experience. Management implications emphasize the need for transboundary coordination that acknowledges divergent value priorities while building on shared recognition of core ES dimensions.</p>
+            
+            <h2>Introduction & Background</h2>
+            
+            <h3>Ecosystem Services in Post-Disaster Contexts</h3>
+            <p>Rivers provide a wide range of ecosystem services including clean water, flood regulation, biodiversity habitat, recreation opportunities, aesthetic and spiritual benefits, and provisioning services such as fish harvest (Millennium Ecosystem Assessment 2005, Costanza et al. 2017). These services are not static—they change with ecological conditions, and public awareness of their importance often shifts following environmental disturbances. Harmful algal blooms, fish kills, floods, and pollution events can reduce the actual delivery of ES (e.g., water becomes unsafe, fish populations decline, recreation becomes unpleasant) while simultaneously increasing public awareness of what has been lost (Willis et al. 2018).</p>
+            
+            <p>The 2022 Oder River disaster—which killed over 300 tons of fish and devastated aquatic biodiversity across 500 km—created a natural experiment for examining ES perception under ecological stress. Unlike gradual environmental degradation, the sudden and highly publicized nature of this event meant most residents in the Oder basin became acutely aware of the river's ecological crisis. This raises questions about whether and how such awareness affects ES valuation, and whether disaster experiences translate into changed priorities for river management.</p>
+            
+            <h3>Cross-Country Ecosystem Services Research</h3>
+            <p>Previous multi-country ES research demonstrates that cultural context, national identity, and ecological conditions shape which ES are most valued (Kochalski et al. 2022). Studies comparing ES valuation across European countries consistently find both universal patterns (e.g., widespread support for biodiversity conservation) and context-specific priorities (e.g., harvest-oriented values higher in countries with strong extractive traditions). The German-Polish border along the Oder River provides an ideal setting for examining these dynamics: both nations share the same river and experienced the same disaster, but differ in political systems, economic development, angling culture, and historical relationship with the river.</p>
+            
+            <h3>Stated Preferences and ES Assessment</h3>
+            <p>Stated preference methods—including importance ratings, ranking exercises, and budget allocation tasks—are widely used to elicit public ES priorities (Zandebasiri et al. 2023). These methods capture not only which services people value (importance ratings) but also relative priorities when tradeoffs are necessary (budget allocation). Combining multiple elicitation formats provides richer understanding than single-question approaches. Factor analysis is commonly used to reduce dimensionality and identify meaningful ES categories that reflect how the public conceptually groups services (Kochalski et al. 2022).</p>
+            
+            <h3>Co-Production of Ecosystem Services</h3>
+            <p>A key insight from recent ES research is that all ecosystem services—including cultural services—are co-produced through interactions between ecological systems and human institutions, experiences, and values (Chan et al. 2012, Kochalski et al. 2022). ES are not simply "delivered" by ecosystems and passively received by people. Rather, people's recognition, valuation, and ability to benefit from ES depend on their awareness, access, cultural background, and personal experiences with nature. This framework predicts that ES valuation will vary not only with objective ecological conditions but also with individual and cultural factors that shape how people perceive and interact with ecosystems.</p>
+            
+            <h3>Research Gap</h3>
+            <p>While numerous studies value river ES in stable conditions and some examine impacts of chronic stressors (e.g., nutrient pollution), few assess public ES priorities in the immediate aftermath of catastrophic environmental disasters. The Oder case is particularly valuable because: (1) the disaster was sudden and highly visible, creating a shared before/after reference point; (2) the transboundary nature allows comparison across national contexts experiencing the same ecological shock; (3) the disaster primarily affected one ES category (provisioning/biodiversity) while leaving physical infrastructure intact, enabling examination of how loss in one domain affects valuation of others; (4) three years post-disaster provides enough time for initial shock to subside while memories remain salient.</p>
+            
+            <h2>Research Questions</h2>
+            <ol>
+                <li><strong>RQ1:</strong> How do residents prioritize different ecosystem services (cultural, provisioning, regulating, supporting) provided by the Oder River three years post-disaster?</li>
+                <li><strong>RQ2:</strong> What is the factor structure of ES importance ratings? Do ES items cluster into meaningful categories reflecting how the public conceptually groups river benefits?</li>
+                <li><strong>RQ3:</strong> Do German and Polish residents differ significantly in their ES priorities? If so, which ES show largest cross-border differences?</li>
+                <li><strong>RQ4:</strong> How does awareness of the 2022 disaster affect ES valuation? Does disaster salience increase importance ratings for specific ES categories?</li>
+                <li><strong>RQ5:</strong> What personal characteristics (values, demographics, river connection) and activity patterns predict ES priorities?</li>
+                <li><strong>RQ6:</strong> When forced to make tradeoffs (budget allocation), which ES receive highest priority? Do stated priorities align with importance ratings or diverge?</li>
+            </ol>
+            
+            <h2>Hypotheses</h2>
+            
+            <div class="hypothesis-box">
+                <h4>H1: Universal High Value for Core ES</h4>
+                <p><strong>H1a:</strong> Water quality, biodiversity, and regulating services (flood protection) will receive universally high importance ratings across both countries, reflecting fundamental human needs and widespread environmental awareness.</p>
+                <p><strong>H1b:</strong> Cultural ES (aesthetics, well-being, sense of place) will also receive high ratings, consistent with intrinsic-ecological value findings from other threatened species/ecosystems (Kochalski et al. 2022).</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H2: Factor Structure</h4>
+                <p><strong>H2:</strong> Exploratory factor analysis will identify 3-4 distinct ES dimensions similar to patterns found in other aquatic ES research: (1) intrinsic-ecological (biodiversity, water quality, future generations), (2) extractive-provisioning (fishing, economic benefits), (3) recreation-cultural (aesthetics, well-being, education), and (4) regulating services (flood control, climate).</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H3: Cross-Border Differences</h4>
+                <p><strong>H3a:</strong> Polish residents will rate extractive-provisioning ES (especially fishing) higher than Germans, reflecting stronger cultural tradition of fish consumption and active commercial/recreational fisheries in Poland.</p>
+                <p><strong>H3b:</strong> German residents will rate intrinsic-ecological and regulating ES higher than Poles, reflecting stronger environmental movement, higher concern for biodiversity, and greater flood-risk awareness in German Oder regions.</p>
+                <p><strong>H3c:</strong> Recreation-cultural ES will show smaller cross-border differences, as these benefits are universally accessible and desired.</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H4: Disaster Awareness Effects</h4>
+                <p><strong>H4a:</strong> Residents with higher disaster awareness will rate biodiversity/fish-related ES more important, as the disaster made these services salient through their loss.</p>
+                <p><strong>H4b:</strong> Disaster awareness will correlate with higher importance ratings for water quality and regulating services, as the disaster highlighted river ecosystem fragility.</p>
+                <p><strong>H4c:</strong> Awareness may not affect extractive ES ratings in Germany (where wild fish populations were already extinct), but will increase extractive ES importance in Poland (where fishing was actively disrupted).</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H5: Personal Characteristics & Activities</h4>
+                <p><strong>H5a:</strong> Biospheric altruism (environmental values) will predict higher ratings for intrinsic-ecological and cultural ES, but may negatively correlate with extractive ES.</p>
+                <p><strong>H5b:</strong> River proximity, visit frequency, and recreational use will predict higher ratings for recreation-cultural ES, demonstrating experiential co-production of cultural services.</p>
+                <p><strong>H5c:</strong> Anglers will rate extractive-provisioning ES significantly higher than non-anglers, showing experiential specificity in ES valuation.</p>
+                <p><strong>H5d:</strong> Higher education will predict higher ratings for intrinsic-ecological and regulating ES, consistent with environmental literacy effects.</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H6: Priority Tradeoffs</h4>
+                <p><strong>H6a:</strong> In budget allocation (Top 3 + 100 points), water quality and flood protection will receive highest priority, as these are fundamental services with immediate human welfare implications.</p>
+                <p><strong>H6b:</strong> Despite high importance ratings, some cultural ES (aesthetics, education) will receive lower budget priority, revealing difference between "nice to have" vs. "essential" services when tradeoffs are forced.</p>
+                <p><strong>H6c:</strong> Cross-border differences will be larger in budget allocation than importance ratings, as budget allocation forces explicit prioritization that reveals cultural values.</p>
+            </div>
+            
+            <h2>Theoretical Framework</h2>
+            
+            <div class="theory-box">
+                <h4>Conceptual Model: Co-Production of ES Perception Post-Disaster</h4>
+                <p><strong>Ecological Context:</strong></p>
+                <ul style="margin-left: 1.5rem;">
+                    <li>2022 disaster reduced biodiversity, fish populations, water quality concerns</li>
+                    <li>Recovery trajectory 2023-2025 (improving but incomplete)</li>
+                    <li>Visible impacts (dead fish, media coverage) create shared awareness</li>
+                </ul>
+                
+                <p><strong>Individual Factors:</strong></p>
+                <ul style="margin-left: 1.5rem;">
+                    <li>Personal values (biospheric altruism, place attachment)</li>
+                    <li>Experiences (river visits, recreational activities, disaster exposure)</li>
+                    <li>Demographics (education, age, income, urban/rural)</li>
+                    <li>Identity (angler vs. non-angler, German vs. Polish national identity)</li>
+                </ul>
+                
+                <p><strong>Cultural Context:</strong></p>
+                <ul style="margin-left: 1.5rem;">
+                    <li>National environmental policy histories</li>
+                    <li>Economic development levels</li>
+                    <li>Fishing culture and traditions</li>
+                    <li>Trust in institutions</li>
+                </ul>
+                
+                <p><strong>↓ Co-Production Process ↓</strong></p>
+                
+                <p><strong>ES Perception & Valuation:</strong></p>
+                <ul style="margin-left: 1.5rem;">
+                    <li>Which services are recognized as important?</li>
+                    <li>How do services cluster conceptually?</li>
+                    <li>What priorities emerge when tradeoffs are necessary?</li>
+                </ul>
+            </div>
+            
+            <h2>Data & Methods</h2>
+            
+            <h3>Survey Design</h3>
+            
+            <div class="data-source">
+                <div class="data-source-label">Resident Ecosystem Services Survey</div>
+                <p><strong>Sample:</strong> N ≈ 1,200 (600 Germany, 600 Poland)</p>
+                <p><strong>Recruitment:</strong> Online panel with quota sampling for age, gender, education, proximity to Oder River</p>
+                <p><strong>Languages:</strong> German and Polish (professionally translated)</p>
+                <p><strong>Deployment:</strong> Year 2 of OderTogether project (2027)</p>
+            </div>
+            
+            <h4>Key Variables:</h4>
+            
+            <p><strong>ES Importance Ratings (14 items, 5-point scale from "Not important" to "Extremely important"):</strong></p>
+            <ol>
+                <li>Clean water / natural water purification</li>
+                <li>Flood protection / reducing flood impacts</li>
+                <li>Habitat for fish, birds, and other wildlife (biodiversity)</li>
+                <li>Maintaining healthy fish populations</li>
+                <li>Opportunities for recreation (walking, cycling, boating, etc.)</li>
+                <li>Beautiful landscapes / enjoyment of nature</li>
+                <li>A place for relaxation and mental well-being</li>
+                <li>Cultural heritage / identity connected to the river</li>
+                <li>Environmental education / learning opportunities</li>
+                <li>Economic benefits (tourism, local business)</li>
+                <li>Fishing as a local activity (food or leisure)</li>
+                <li>Climate regulation (e.g., wetlands, floodplains storing carbon)</li>
+                <li>Sense of place / feeling at home in the landscape (relational value)</li>
+                <li>Option value: keeping the river healthy for future generations</li>
+            </ol>
+            
+            <p><strong>Priority Measures:</strong></p>
+            <ul>
+                <li>Top 3 ES selection (forced ranking)</li>
+                <li>Budget allocation (distribute 100 points across ES categories)</li>
+            </ul>
+            
+            <p><strong>Disaster Awareness:</strong></p>
+            <ul>
+                <li>Awareness of 2022 event (yes/no + details)</li>
+                <li>Concern level about Oder River health (1-5 scale)</li>
+                <li>Perceived current river condition vs. pre-2022 (worse, same, better, don't know)</li>
+            </ul>
+            
+            <p><strong>Personal Characteristics:</strong></p>
+            <ul>
+                <li>Biospheric values (3-item scale from De Groot & Steg 2008)</li>
+                <li>Distance from Oder River (km)</li>
+                <li>River visit frequency (never, rarely, monthly, weekly)</li>
+                <li>Activities near river (recreation, observation, fishing, other)</li>
+                <li>Angler status (current, former, never)</li>
+                <li>Demographics (age, gender, education, urban/rural, income)</li>
+            </ul>
+            
+            <h3>Analytical Approach</h3>
+            
+            <h4>Step 1: Descriptive Analysis</h4>
+            <ul>
+                <li>Calculate mean importance ratings for each ES item overall and by country</li>
+                <li>Test cross-country differences using independent t-tests with Bonferroni correction</li>
+                <li>Visualize ES importance distributions with violin plots</li>
+                <li>Examine Top 3 selection frequencies by country</li>
+                <li>Analyze budget allocation patterns (mean points allocated to each ES)</li>
+            </ul>
+            
+            <h4>Step 2: Factor Analysis</h4>
+            <ul>
+                <li>Exploratory Factor Analysis (EFA) with varimax rotation on 14 ES items</li>
+                <li>Assess factorability (KMO > 0.8, Bartlett's test significant, communalities > 0.3)</li>
+                <li>Determine optimal number of factors using eigenvalues, scree plot, and interpretability</li>
+                <li>Calculate composite scores for each factor (mean of items loading on that factor)</li>
+                <li>Assess internal consistency (Cronbach's alpha > 0.7)</li>
+                <li>Compare factor structure across Germany and Poland to test measurement invariance</li>
+            </ul>
+            
+            <h4>Step 3: Cross-Country Comparison</h4>
+            <ul>
+                <li>MANOVA testing country effects on composite factor scores</li>
+                <li>Post-hoc pairwise comparisons for individual ES items showing largest differences</li>
+                <li>Effect size calculations (Cohen's d) to quantify magnitude of differences</li>
+                <li>Visualize cross-country differences with forest plots showing mean differences and 95% CIs</li>
+            </ul>
+            
+            <h4>Step 4: Disaster Awareness Analysis</h4>
+            <ul>
+                <li>Compare ES importance ratings between high vs. low disaster awareness groups (median split)</li>
+                <li>Regression models: Factor scores ~ Disaster awareness + Country + Awareness×Country</li>
+                <li>Test whether awareness effects differ between countries (interaction term)</li>
+            </ul>
+            
+            <h4>Step 5: Predictors of ES Valuation</h4>
+            <ul>
+                <li>Multiple regression models for each ES factor</li>
+                <li>Predictors: Biospheric values, age, gender, education, income, urban/rural, distance to river, visit frequency, angler status, country</li>
+                <li>Standardized coefficients to compare predictor importance</li>
+                <li>Variance inflation factors (VIF) to check multicollinearity</li>
+                <li>Model comparison using adjusted R² and AIC</li>
+            </ul>
+            
+            <h4>Step 6: Priority Alignment Analysis</h4>
+            <ul>
+                <li>Compare importance ratings vs. Top 3 selections vs. budget allocation</li>
+                <li>Calculate rank-order correlations between elicitation methods</li>
+                <li>Identify ES that are "important but not prioritized" vs. "prioritized despite moderate importance"</li>
+                <li>Test whether priority alignment differs by country or personal characteristics</li>
+            </ul>
+            
+            <h4>Step 7: Sensitivity Analyses</h4>
+            <ul>
+                <li>Alternative factor solutions (2-factor, 5-factor) to test robustness</li>
+                <li>Subset analyses by river proximity (near vs. far residents)</li>
+                <li>Comparison of German border regions (Brandenburg) vs. rest of Germany</li>
+                <li>Analysis excluding respondents with missing disaster awareness (test selection bias)</li>
+            </ul>
+            
+            <h2>Expected Results</h2>
+            
+            <h3>Scenario A: Universal Core + Divergent Periphery</h3>
+            <p>Both countries rate water quality, flood protection, and biodiversity as highly important (means > 4.0/5.0), showing universal recognition of core ES. Significant cross-border differences emerge for extractive ES (fishing, economic benefits), with Polish residents rating these 0.5-0.8 points higher than Germans. Cultural ES show moderate differences (0.2-0.4 points), with Germans slightly higher on intrinsic values. Factor analysis reveals 3 factors: (1) Life-Supporting (water, flood, climate), (2) Biodiversity-Cultural (habitat, fish, aesthetics, place), (3) Extractive-Economic (fishing, tourism, economy).</p>
+            
+            <h3>Scenario B: Disaster Heightens Ecological Awareness</h3>
+            <p>High disaster awareness respondents (both countries) rate biodiversity, fish populations, and future generations 0.3-0.5 points higher than low-awareness group. Effect is stronger in Poland where fishing disruption was more visible. Awareness does not affect water quality or flood ratings (already at ceiling). Interaction effect: disaster awareness increases extractive ES valuation in Poland but not Germany.</p>
+            
+            <h3>Scenario C: Experience Drives Valuation</h3>
+            <p>Biospheric values are strongest predictor of intrinsic-ecological ES (β = 0.35-0.45). River proximity and visit frequency predict cultural ES (β = 0.25-0.35). Angler status strongly predicts extractive ES (β = 0.40+), but also predicts higher ratings for biodiversity (anglers care about healthy ecosystems). Education positive for all ES except extractive (negative or null). Country effects persist even after controlling for individual characteristics, indicating cultural differences beyond demographics.</p>
+            
+            <h3>Scenario D: Priority Diverges from Importance</h3>
+            <p>In budget allocation, water quality and flood protection receive 30-40% of points despite similar importance ratings to other ES. Cultural ES (aesthetics, education, well-being) receive only 5-10% of budget despite high importance ratings (3.8-4.2), revealing "important but not urgent" status. Cross-border differences larger in budget allocation (0.8-1.2 point difference) than importance ratings (0.3-0.5 difference), confirming that forced prioritization reveals cultural values more clearly.</p>
+            
+            <h2>Discussion</h2>
+            
+            <h3>Theoretical Contributions</h3>
+            <ul>
+                <li><strong>Co-production framework:</strong> Results demonstrate that ES perception is shaped by interactions among ecological conditions (post-disaster state), cultural context (national identity), and personal experiences (river connection, values). Even residents of the same degraded river perceive its services differently.</li>
+                <li><strong>Disaster as salience mechanism:</strong> Environmental crises can increase recognition of ES, particularly those directly affected. However, salience effects may be asymmetric—disaster heightens awareness more when ES were actively used and lost (Polish fishing) than when already unavailable (German fishing).</li>
+                <li><strong>Dimensionality of ES valuation:</strong> Public conceptual grouping of ES may differ from typologies used by scientists (MEA categories). Understanding lay mental models helps communicate ES concepts effectively.</li>
+                <li><strong>Importance vs. priority distinction:</strong> People can rate many ES as "important" while prioritizing only few when tradeoffs are necessary. Budget allocation and Top 3 methods reveal different aspects of valuation than importance ratings alone.</li>
+            </ul>
+            
+            <h3>Management Implications</h3>
+            <ul>
+                <li><strong>Transboundary coordination challenges:</strong> German-Polish differences in ES priorities complicate joint management. Restoration strategies may need to emphasize shared values (water quality, flood protection) while accommodating divergent priorities (fishing access, biodiversity protection).</li>
+                <li><strong>Communication strategies:</strong> Given universal high ratings for core ES, management communication should emphasize these shared values to build cross-border solidarity. Avoid framing restoration as zero-sum tradeoff between German environmental priorities and Polish economic interests.</li>
+                <li><strong>Angler engagement:</strong> Anglers show heightened valuation of both extractive and biodiversity ES—not just selfish interest in fishing but genuine ecosystem stewardship. Angling community is key constituency for restoration support.</li>
+                <li><strong>Disaster as teachable moment:</strong> High disaster awareness correlates with elevated ES valuation, suggesting public education and memorial efforts can sustain long-term support for river health even after initial crisis fades from memory.</li>
+                <li><strong>Priority-setting process:</strong> Given divergence between importance ratings and budget priorities, stakeholder workshops should use budget allocation or similar forced-choice methods to elicit real priorities rather than just asking what's "important" (everything is important).</li>
+            </ul>
+            
+            <h3>Limitations</h3>
+            <ul>
+                <li><strong>Cross-sectional design:</strong> Cannot assess whether ES valuations changed due to disaster (no pre-2022 baseline). Stated priorities may reflect post-hoc rationalization rather than causal disaster effects.</li>
+                <li><strong>Online panel sampling:</strong> May under-represent rural residents, elderly, and those without internet access—populations potentially most connected to the river and its ES.</li>
+                <li><strong>Stated preferences:</strong> Importance ratings and budget allocations are hypothetical. Revealed preference methods (e.g., travel cost, hedonic pricing) would complement stated preference data but were not feasible for this study.</li>
+                <li><strong>Translation equivalence:</strong> Despite professional translation, some ES concepts may have different cultural connotations in German vs. Polish (e.g., "sense of place," "well-being"). Factor structure comparison tests this but cannot fully resolve issue.</li>
+                <li><strong>ES interdependencies:</strong> Survey treats ES as independent items, but many are interrelated (e.g., healthy fish populations enable fishing and support biodiversity). Factor analysis captures some correlations but not full complexity of ES bundles.</li>
+                <li><strong>Disaster attribution:</strong> Residents may conflate 2022 disaster with other longstanding Oder River problems (industrial pollution, river channelization, agricultural runoff). Disaster awareness effects could partly reflect general environmental concern.</li>
+            </ul>
+            
+            <h3>Future Research Directions</h3>
+            <ul>
+                <li><strong>Longitudinal tracking:</strong> Repeat survey in 5 years to test whether disaster salience effects persist, fade, or strengthen as recovery progresses. Track how ES priorities evolve with ecological restoration.</li>
+                <li><strong>Integration with biophysical data:</strong> Link resident ES priorities to actual ecosystem condition indicators (water quality metrics, fish abundance, biodiversity indices) to test whether perceptions align with objective conditions.</li>
+                <li><strong>Stated-revealed preference comparison:</strong> Compare stated ES priorities to revealed preferences from catch logs, river visitation patterns, and participation in restoration activities (Papers 1-3 provide revealed preference data).</li>
+                <li><strong>Cross-border ES flows:</strong> Examine whether Polish residents benefit from German restoration investments and vice versa. Spatial analysis of ES provision and consumption across border.</li>
+                <li><strong>Institutional trust analysis:</strong> Explore whether ES priorities interact with trust in management institutions. Do residents who distrust government prioritize different ES than those with high institutional trust?</li>
+                <li><strong>Comparison to other disaster cases:</strong> Apply same survey instrument to other river disaster cases (e.g., Elbe floods, Danube pollution events) to test generalizability of disaster salience effects.</li>
+            </ul>
+            
+            <h2>Integration with Other OderTogether Papers</h2>
+            
+            <p><strong>Paper 1 (Recovery Trajectory):</strong> Provides revealed preference data on angler ES use—compare stated priorities to actual behavior. Test whether anglers who rate fishing ES as highly important also demonstrate behavioral commitment (continued fishing despite poor conditions).</p>
+            
+            <p><strong>Paper 2 (Motivation & Specialization):</strong> Creel survey captures anglers' catch vs. nature-oriented motivations. Compare catch log motivation proxies to stated ES priorities from residents who identify as anglers in ES survey. Test whether catch-oriented anglers prioritize extractive ES while nature-oriented anglers prioritize biodiversity/cultural ES.</p>
+            
+            <p><strong>Paper 3 (Harvest Behavior):</strong> Voluntary catch-and-release demonstrates conservation ethic. Test whether residents who rate biodiversity/fish ES highly are more likely to be anglers practicing voluntary restraint. Integration paper could examine whether stated conservation values (ES survey) predict actual conservation behavior (harvest restraint).</p>
+            
+            <p><strong>Cross-border comparison:</strong> All four papers enable German-Polish comparison. Do stated ES priorities (Paper 4) explain observed differences in satisfaction recovery (Paper 1), motivation patterns (Paper 2), and harvest behavior (Paper 3)? E.g., if Polish residents prioritize extractive ES more, do they also show stronger catch-dependence for satisfaction?</p>
+            
+            <div class="back-link">
+                <a href="survey-framework.html">← Back to Survey Framework</a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>OderTogether Research Project — January 2026</p>
+        </footer>
+    </div>
+</body>
+</html>

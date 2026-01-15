@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OderTogether Publication Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            line-height: 1.7;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        
+        header {
+            margin-bottom: 4rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e0e0e0;
+            text-align: center;
+        }
+        
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2.8rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            font-weight: 400;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 3rem 0 1.5rem;
+            letter-spacing: -0.01em;
+        }
+        
+        .overview-box {
+            background: linear-gradient(135deg, #2B5F7C 0%, #3D7E8A 100%);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            margin: 3rem 0;
+        }
+        
+        .overview-box h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .overview-box ul {
+            margin-left: 1.5rem;
+            color: rgba(255,255,255,0.95);
+        }
+        
+        .overview-box li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .paper-card {
+            background: white;
+            border: 3px solid;
+            border-radius: 12px;
+            margin-bottom: 2.5rem;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .paper-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        
+        .paper-card.tier1 {
+            border-color: #2B5F7C;
+        }
+        
+        .paper-card.tier2 {
+            border-color: #4A7C3A;
+        }
+        
+        .paper-card.tier3 {
+            border-color: #7C5C3A;
+        }
+        
+        .paper-header {
+            padding: 2rem;
+            color: white;
+        }
+        
+        .paper-card.tier1 .paper-header {
+            background: linear-gradient(135deg, #2B5F7C 0%, #3D7E8A 100%);
+        }
+        
+        .paper-card.tier2 .paper-header {
+            background: linear-gradient(135deg, #4A7C3A 0%, #6B8F71 100%);
+        }
+        
+        .paper-card.tier3 .paper-header {
+            background: linear-gradient(135deg, #7C5C3A 0%, #8B6F47 100%);
+        }
+        
+        .paper-meta {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 0.75rem;
+        }
+        
+        .paper-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.6rem;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: 0.5rem;
+        }
+        
+        .paper-subtitle {
+            font-size: 1rem;
+            opacity: 0.95;
+            line-height: 1.4;
+        }
+        
+        .paper-content {
+            padding: 2rem;
+        }
+        
+        .paper-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-label {
+            font-weight: 600;
+            color: #2B5F7C;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .section-text {
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .key-points {
+            margin: 1rem 0;
+        }
+        
+        .key-points li {
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+        
+        .paper-footer {
+            padding: 1.5rem 2rem;
+            background: #f9f9f9;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .target-journals {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .target-journals strong {
+            color: #2B5F7C;
+        }
+        
+        .detail-button {
+            display: inline-block;
+            background: #2B5F7C;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s ease;
+        }
+        
+        .detail-button:hover {
+            background: #1a4058;
+        }
+        
+        .timeline-box {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .timeline-box h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.4rem;
+            color: #2B5F7C;
+            margin-bottom: 1.5rem;
+        }
+        
+        .timeline-item {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .timeline-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .timeline-year {
+            font-weight: 600;
+            color: #2B5F7C;
+            font-size: 1.1rem;
+            min-width: 80px;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-papers {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .integration-note {
+            background: #f0f7f0;
+            border-left: 4px solid #4A7C3A;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 4px;
+        }
+        
+        .integration-note h4 {
+            color: #4A7C3A;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        
+        .back-link {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+        }
+        
+        .back-link a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .paper-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>OderTogether Publication Portfolio</h1>
+            <p class="subtitle">Five peer-reviewed papers examining ecosystem service recovery, angler behavior, and transboundary values following the 2022 Oder River disaster</p>
+        </header>
+        
+        <main>
+            <div class="overview-box">
+                <h3>Portfolio Overview</h3>
+                <p style="margin-bottom: 1rem;">This research program uses the 2022 Oder River disaster as a natural experiment to examine social-ecological recovery through multiple lenses: revealed preferences (catch logs), stated preferences (ES surveys), behavioral economics (harvest decisions), and cross-cultural values (German-Polish comparison).</p>
+                <ul>
+                    <li><strong>Papers 1-3:</strong> Catch log analysis examining recovery trajectories, satisfaction determinants, and harvest behavior</li>
+                    <li><strong>Paper 4:</strong> Resident ecosystem services survey analyzing public ES priorities post-disaster</li>
+                    <li><strong>Paper 5:</strong> Integration paper comparing German-Polish ES valuation and governance preferences</li>
+                </ul>
+            </div>
+            
+            <h2>Tier 1: Catch Log Analysis (Revealed Preferences)</h2>
+            
+            <!-- PAPER 1 -->
+            <div class="paper-card tier1">
+                <div class="paper-header">
+                    <div class="paper-meta">Paper 1 • OderAngeln Catch Log Study</div>
+                    <div class="paper-title">Post-Disaster Recovery Trajectory: Recreational Fishing Effort and Satisfaction Following the 2022 Oder River Fish Kill</div>
+                    <div class="paper-subtitle">Temporal analysis • Mixed-effects models • N≈500 anglers, 2-3 years</div>
+                </div>
+                
+                <div class="paper-content">
+                    <div class="paper-section">
+                        <div class="section-label">Research Questions</div>
+                        <div class="section-text">How have fishing effort, catch rates, and angler satisfaction changed from 2023-2025? Does satisfaction recovery track biological recovery, or do they diverge? Do highly specialized anglers show different recovery patterns than casual anglers?</div>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Key Contributions</div>
+                        <ul class="key-points">
+                            <li>Rare longitudinal data on social recovery following catastrophic environmental event</li>
+                            <li>Tests whether angler satisfaction lags, leads, or tracks biological recovery (CPUE)</li>
+                            <li>Extends Birdsong et al. 2021/2022 satisfaction work to post-disaster context</li>
+                            <li>Demonstrates specialization as buffer against ecological stress</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Data Requirements</div>
+                        <div class="section-text"><strong>Critical:</strong> Multi-year catch log data (2023, 2024, 2025 minimum). Without temporal coverage, paper must pivot to cross-sectional design examining 2025 patterns only.</div>
+                    </div>
+                </div>
+                
+                <div class="paper-footer">
+                    <div class="target-journals">
+                        <strong>Target:</strong> North American Journal of Fisheries Management, Fisheries Research
+                    </div>
+                    <a href="oder_paper1.html" class="detail-button">View Detailed Research Plan →</a>
+                </div>
+            </div>
+            
+            <!-- PAPER 2 -->
+            <div class="paper-card tier1">
+                <div class="paper-header">
+                    <div class="paper-meta">Paper 2 • OderAngeln Catch Log Study</div>
+                    <div class="paper-title">What Matters When Fish Don't: Angler Motivations, Specialization, and Satisfaction Under Ecological Stress</div>
+                    <div class="paper-subtitle">Cross-sectional analysis • Regression & latent profiles • N≈500 anglers, 2000+ trips</div>
+                </div>
+                
+                <div class="paper-content">
+                    <div class="paper-section">
+                        <div class="section-label">Research Questions</div>
+                        <div class="section-text">How do catch-oriented vs. nature-oriented motivations predict satisfaction when catch rates are depressed? Does specialization moderate the catch-satisfaction relationship? Can we identify distinct "angler profiles" with different satisfaction drivers?</div>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Key Contributions</div>
+                        <ul class="key-points">
+                            <li>Tests competing hypotheses: specialized anglers as more vs. less catch-dependent</li>
+                            <li>Integrates Beardmore, Ditton, and Danish citizen science (Gundelund) findings</li>
+                            <li>Develops motivation proxies from behavioral data (method innovation)</li>
+                            <li>Identifies which anglers are resilient vs. vulnerable to poor fishing conditions</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Management Implications</div>
+                        <div class="section-text">Enables targeted retention strategies: specialized anglers need ecosystem health messaging; casual anglers need immediate catch improvements. Informs amenity vs. fish stocking investment decisions.</div>
+                    </div>
+                </div>
+                
+                <div class="paper-footer">
+                    <div class="target-journals">
+                        <strong>Target:</strong> Human Dimensions of Wildlife, Leisure Sciences
+                    </div>
+                    <a href="oder_paper2.html" class="detail-button">View Detailed Research Plan →</a>
+                </div>
+            </div>
+            
+            <!-- PAPER 3 -->
+            <div class="paper-card tier1">
+                <div class="paper-header">
+                    <div class="paper-meta">Paper 3 • OderAngeln Catch Log Study</div>
+                    <div class="paper-title">Adaptive Harvest Behavior: How Anglers Adjust Keep Decisions in Response to Declining Fish Populations</div>
+                    <div class="paper-subtitle">Multilevel analysis • Fish-level data • N≈5,000-20,000 individual fish records</div>
+                </div>
+                
+                <div class="paper-content">
+                    <div class="paper-section">
+                        <div class="section-label">Research Questions</div>
+                        <div class="section-text">Do anglers voluntarily practice more catch-and-release as populations recover slowly? Which factors predict keep vs. release decisions at individual fish level? Does harvest restraint correlate with conservation-oriented characteristics?</div>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Key Contributions</div>
+                        <ul class="key-points">
+                            <li>Extends Birdsong dissertation Paper IV on voluntary C&R in consumptive culture</li>
+                            <li>Tests whether social-ecological feedback loops emerge organically vs. require regulation</li>
+                            <li>Three-level analysis (fish within trips within anglers) = methodological sophistication</li>
+                            <li>Direct policy relevance: Is voluntary conservation sufficient to aid recovery?</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Theoretical Framing</div>
+                        <div class="section-text">Commons dilemma + norm emergence + specialization theory. Tests whether anglers cooperate to conserve shared resource without enforcement, or whether tragedy of commons prevails.</div>
+                    </div>
+                </div>
+                
+                <div class="paper-footer">
+                    <div class="target-journals">
+                        <strong>Target:</strong> Fisheries Management & Ecology, Canadian Journal of Fisheries & Aquatic Sciences
+                    </div>
+                    <a href="oder_paper3.html" class="detail-button">View Detailed Research Plan →</a>
+                </div>
+            </div>
+            
+            <h2>Tier 2: Ecosystem Services Analysis (Stated Preferences)</h2>
+            
+            <!-- PAPER 4 -->
+            <div class="paper-card tier2">
+                <div class="paper-header">
+                    <div class="paper-meta">Paper 4 • Resident Ecosystem Services Survey</div>
+                    <div class="paper-title">Whose River, Which Values? Transboundary Ecosystem Service Priorities Following the 2022 Oder River Disaster</div>
+                    <div class="paper-subtitle">Cross-country survey • Factor analysis & regression • N=1,200 residents</div>
+                </div>
+                
+                <div class="paper-content">
+                    <div class="paper-section">
+                        <div class="section-label">Research Questions</div>
+                        <div class="section-text">How do residents prioritize 14 ecosystem services three years post-disaster? Do German and Polish residents differ in ES priorities despite sharing the same river? What personal characteristics and disaster awareness predict ES valuation?</div>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Key Contributions</div>
+                        <ul class="key-points">
+                            <li>Applies Kochalski et al. 2022 methodology (IGB multi-country ES framework) to post-disaster context</li>
+                            <li>Multiple elicitation methods: importance ratings, Top 3 priorities, budget allocation (100 points)</li>
+                            <li>Tests "co-production" framework: ES perception shaped by ecology × society × experience</li>
+                            <li>Examines whether environmental crises heighten or diminish ES recognition</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Expected Factor Structure</div>
+                        <div class="section-text">Anticipate 3-4 factors: (1) intrinsic-ecological (biodiversity, fish, future generations), (2) extractive-provisioning (fishing, economic), (3) recreation-cultural (aesthetics, well-being, education), (4) regulating (flood, climate).</div>
+                    </div>
+                </div>
+                
+                <div class="paper-footer">
+                    <div class="target-journals">
+                        <strong>Target:</strong> Ecosystem Services, Environmental Management, Ecological Economics
+                    </div>
+                    <a href="oder_paper4.html" class="detail-button">View Detailed Research Plan →</a>
+                </div>
+            </div>
+            
+            <h2>Tier 3: Integration & Synthesis</h2>
+            
+            <!-- PAPER 5 -->
+            <div class="paper-card tier3">
+                <div class="paper-header">
+                    <div class="paper-meta">Paper 5 • Integration Across All Data Sources</div>
+                    <div class="paper-title">Transboundary Ecosystem Services: How Shared Rivers Create Unshared Values in the Post-Disaster Oder Basin</div>
+                    <div class="paper-subtitle">Cross-border comparison • Decomposition analysis • All Papers 1-4 data</div>
+                </div>
+                
+                <div class="paper-content">
+                    <div class="paper-section">
+                        <div class="section-label">Core Question</div>
+                        <div class="section-text">Germans and Poles share the same river and experienced the same disaster—why do they value its ecosystem services differently? Tests three explanations: ecological (different fishing access), economic (development gap), and cultural-institutional (governance traditions).</div>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Key Contributions</div>
+                        <ul class="key-points">
+                            <li>Natural experiment: same river, same disaster, different national contexts</li>
+                            <li>Blinder-Oaxaca decomposition: partition demographics vs. "true" cultural differences</li>
+                            <li>Tests whether disaster awareness amplifies or reduces cross-border value divergence</li>
+                            <li>Direct policy relevance for EU Water Framework Directive transboundary coordination</li>
+                            <li>Three-layer framework: ecology + economy + culture co-produce ES priorities</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Hypothesized Patterns</div>
+                        <div class="section-text">Poles rate extractive ES (fishing, economic) 30-50% higher; Germans rate intrinsic ES (biodiversity, future generations) 10-20% higher; both converge on core ES (water quality, flood protection). Cross-border differences larger in budget allocation than importance ratings—forced tradeoffs reveal priorities.</div>
+                    </div>
+                    
+                    <div class="paper-section">
+                        <div class="section-label">Bonus Analysis (Data-Dependent)</div>
+                        <div class="section-text">IF Polish catch log data become available: Compare stated ES priorities to revealed fishing behavior. Do cross-border value differences predict behavioral differences? This would fully integrate Papers 1-5.</div>
+                    </div>
+                </div>
+                
+                <div class="paper-footer">
+                    <div class="target-journals">
+                        <strong>Target:</strong> Ecosystem Services, Environmental Science & Policy, Global Environmental Change
+                    </div>
+                    <a href="oder_paper5.html" class="detail-button">View Detailed Research Plan →</a>
+                </div>
+            </div>
+            
+            <div class="timeline-box">
+                <h3>Publication Timeline (3 Years)</h3>
+                
+                <div class="timeline-item">
+                    <div class="timeline-year">Year 1</div>
+                    <div class="timeline-content">
+                        <div class="timeline-papers">Papers 1 & 2 drafted and submitted</div>
+                        <div style="color: #666; font-size: 0.9rem;">Catch log analysis complete; ES survey finalized & piloted</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-year">Year 2</div>
+                    <div class="timeline-content">
+                        <div class="timeline-papers">Papers 1 & 2 published; Paper 3 submitted; Paper 4 drafted</div>
+                        <div style="color: #666; font-size: 0.9rem;">ES survey deployed; stakeholder workshops; integration analysis begins</div>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-year">Year 3</div>
+                    <div class="timeline-content">
+                        <div class="timeline-papers">Paper 3 published; Papers 4 & 5 submitted</div>
+                        <div style="color: #666; font-size: 0.9rem;">All data integrated; policy briefs delivered; project synthesis complete</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="integration-note">
+                <h4>How Papers Connect</h4>
+                <p><strong>Papers 1-3 (Catch Logs):</strong> Provide revealed preference data on how anglers actually behave post-disaster—effort, satisfaction, harvest decisions. Show what anglers DO.</p>
+                
+                <p><strong>Paper 4 (ES Survey):</strong> Provides stated preference data on what residents (including anglers) VALUE. Shows what people SAY is important.</p>
+                
+                <p><strong>Paper 5 (Integration):</strong> Compares stated and revealed preferences across German-Polish border. Tests whether value differences explain behavioral differences. Examines how cultural contexts shape both what people say and what they do.</p>
+                
+                <p style="margin-top: 1rem;"><strong>Continuity with Dissertation:</strong> Extends Birdsong et al. 2021 (meta-analysis: catch matters but moderated by characteristics), Birdsong et al. 2022 (specialization moderates satisfaction in German dual-fishery), and Paper IV (voluntary C&R in consumptive culture) to post-disaster social-ecological recovery context.</p>
+            </div>
+            
+            <div class="back-link">
+                <a href="oder_home.html">← Back to Survey Framework</a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>OderTogether Research Project — January 2026</p>
+        </footer>
+    </div>
+</body>
+</html>

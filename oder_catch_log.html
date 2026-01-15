@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch Log Survey Structure - OderAngeln</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            line-height: 1.7;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        
+        header {
+            margin-bottom: 4rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+        
+        h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 3rem 0 1.5rem;
+            letter-spacing: -0.01em;
+        }
+        
+        h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 1.5rem 0 0.75rem;
+        }
+        
+        p {
+            margin-bottom: 1.25rem;
+            color: #333;
+        }
+        
+        .survey-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0 4rem;
+        }
+        
+        .survey-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 2rem;
+        }
+        
+        .survey-card.annual {
+            border-color: #2B5F7C;
+            border-width: 3px;
+        }
+        
+        .survey-card.daily {
+            border-color: #4A8CB0;
+            border-width: 3px;
+        }
+        
+        .survey-type-label {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .survey-card.annual .survey-type-label {
+            color: #2B5F7C;
+        }
+        
+        .survey-card.daily .survey-type-label {
+            color: #4A8CB0;
+        }
+        
+        .survey-sections {
+            margin-top: 2rem;
+        }
+        
+        .section-block {
+            background: #f9f9f9;
+            border-left: 4px solid #2B5F7C;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 4px;
+        }
+        
+        .section-block.daily-section {
+            border-left-color: #4A8CB0;
+        }
+        
+        .page-number {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2B5F7C;
+            margin-bottom: 1rem;
+        }
+        
+        .daily-section .page-number {
+            color: #4A8CB0;
+        }
+        
+        .question-list {
+            list-style: none;
+            margin-top: 0.75rem;
+        }
+        
+        .question-list li {
+            padding: 0.5rem 0 0.5rem 1.5rem;
+            position: relative;
+            color: #555;
+        }
+        
+        .question-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #999;
+        }
+        
+        .sub-items {
+            list-style: none;
+            margin-left: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .sub-items li {
+            color: #666;
+            font-size: 0.95rem;
+            padding: 0.25rem 0 0.25rem 1rem;
+        }
+        
+        .sub-items li::before {
+            content: '•';
+            color: #ccc;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin: 3rem 0;
+        }
+        
+        .shared-questions {
+            background: #f0f7ff;
+            border: 2px solid #6B8F71;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .shared-questions h3 {
+            color: #6B8F71;
+        }
+        
+        .back-link {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .back-link a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .survey-types,
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Catch Log Survey Structure</h1>
+            <p class="subtitle">OderAngeln Project survey schema and question flow</p>
+        </header>
+        
+        <main>
+            <p>The OderAngeln catch log study uses two different survey instruments depending on permit type. Annual permit holders receive a comprehensive logbook for recording all trips, while day/week permit holders complete a streamlined online survey after each fishing trip.</p>
+            
+            <div class="survey-types">
+                <div class="survey-card annual">
+                    <div class="survey-type-label">Annual Permit Survey</div>
+                    <p><strong>Target:</strong> Anglers with annual Oder fishing permits</p>
+                    <p><strong>Format:</strong> Paper logbook or online catch log</p>
+                    <p><strong>Purpose:</strong> Comprehensive season-long documentation</p>
+                </div>
+                
+                <div class="survey-card daily">
+                    <div class="survey-type-label">Day/Week Permit Survey</div>
+                    <p><strong>Target:</strong> Anglers with day or week permits</p>
+                    <p><strong>Format:</strong> Online survey (mobile-friendly)</p>
+                    <p><strong>Purpose:</strong> Quick trip documentation (~5 min)</p>
+                </div>
+            </div>
+            
+            <h2>Annual Permit Survey Structure</h2>
+            <p>Comprehensive background questionnaire completed once at registration, followed by per-trip logging throughout the season.</p>
+            
+            <div class="survey-sections">
+                <div class="section-block">
+                    <div class="page-number">Background Questions (One-time)</div>
+                    <ul class="question-list">
+                        <li>How many years have you been actively fishing?</li>
+                        <li>On how many days do you estimate you went fishing in 2025?</li>
+                        <li>Are you a member of a fishing club?
+                            <ul class="sub-items">
+                                <li>Yes, active member</li>
+                                <li>Yes, passive member</li>
+                                <li>No, not a member</li>
+                            </ul>
+                        </li>
+                        <li>Which annual permit did you purchase for 2026?
+                            <ul class="sub-items">
+                                <li>Large Oder map – for members</li>
+                                <li>Large Oder map – for unorganized anglers</li>
+                                <li>Annual permit for designated sections</li>
+                            </ul>
+                        </li>
+                        <li>How did you purchase or obtain your annual pass?
+                            <ul class="sub-items">
+                                <li>Online fishing license shop</li>
+                                <li>Issued by Brandenburg Angling Association</li>
+                                <li>Through a fishing business</li>
+                                <li>Via a fishing shop</li>
+                                <li>Online fishing card shop (e.g., Fiskado)</li>
+                                <li>Other issuing points</li>
+                            </ul>
+                        </li>
+                        <li>Participation preference:
+                            <ul class="sub-items">
+                                <li>Catch logbook in paper format (DIN A5, waterproof)</li>
+                                <li>Online fishing log (entries via mobile devices)</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="section-block">
+                    <div class="page-number">Demographics (One-time)</div>
+                    <ul class="question-list">
+                        <li>When were you born? (year of birth, minimum age 14 years)</li>
+                        <li>First name</li>
+                        <li>Surname</li>
+                        <li>Street, house number</li>
+                        <li>Postal code</li>
+                        <li>Location</li>
+                        <li>Landline telephone number</li>
+                        <li>Mobile phone number</li>
+                        <li>E-mail</li>
+                    </ul>
+                </div>
+                
+                <div class="section-block">
+                    <div class="page-number">Per-Trip Logging (Repeated)</div>
+                    <p style="margin-bottom: 1rem;"><em>Completed for each fishing trip throughout the season</em></p>
+                    <ul class="question-list">
+                        <li>Date of fishing trip</li>
+                        <li>Time started and finished</li>
+                        <li>Body of water name</li>
+                        <li>Nearest location</li>
+                        <li>Total expenses for the trip</li>
+                        <li>Target fish species</li>
+                        <li>Fishing method:
+                            <ul class="sub-items">
+                                <li>Riverbank or boat</li>
+                                <li>Spin or still</li>
+                                <li>One rod or two rods</li>
+                            </ul>
+                        </li>
+                        <li>Did you catch at least one fish?</li>
+                        <li>For each fish caught ≥20cm:
+                            <ul class="sub-items">
+                                <li>Species</li>
+                                <li>Length</li>
+                                <li>Harvest (yes/no)</li>
+                            </ul>
+                        </li>
+                        <li>Satisfaction (1-5 scale)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h2>Day/Week Permit Survey Structure</h2>
+            <p>Streamlined survey completed after each fishing trip. Designed for mobile completion in ~5 minutes.</p>
+            
+            <div class="survey-sections">
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 1: Trip Timing</div>
+                    <ul class="question-list">
+                        <li>Date of your fishing trip</li>
+                        <li>What time did you start?</li>
+                        <li>What time did you finish?</li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 2: Location & Expenses</div>
+                    <ul class="question-list">
+                        <li>Please specify the name of the body of water</li>
+                        <li>Please specify the nearest location</li>
+                        <li>Please state the total expenses for the trip</li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 3: Fishing Method</div>
+                    <ul class="question-list">
+                        <li>What is your target fish species?</li>
+                        <li>Please specify the fishing method:
+                            <ul class="sub-items">
+                                <li>Riverbank/boat</li>
+                                <li>Spin/still</li>
+                                <li>One rod or two rods</li>
+                            </ul>
+                        </li>
+                        <li>Did you catch at least one fish?</li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 4: Catch Details</div>
+                    <ul class="question-list">
+                        <li>Fish longer than 20 cm:
+                            <ul class="sub-items">
+                                <li>Species</li>
+                                <li>Length</li>
+                                <li>Harvest (yes/no)</li>
+                                <li>For each individual fish caught</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 5: Satisfaction</div>
+                    <ul class="question-list">
+                        <li>Satisfaction (1-5 scale)</li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 6: Fishing Experience</div>
+                    <ul class="question-list">
+                        <li>How many years have you been actively fishing?</li>
+                        <li>How many days did you go fishing in 2024?</li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 7: Club Membership</div>
+                    <ul class="question-list">
+                        <li>Are you a member of a fishing club?</li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 8: Permit Information</div>
+                    <ul class="question-list">
+                        <li>Which fishing permit did you purchase?</li>
+                        <li>How did you purchase it?</li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 9: Demographics</div>
+                    <ul class="question-list">
+                        <li>Year of birth</li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 10: Target Species & Equipment</div>
+                    <ul class="question-list">
+                        <li>List three favorite target species</li>
+                        <li>Value of equipment</li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 11: Leisure Activities</div>
+                    <ul class="question-list">
+                        <li>Number of hobbies</li>
+                        <li>How important is fishing as a hobby compared to other leisure activities?
+                            <ul class="sub-items">
+                                <li>1st most important</li>
+                                <li>2nd most important</li>
+                                <li>3rd most important</li>
+                                <li>More than 3rd</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="section-block daily-section">
+                    <div class="page-number">Page 12: Fishing Preferences</div>
+                    <ul class="question-list">
+                        <li>Fishing preferences (scale 1-5: never to exclusively):
+                            <ul class="sub-items">
+                                <li>Spin fishing</li>
+                                <li>Fishing the Oder</li>
+                                <li>Still fishing</li>
+                                <li>Target a specific species</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="shared-questions">
+                <h3>Shared Data Elements</h3>
+                <p>Both survey types collect the following core information for comparability:</p>
+                <ul class="question-list">
+                    <li>Trip characteristics: date, time, location, expenses</li>
+                    <li>Fishing method: bank/boat, spin/still, number of rods</li>
+                    <li>Target species</li>
+                    <li>Catch data: species, length (≥20cm), harvest decision</li>
+                    <li>Satisfaction rating (1-5)</li>
+                    <li>Angler background: years fishing, annual fishing days, club membership</li>
+                    <li>Permit type and purchase method</li>
+                </ul>
+            </div>
+            
+            <div class="back-link">
+                <a href="index.html">← Back to OderTogether Project</a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>OderAngeln Project | Institute for Inland Fisheries (IfB) Potsdam-Sacrow | USUMA GmbH</p>
+        </footer>
+    </div>
+</body>
+</html>

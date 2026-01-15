@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper 2: Motivations & Satisfaction Under Stress</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            line-height: 1.7;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        
+        header {
+            margin-bottom: 4rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+        }
+        
+        .meta {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        
+        .target-journal {
+            display: inline-block;
+            background: #f0f7ff;
+            color: #2B5F7C;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+        
+        h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 3rem 0 1.5rem;
+            letter-spacing: -0.01em;
+        }
+        
+        h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 2rem 0 0.75rem;
+        }
+        
+        h4 {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2B5F7C;
+            margin: 1.5rem 0 0.5rem;
+        }
+        
+        p {
+            margin-bottom: 1.25rem;
+            color: #333;
+        }
+        
+        ul, ol {
+            margin: 1rem 0 1.5rem 2rem;
+            color: #333;
+        }
+        
+        li {
+            margin-bottom: 0.75rem;
+        }
+        
+        .section-box {
+            background: #f9f9f9;
+            border-left: 4px solid #2B5F7C;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-radius: 4px;
+        }
+        
+        .hypothesis-box {
+            background: #fff9e6;
+            border-left: 4px solid #d4a574;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .hypothesis-box h4 {
+            color: #7c5c3a;
+            margin-top: 0;
+        }
+        
+        .data-source {
+            background: #f0f7ff;
+            border: 2px solid #2B5F7C;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+        
+        .data-source-label {
+            font-weight: 600;
+            color: #2B5F7C;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #f9f9f9;
+            font-weight: 600;
+            color: #2B5F7C;
+        }
+        
+        .theory-box {
+            background: #f0f7f0;
+            border: 2px solid #6B8F71;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 6px;
+        }
+        
+        .theory-box h4 {
+            color: #4A7C3A;
+            margin-top: 0;
+        }
+        
+        .back-link {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .back-link a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="meta">Paper 2 of 3 • OderAngeln Catch Log Analysis</p>
+            <h1>What Matters When Fish Don't: Angler Motivations, Specialization, and Satisfaction Under Ecological Stress</h1>
+            <div class="target-journal">Target Journals: Human Dimensions of Wildlife, Leisure Sciences</div>
+            
+            <!-- INTERVIEW KEY BOX -->
+            <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 3px solid #ff9800; border-radius: 8px; padding: 2rem; margin-top: 2rem; box-shadow: 0 4px 12px rgba(255, 152, 0, 0.2);">
+                <h3 style="margin: 0 0 1rem; color: #e65100; font-size: 1.3rem;">🎤 INTERVIEW KEY - Major Updates from Pope et al. (2026)</h3>
+                <ul style="margin: 0; padding-left: 1.5rem; color: #424242; line-height: 1.8;">
+                    <li style="margin-bottom: 0.75rem;"><strong>Your meta-analysis is THE reference:</strong> Birdsong et al. (2021) cited throughout Pope et al. (2026) as definitive satisfaction review. This paper tests your findings in novel post-disaster context.</li>
+                    <li style="margin-bottom: 0.75rem;"><strong>Integrated framework (NEW):</strong> Landon et al. (2026) unified framework shows: Values → Beliefs → Attitudes → Preferences → Behavior → Satisfaction. We're testing the behavior→satisfaction link under ecological stress.</li>
+                    <li style="margin-bottom: 0.75rem;"><strong>Centrality, not "specialization":</strong> Landon et al. (2026) new guidance—if measuring single dimension, call it "centrality" (psychological commitment). Centrality predicts C&R during stress (Sutton & Ditton 2001).</li>
+                    <li style="margin-bottom: 0.75rem;"><strong>Competing hypothesis added:</strong> Koemle et al. (2024) found specialized anglers under stress use regret minimization—may show LOWER satisfaction due to violated expectations. Tests Beardmore's "less catch-dependent" finding.</li>
+                    <li style="margin-bottom: 0.75rem;"><strong>Context-dependent satisfaction:</strong> Gundelund et al. (2022) showed motivations moderate catch-satisfaction relationships. Post-disaster Oder = ultimate context test.</li>
+                    <li style="margin-bottom: 0;"><strong>Methodological rigor:</strong> Catch log data prone to biases (Essig & Holliday 1991)—we address with rapid reporting encouragement and validation against creel survey.</li>
+                </ul>
+            </div>
+        </header>
+        
+        <main>
+            <h2>Abstract</h2>
+            <p>Recreational fishing satisfaction is typically driven by catch success, but environmental disturbances that depress fish populations test whether other motivations can sustain participation. Using catch log data from German anglers on the Oder River following the catastrophic 2022 fish kill, we examine which angler characteristics buffer against poor fishing conditions. Results show [findings TBD]. Highly specialized anglers maintain higher satisfaction despite equivalent catch rates compared to casual anglers, suggesting skill-based adaptation or recalibrated expectations. Nature-oriented motivations (inferred from species targeting and harvest behavior) predict satisfaction independently of catch success. Latent profile analysis reveals three distinct angler types with different satisfaction drivers: "Catch-Focused" (satisfaction dominated by CPUE), "Experience-Oriented" (satisfaction driven by environmental quality and solitude), and "Social-Traditional" (satisfaction linked to continuation of fishing tradition). Management implications include targeted messaging strategies and the importance of maintaining non-catch amenities during ecological recovery.</p>
+            
+            <h2>Introduction & Background</h2>
+            
+            <h3>Recreational Specialization Theory</h3>
+            <p>The recreational specialization framework (Bryan 1977, Ditton et al. 1992) proposes that recreationists exist along a continuum from casual participants to highly specialized enthusiasts. <strong>Recent synthesis (Landon et al. 2026 in Pope et al. 2026) identifies measurement inconsistency as an "ongoing concern"—studies measuring single dimensions should not claim to assess "specialization" but rather specify the dimension measured.</strong> Specialization encompasses three dimensions: behavioral commitment (participation frequency, years of experience), cognitive/skill commitment (equipment investment, perceived skill), and affective/psychological commitment (centrality to self-identity, importance in life). <strong>We focus specifically on centrality (psychological commitment)</strong>, which Landon et al. (2026) identify as the core dimension predicting attitudes and behavior during ecological stress.</p>
+            
+            <p><strong>The Landon et al. (2026) integrated framework</strong> positions satisfaction as the outcome of fulfilling preferences shaped by cognitions and fisher identity. The framework shows: Values → Value Orientations → Beliefs → Norms → Attitudes → Preferences → Intentions/Behavior → Outcomes (Benefits + Satisfaction). Our study examines the final link: how behavior (catch, harvest, species targeting) translates into satisfaction under ecological constraints, and how centrality moderates this relationship.</p>
+            
+            <p>In fishing contexts, centrality predicts numerous outcomes relevant to post-disaster recovery: harvest orientation (specialized anglers prefer catch-and-release; Sutton & Ditton 2001), setting preferences (remote locations), species selectivity (trophy species), and satisfaction drivers. Early specialization research (Chipman & Helfrich 1988, Salz & Loomis 2005) found that highly specialized anglers were <em>more</em> sensitive to catch rates—needing higher CPUE for satisfaction. However, later studies (Beardmore et al. 2011, 2013) suggested the opposite: specialized anglers maintain satisfaction even when catch rates decline, because they value other aspects of the experience (setting quality, skill demonstration, tradition). <strong>Most recently, Koemle et al. (2024) found that specialized anglers under stress use regret minimization rather than simple utility maximization, suggesting they may show LOWER satisfaction when expectations are violated—a competing hypothesis we test.</strong></p>
+            
+            <p>Meta-analytic evidence (Birdsong et al. 2021—cited as THE satisfaction reference in Pope et al. 2026) confirms that catch-related variables are the strongest predictors of angler satisfaction overall, but this relationship is moderated by angler characteristics and context. Empirical work examining specialization across contrasting German fishery contexts (Birdsong et al. 2022) demonstrates that the strength of the catch-satisfaction relationship varies systematically by specialization level, with highly specialized anglers showing reduced dependence on catch outcomes relative to casual participants. However, these patterns were documented in stable fishery systems—whether they persist under ecological stress remains unclear. <strong>Empirical evidence from Slaton et al. (2023) shows different specialization dimensions predict different outcomes: centrality predicts habitat/harvest attitudes while behavioral commitment predicts commercial fishery attitudes, supporting our focus on centrality for post-disaster satisfaction.</strong></p>
+            
+            <h3>Motivation as Satisfaction Moderator</h3>
+            <p>Research using Danish citizen science data (Gundelund et al. 2022) demonstrated that angler motivations moderate the catch-satisfaction relationship. Anglers fishing for "activity-specific" motivations (e.g., excitement of catching fish) showed much stronger catch-satisfaction relationships than those fishing for "activity-general" motivations (e.g., being in nature). This aligns with expectancy-value theories: satisfaction derives from achieving valued outcomes, so catch only matters if it's what you came for.</p>
+            
+            <p>However, most studies examine this under normal conditions. The post-disaster Oder context provides a unique test: <strong>when catch rates are universally depressed</strong>, can non-catch motivations sustain satisfaction? Or does poor fishing quality overwhelm all other considerations?</p>
+            
+            <h3>Context Effects</h3>
+            <p>The Danish citizen science study (Gundelund et al. 2022) also found trip context mattered—catch was more important for satisfaction in some settings (salmonids in streams) than others (predatory fish in lakes). This suggests anglers calibrate expectations by setting. In the Oder case, all locations share the post-disaster context, but we can examine whether specific fishing methods, target species, or locations show different satisfaction-catch relationships.</p>
+            
+            <h3>Research Gap & Contribution</h3>
+            <p>While specialization and motivation theories are well-developed, and previous work has demonstrated how these factors moderate satisfaction in stable systems (Birdsong et al. 2021, 2022; Gundelund et al. 2022), few studies test them under ecological stress. The Oder disaster creates a natural experiment: all anglers face similar depressed catch rates, isolating the role of individual differences in satisfaction. Unlike experimental vignette studies, we observe actual behavior and satisfaction under real constraints. This provides stronger causal inference about what sustains recreational participation during environmental crises.</p>
+            
+            <p>This study extends previous satisfaction research by examining whether established specialization and motivation effects persist when catch rates are universally poor—a critical test of whether these are robust psychological mechanisms or context-dependent phenomena.</p>
+            
+            <h2>Research Questions</h2>
+            <ol>
+                <li><strong>RQ1:</strong> How do angler motivations (catch-oriented vs. nature-oriented) predict satisfaction when catch rates are depressed?</li>
+                <li><strong>RQ2:</strong> Does specialization moderate the relationship between catch success and satisfaction?</li>
+                <li><strong>RQ3:</strong> Which fishing characteristics (method, target species, location choices) distinguish satisfied vs. dissatisfied anglers?</li>
+                <li><strong>RQ4:</strong> Can we identify distinct "angler profiles" with different satisfaction drivers, and what proportion of Oder anglers fall into each profile?</li>
+            </ol>
+            
+            <h2>Hypotheses</h2>
+            
+            <div class="hypothesis-box">
+                <h4>H1: Main Effect of Catch (Replication)</h4>
+                <p><strong>H1:</strong> Catch success (CPUE, catching ≥1 fish) will positively predict trip satisfaction even in post-disaster conditions. This is the most robust finding in fishing satisfaction literature and should hold despite depressed catch rates.</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H2: Motivation as Moderator</h4>
+                <p><strong>H2a:</strong> Catch-oriented anglers (identified by targeting high catch-rate species like perch/roach, keeping high proportion of catch) will show stronger catch-satisfaction relationships than nature-oriented anglers (targeting pike/zander, practicing catch-and-release).</p>
+                <p><strong>H2b:</strong> Nature-oriented anglers will show higher baseline satisfaction at equivalent catch rates, because they derive satisfaction from non-catch aspects of the experience.</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H3: Centrality as Moderator 🎤</h4>
+                <p><strong>H3a:</strong> Highly centrally-involved anglers (fishing central to identity) will show weaker catch-satisfaction relationships compared to casual anglers, as they value skill demonstration, setting quality, and continuation of tradition even when catch rates are poor (Beardmore et al. 2013).</p>
+                <p><strong>H3b:</strong> Highly centrally-involved anglers will maintain higher satisfaction at low catch rates compared to casual anglers, demonstrating resilience to ecological stress.</p>
+                <p><strong>Competing hypothesis H3c (NEW from Koemle et al. 2024):</strong> Alternatively, centrally-involved anglers may show <em>lower</em> satisfaction due to use of regret minimization decision-making under stress rather than utility maximization. When expectations are violated (poor catch in what should be good water), specialized anglers experience greater disappointment. This would align with earlier specialization findings (Chipman & Helfrich 1988) and recent work showing context-dependent responses (Koemle et al. 2024).</p>
+                <p><strong>Interview note:</strong> Testing competing hypotheses is scientifically stronger than just confirming one. Koemle et al. (2024) is NEW empirical evidence not available when Beardmore studies were conducted. Post-disaster Oder provides critical test case.</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H4: Trip Characteristics</h4>
+                <p><strong>H4a:</strong> Anglers using active methods (spin fishing) will show stronger catch-satisfaction relationships than passive methods (still fishing), as active methods emphasize catch success over contemplative experience.</p>
+                <p><strong>H4b:</strong> Longer trips (≥4 hours) will show weaker catch-satisfaction relationships than short trips, as longer trips allow time for non-catch satisfactions to accumulate.</p>
+                <p><strong>H4c:</strong> Main river channel fishing will show lower satisfaction than tributary/side channel fishing, as the disaster was most severe in the main channel.</p>
+            </div>
+            
+            <div class="hypothesis-box">
+                <h4>H5: Latent Profiles</h4>
+                <p><strong>H5:</strong> Latent profile analysis will identify 3-4 distinct angler types with different satisfaction drivers. We predict:</p>
+                <ul style="margin-left: 2rem;">
+                    <li><strong>Catch-Focused:</strong> Satisfaction dominated by CPUE, low importance of setting</li>
+                    <li><strong>Experience-Oriented:</strong> Satisfaction from nature connection, weak catch dependence</li>
+                    <li><strong>Social-Traditional:</strong> Satisfaction from maintaining tradition, club affiliation important</li>
+                    <li><strong>Generalist:</strong> Moderate satisfaction from all sources</li>
+                </ul>
+            </div>
+            
+            <h2>Theoretical Framework</h2>
+            
+            <div class="theory-box">
+                <h4>Conceptual Model</h4>
+                <p><strong>Outcome:</strong> Trip satisfaction (1-5)</p>
+                <p><strong>Direct predictors:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>Catch success (CPUE, binary success)</li>
+                    <li>Trip characteristics (hours, method, location)</li>
+                    <li>Temporal factors (season, year)</li>
+                </ul>
+                <p><strong>Moderators (individual differences):</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>Specialization (continuous index or categories)</li>
+                    <li>Motivation orientation (inferred from behavior)</li>
+                    <li>Angler profile (latent classes)</li>
+                </ul>
+                <p><strong>Key interactions to test:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>CPUE × Specialization</li>
+                    <li>CPUE × Motivation</li>
+                    <li>CPUE × Method</li>
+                    <li>CPUE × Trip duration</li>
+                </ul>
+            </div>
+            
+            <h2>Data Requirements</h2>
+            
+            <h3>Primary Data Source: OderAngeln Catch Log</h3>
+            
+            <div class="data-source">
+                <div class="data-source-label">Trip-Level Variables</div>
+                <p><strong>Outcome:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>Trip satisfaction (1-5 scale)</li>
+                </ul>
+                
+                <p><strong>Catch variables:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>Fish caught (count)</li>
+                    <li>Fish kept vs. released</li>
+                    <li>Species composition</li>
+                    <li>Hours fished</li>
+                </ul>
+                
+                <p><strong>Trip characteristics:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>Fishing method (spin, still, fly)</li>
+                    <li>Target species</li>
+                    <li>Location (river section/km)</li>
+                    <li>Date/season</li>
+                </ul>
+            </div>
+            
+            <div class="data-source">
+                <div class="data-source-label">Angler-Level Variables (Background)</div>
+                <p><strong>Specialization indicators:</strong></p>
+                <ul style="margin-left: 2rem;">
+                    <li>Years fishing (experience)</li>
+                    <li>Annual days fishing (behavioral commitment)</li>
+                    <li>Self-rated skill (1-5, cognitive commitment)</li>
+                    <li>Equipment value (investment proxy)</li>
+                    <li>Fishing importance rating (1-5, psychological commitment)</li>
+                    <li>Club membership (yes/no)</li>
+                </ul>
+            </div>
+            
+            <h3>Derived Variables</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Operationalization</th>
+                        <th>Rationale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>CPUE</strong></td>
+                        <td>Fish caught / hours fished</td>
+                        <td>Standard catch rate metric</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Trip success</strong></td>
+                        <td>Binary: caught ≥1 fish</td>
+                        <td>Alternative catch measure, less sensitive to outliers</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Harvest rate</strong></td>
+                        <td>Fish kept / fish caught</td>
+                        <td>Proxy for catch vs. nature orientation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Specialization index</strong></td>
+                        <td>Z-score composite: years + days/year + skill + importance + equipment</td>
+                        <td>Multi-dimensional specialization measure</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Motivation proxy</strong></td>
+                        <td>Composite: target species + harvest rate + method preference</td>
+                        <td>Behavioral indicators of catch vs. experience orientation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Trip duration category</strong></td>
+                        <td>Short (&lt;2h), Medium (2-4h), Long (4+h)</td>
+                        <td>Test if longer trips allow non-catch satisfaction</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Location type</strong></td>
+                        <td>Main channel vs. tributary/side channel</td>
+                        <td>Disaster severity varied spatially</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Sample Requirements</h3>
+            <p><strong>Minimum:</strong> 500 trips from 100+ anglers (allows for nested modeling and interaction testing)</p>
+            <p><strong>Ideal:</strong> 2,000+ trips from 300+ anglers, enabling:</p>
+            <ul>
+                <li>Robust latent profile analysis (requires larger n)</li>
+                <li>Subgroup analyses by method, species, location</li>
+                <li>Cross-validation of profile solution</li>
+            </ul>
+            
+            <h2>Analytical Approach</h2>
+            
+            <h3>Step 1: Motivation Proxy Development</h3>
+            <p>Since catch logs don't directly measure motivation, we infer orientation from behavior:</p>
+            
+            <h4>Catch-Oriented Indicators:</h4>
+            <ul>
+                <li>Targets high catch-rate species (perch, roach, bream)</li>
+                <li>High harvest rate (keeps >50% of catch)</li>
+                <li>Short trips (maximizing catch per hour invested)</li>
+                <li>Active methods (spin fishing for quick action)</li>
+            </ul>
+            
+            <h4>Nature/Experience-Oriented Indicators:</h4>
+            <ul>
+                <li>Targets trophy/challenge species (pike, zander, catfish)</li>
+                <li>Low harvest rate (catch-and-release, keeps <20%)</li>
+                <li>Long trips (contemplative experience)</li>
+                <li>Passive methods (still fishing, allows nature observation)</li>
+            </ul>
+            
+            <p><strong>Validation:</strong> If specialization index correlates strongly with motivation proxy (r > 0.6), they may measure same construct. If correlation is moderate (r = 0.3-0.5), they capture distinct dimensions as theorized.</p>
+            
+            <h3>Step 2: Regression Models</h3>
+            
+            <h4>Model 1: Base Model (Replication)</h4>
+            <p><strong>Outcome:</strong> Satisfaction (1-5 ordinal, or treat as continuous)</p>
+            <p><strong>Predictors:</strong> CPUE, Trip success (binary), Hours fished, Season, Year</p>
+            <p><strong>Random effects:</strong> (1 | Angler ID)</p>
+            <p><strong>Purpose:</strong> Establish baseline catch-satisfaction relationship. Tests H1.</p>
+            
+            <h4>Model 2: Specialization Moderation</h4>
+            <p><strong>Add to Model 1:</strong> Specialization index, CPUE × Specialization interaction</p>
+            <p><strong>Purpose:</strong> Test whether specialized anglers' satisfaction depends less on catch. Tests H3a, H3b.</p>
+            <p><strong>Interpretation:</strong> Negative interaction coefficient (CPUE × Specialization) supports H3a. Positive main effect of specialization supports H3b.</p>
+            
+            <h4>Model 3: Motivation Moderation</h4>
+            <p><strong>Add to Model 1:</strong> Motivation proxy, CPUE × Motivation interaction</p>
+            <p><strong>Purpose:</strong> Test whether catch-oriented anglers show stronger catch-satisfaction relationships. Tests H2a, H2b.</p>
+            
+            <h4>Model 4: Trip Characteristics</h4>
+            <p><strong>Add:</strong> Method (spin/still), Duration category, Location type, interactions with CPUE</p>
+            <p><strong>Purpose:</strong> Test context effects. Tests H4a-c.</p>
+            
+            <h4>Model 5: Full Model</h4>
+            <p><strong>Include:</strong> All main effects and theoretically-justified interactions</p>
+            <p><strong>Purpose:</strong> Assess relative importance of different moderators</p>
+            
+            <h3>Step 3: Latent Profile Analysis</h3>
+            <p>Identify distinct angler types based on:</p>
+            <ul>
+                <li>Mean CPUE (skill/success level)</li>
+                <li>Mean satisfaction</li>
+                <li>Harvest rate (catch vs. release orientation)</li>
+                <li>Method preference (spin vs. still proportion)</li>
+                <li>Target species diversity (specialist vs. generalist)</li>
+                <li>Trip duration preference</li>
+                <li>Specialization index</li>
+            </ul>
+            
+            <p><strong>Procedure:</strong></p>
+            <ol>
+                <li>Fit models with 2-6 profiles</li>
+                <li>Select optimal number using BIC, entropy, interpretability</li>
+                <li>Characterize each profile (demographics, behavior, satisfaction drivers)</li>
+                <li>Test whether satisfaction determinants differ across profiles using multi-group regression</li>
+            </ol>
+            
+            <h3>Step 4: Sensitivity Analyses</h3>
+            <ul>
+                <li>Alternative satisfaction coding (ordinal logistic vs. linear)</li>
+                <li>Alternative specialization measures (tertiles vs. continuous)</li>
+                <li>Subset to high-frequency anglers (≥10 trips) for robustness</li>
+                <li>Temporal sensitivity: Do patterns hold within single year vs. pooling across years?</li>
+                <li>Species-specific analyses: Do patterns differ for pike vs. perch anglers?</li>
+            </ul>
+            
+            <h2>Expected Results & Interpretation</h2>
+            
+            <h3>Scenario A: Specialization as Buffer</h3>
+            <p>If H3a-b are supported, we find that highly specialized anglers maintain satisfaction even at low catch rates, while casual anglers show strong catch-dependence. This suggests specialization provides psychological resilience to environmental disturbances. Management implication: specialized anglers will persist through recovery period, but casual anglers need catch-improvement messaging to maintain participation.</p>
+            
+            <h3>Scenario B: Motivation Matters More Than Specialization</h3>
+            <p>If H2 is strongly supported but H3 is weak, motivation (inferred from behavior) explains satisfaction better than specialization. This would challenge some specialization theory but align with the Danish study's findings. Interpretation: what you're trying to achieve matters more than how committed you are to the activity.</p>
+            
+            <h3>Scenario C: Context Overwhelms Individual Differences</h3>
+            <p>If interactions are weak/non-significant, this suggests the disaster's impact was so severe that all anglers are dissatisfied regardless of orientation. This would indicate need for urgent management action, as even resilient segments aren't maintaining satisfaction.</p>
+            
+            <h3>Scenario D: Distinct Angler Types</h3>
+            <p>Latent profile analysis may reveal that discrete angler types exist, each with unique satisfaction drivers, rather than continuous specialization/motivation dimensions. For example:</p>
+            <ul>
+                <li><strong>Catch-Focused (35%):</strong> Young, less experienced, dissatisfied by poor fishing</li>
+                <li><strong>Traditionalists (40%):</strong> Older, club members, satisfied by continuing tradition despite poor catch</li>
+                <li><strong>Nature-Enthusiasts (25%):</strong> Environmental values, satisfied by river access and setting</li>
+            </ul>
+            <p>Each type would require different management strategies.</p>
+            
+            <h2>Discussion Points</h2>
+            
+            <h3>Theoretical Contributions</h3>
+            <ul>
+                <li><strong>Specialization theory:</strong> Clarifies whether specialized recreationists are more resilient or more sensitive to environmental degradation</li>
+                <li><strong>Motivation theory:</strong> Tests expectancy-value framework under ecological stress rather than normal conditions</li>
+                <li><strong>Context effects:</strong> Demonstrates how environmental disasters alter satisfaction determinants</li>
+            </ul>
+            
+            <h3>Management Implications</h3>
+            <ul>
+                <li><strong>Targeted messaging:</strong> If motivation matters, different communication strategies needed for catch-oriented vs. nature-oriented anglers</li>
+                <li><strong>Retention strategies:</strong> Identify which segments are at risk of attrition and target interventions</li>
+                <li><strong>Amenity management:</strong> If non-catch factors matter for some segments, maintain access, aesthetics, solitude even if biological recovery is slow</li>
+                <li><strong>Expectation management:</strong> Help anglers recalibrate expectations to post-disaster reality rather than pre-2022 conditions</li>
+            </ul>
+            
+            <h3>Limitations</h3>
+            <ul>
+                <li><strong>Motivation measurement:</strong> We infer motivation from behavior rather than directly measuring it. This is pragmatic given data constraints but introduces measurement error. Future work should add stated motivation questions.</li>
+                <li><strong>Selection bias:</strong> Catch logs only capture anglers who continued fishing. Most dissatisfied anglers may have quit entirely. Results describe conditional satisfaction (given participation) not absolute satisfaction.</li>
+                <li><strong>Temporal confound:</strong> Specialization and motivation may have changed <em>because of</em> the disaster rather than being pre-existing traits. Longitudinal analysis (Paper 1) can partially address this.</li>
+                <li><strong>Causality:</strong> Cross-sectional correlations don't prove causation. Experimental or quasi-experimental designs would strengthen causal claims.</li>
+            </ul>
+            
+            <h3>Future Research Directions</h3>
+            <ul>
+                <li><strong>Stated vs. revealed preferences:</strong> When resident ES survey and creel survey deploy, compare stated motivations to behavioral indicators from catch logs</li>
+                <li><strong>Cross-border comparison:</strong> If Polish catch log data become available, test whether motivation/specialization effects differ by country (cultural context)</li>
+                <li><strong>Longitudinal profiles:</strong> Track whether anglers switch profiles over time (e.g., catch-focused → experience-oriented as adaptation)</li>
+                <li><strong>Restoration effectiveness:</strong> Use satisfaction monitoring as social indicator of restoration success, complementing biological monitoring</li>
+            </ul>
+            
+            <div class="back-link">
+                <a href="oder_papers.html">← Back to Publication Strategy</a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>OderTogether Research Project — January 2026</p>
+        </footer>
+    </div>
+</body>
+</html>

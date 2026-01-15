@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angler Creel Survey - OderTogether Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --forest-green: #2D5016;
+            --moss-green: #4A7C3A;
+            --sage-green: #6B8E60;
+            --earth-brown: #7C5C3A;
+            --sand-beige: #E8DED0;
+            --warm-white: #F9F6F1;
+            --text-dark: #2C3E50;
+            --text-muted: #6B7885;
+            --accent-amber: #D4A574;
+            --border-soft: #D5CFC4;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, var(--warm-white) 0%, var(--sand-beige) 100%);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(43, 95, 124, 0.12);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--forest-green) 0%, var(--moss-green) 100%);
+            color: white;
+            padding: 2.5rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header h1 {
+            font-family: 'Literata', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+        
+        .survey-content {
+            padding: 2rem;
+        }
+        
+        .section {
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid var(--sand-beige);
+        }
+        
+        .section:last-of-type {
+            border-bottom: none;
+        }
+        
+        .section-title {
+            font-family: 'Literata', serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+        }
+        
+        .question {
+            margin-bottom: 2rem;
+        }
+        
+        .question-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+            font-size: 1rem;
+        }
+        
+        .question-number {
+            color: var(--moss-green);
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-soft);
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: white;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--moss-green);
+            box-shadow: 0 0 0 3px rgba(74, 124, 58, 0.1);
+        }
+        
+        .radio-group,
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .radio-option,
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-soft);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+        
+        .radio-option:hover,
+        .checkbox-option:hover {
+            border-color: var(--sage-green);
+            background: rgba(74, 124, 58, 0.02);
+        }
+        
+        .radio-option.selected,
+        .checkbox-option.selected {
+            border-color: var(--moss-green);
+            background: rgba(74, 124, 58, 0.05);
+        }
+        
+        input[type="radio"],
+        input[type="checkbox"] {
+            margin-right: 0.75rem;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--moss-green);
+        }
+        
+        .likert-scale {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 1rem 0;
+        }
+        
+        .likert-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .likert-option input[type="radio"] {
+            display: none;
+        }
+        
+        .likert-bubble {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 3px solid var(--border-soft);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+        }
+        
+        .likert-option:hover .likert-bubble {
+            border-color: var(--sage-green);
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(74, 124, 58, 0.15);
+        }
+        
+        .likert-option.selected .likert-bubble {
+            border-color: var(--moss-green);
+            background: var(--moss-green);
+            color: white;
+            transform: scale(1.15);
+            box-shadow: 0 6px 16px rgba(74, 124, 58, 0.3);
+        }
+        
+        .likert-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            font-weight: 500;
+            max-width: 80px;
+            line-height: 1.2;
+        }
+        
+        .likert-option.selected .likert-label {
+            color: var(--moss-green);
+            font-weight: 600;
+        }
+        
+        .submit-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--sand-beige);
+            text-align: center;
+        }
+        
+        .submit-button {
+            background: linear-gradient(135deg, var(--forest-green) 0%, var(--moss-green) 100%);
+            color: white;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'DM Sans', sans-serif;
+            box-shadow: 0 4px 12px rgba(74, 124, 58, 0.2);
+        }
+        
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(74, 124, 58, 0.3);
+        }
+        
+        .info-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
+        
+        @media (max-width: 640px) {
+            .header {
+                padding: 2rem 1.5rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .survey-content {
+                padding: 1.5rem;
+            }
+            
+            .likert-scale {
+                gap: 0.5rem;
+            }
+            
+            .likert-bubble {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            .likert-label {
+                font-size: 0.7rem;
+                max-width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Angler Creel Survey</h1>
+            <p class="subtitle">Understanding angler values and experiences on the Oder River (5 minutes)</p>
+            <div style="background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; line-height: 1.6;">
+                <strong style="display: block; margin-bottom: 0.5rem;">🎤 Creel Design (Interview Ready):</strong>
+                30-40 survey days minimum for 20% RSE (Lester et al. 1991). Stratified: weekday/weekend, AM/PM. Track repeat encounters ("Interviewed before?") to address avidity bias—70% sampled only once in 14 years (Cowie & Ridgway 2023). Record start/interview/expected end time for temporal bias correction (Model II regression). Mobile-optimized, <8 min target. Terms defined: "fishing day", "trip", "catch", "harvest" per Vaske et al. (2026) guideline #12. Follows de Kerckhove et al. (2026) optimization framework.
+            </div>
+        </div>
+        
+        <form id="anglerForm" class="survey-content">
+            <!-- Basic Info -->
+            <div class="section">
+                <h2 class="section-title">Today's Fishing Trip</h2>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q1.</span> How important are each of the following motivations for your fishing today?
+                    </label>
+                    <p class="info-text" style="margin-bottom: 1.5rem;">Rate each item from 1 (Not at all important) to 5 (Extremely important)</p>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <p style="font-weight: 500; margin-bottom: 0.75rem; color: var(--text-dark);">Catching fish / achieving good catch</p>
+                        <div class="likert-scale">
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_catch" value="1" required>
+                                <div class="likert-bubble">1</div>
+                                <span class="likert-label">Not at all</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_catch" value="2">
+                                <div class="likert-bubble">2</div>
+                                <span class="likert-label">Slightly</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_catch" value="3">
+                                <div class="likert-bubble">3</div>
+                                <span class="likert-label">Moderately</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_catch" value="4">
+                                <div class="likert-bubble">4</div>
+                                <span class="likert-label">Very</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_catch" value="5">
+                                <div class="likert-bubble">5</div>
+                                <span class="likert-label">Extremely</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <p style="font-weight: 500; margin-bottom: 0.75rem; color: var(--text-dark);">Relaxation / getting away</p>
+                        <div class="likert-scale">
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_relax" value="1" required>
+                                <div class="likert-bubble">1</div>
+                                <span class="likert-label">Not at all</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_relax" value="2">
+                                <div class="likert-bubble">2</div>
+                                <span class="likert-label">Slightly</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_relax" value="3">
+                                <div class="likert-bubble">3</div>
+                                <span class="likert-label">Moderately</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_relax" value="4">
+                                <div class="likert-bubble">4</div>
+                                <span class="likert-label">Very</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_relax" value="5">
+                                <div class="likert-bubble">5</div>
+                                <span class="likert-label">Extremely</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <p style="font-weight: 500; margin-bottom: 0.75rem; color: var(--text-dark);">Being in nature / enjoying scenery</p>
+                        <div class="likert-scale">
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_nature" value="1" required>
+                                <div class="likert-bubble">1</div>
+                                <span class="likert-label">Not at all</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_nature" value="2">
+                                <div class="likert-bubble">2</div>
+                                <span class="likert-label">Slightly</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_nature" value="3">
+                                <div class="likert-bubble">3</div>
+                                <span class="likert-label">Moderately</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_nature" value="4">
+                                <div class="likert-bubble">4</div>
+                                <span class="likert-label">Very</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_nature" value="5">
+                                <div class="likert-bubble">5</div>
+                                <span class="likert-label">Extremely</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <p style="font-weight: 500; margin-bottom: 0.75rem; color: var(--text-dark);">Social time with friends/family</p>
+                        <div class="likert-scale">
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_social" value="1" required>
+                                <div class="likert-bubble">1</div>
+                                <span class="likert-label">Not at all</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_social" value="2">
+                                <div class="likert-bubble">2</div>
+                                <span class="likert-label">Slightly</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_social" value="3">
+                                <div class="likert-bubble">3</div>
+                                <span class="likert-label">Moderately</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_social" value="4">
+                                <div class="likert-bubble">4</div>
+                                <span class="likert-label">Very</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_social" value="5">
+                                <div class="likert-bubble">5</div>
+                                <span class="likert-label">Extremely</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p style="font-weight: 500; margin-bottom: 0.75rem; color: var(--text-dark);">Harvesting fish for food</p>
+                        <div class="likert-scale">
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_harvest" value="1" required>
+                                <div class="likert-bubble">1</div>
+                                <span class="likert-label">Not at all</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_harvest" value="2">
+                                <div class="likert-bubble">2</div>
+                                <span class="likert-label">Slightly</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_harvest" value="3">
+                                <div class="likert-bubble">3</div>
+                                <span class="likert-label">Moderately</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_harvest" value="4">
+                                <div class="likert-bubble">4</div>
+                                <span class="likert-label">Very</span>
+                            </label>
+                            <label class="likert-option">
+                                <input type="radio" name="motivation_harvest" value="5">
+                                <div class="likert-bubble">5</div>
+                                <span class="likert-label">Extremely</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q2.</span> Do you plan to keep any fish today?
+                    </label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="keep_fish" value="yes" required>
+                            <span>Yes, if I catch legal-sized fish</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="keep_fish" value="maybe">
+                            <span>Maybe, depends on what I catch</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="keep_fish" value="no">
+                            <span>No, catch and release only</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q3.</span> How satisfied are you with today's fishing experience so far?
+                    </label>
+                    <div class="likert-scale">
+                        <label class="likert-option">
+                            <input type="radio" name="satisfaction" value="1" required>
+                            <div class="likert-bubble">1</div>
+                            <span class="likert-label">Very unsatisfied</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="satisfaction" value="2">
+                            <div class="likert-bubble">2</div>
+                            <span class="likert-label">Unsatisfied</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="satisfaction" value="3">
+                            <div class="likert-bubble">3</div>
+                            <span class="likert-label">Neutral</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="satisfaction" value="4">
+                            <div class="likert-bubble">4</div>
+                            <span class="likert-label">Satisfied</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="satisfaction" value="5">
+                            <div class="likert-bubble">5</div>
+                            <span class="likert-label">Very satisfied</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catch & Effort Data -->
+            <div class="section">
+                <h2 class="section-title">Today's Catch & Effort</h2>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q4.</span> What time did you start fishing today?
+                    </label>
+                    <input type="time" name="start_time" required>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q5.</span> Are you finished fishing for today?
+                    </label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="finished" value="yes" required>
+                            <span>Yes, I'm done for the day</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="finished" value="no">
+                            <span>No, still fishing</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q6.</span> What species are you primarily targeting today?
+                    </label>
+                    <select name="target_species" required>
+                        <option value="">Select species</option>
+                        <option value="pike">Pike (Hecht)</option>
+                        <option value="zander">Zander (Zander)</option>
+                        <option value="perch">Perch (Barsch)</option>
+                        <option value="bream">Bream (Brassen)</option>
+                        <option value="carp">Carp (Karpfen)</option>
+                        <option value="roach">Roach (Rotauge)</option>
+                        <option value="catfish">Catfish (Wels)</option>
+                        <option value="eel">Eel (Aal)</option>
+                        <option value="mixed">Mixed / whatever bites</option>
+                        <option value="other">Other species</option>
+                    </select>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q7.</span> How many fish have you caught so far today?
+                    </label>
+                    <input type="number" name="fish_caught" min="0" max="200" placeholder="Enter number (0 if none)" required>
+                    <p class="info-text">Count all fish, including those released</p>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q8.</span> Of those caught, how many did you keep?
+                    </label>
+                    <input type="number" name="fish_kept" min="0" max="200" placeholder="Enter number (0 if none)" required>
+                    <p class="info-text">Only count fish you are taking home</p>
+                </div>
+            </div>
+            
+            <!-- Experience & Background -->
+            <div class="section">
+                <h2 class="section-title">Your Fishing Background</h2>
+                
+                <!-- INTERVIEW KEY BOX -->
+                <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 3px solid #ff9800; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(255, 152, 0, 0.2);">
+                    <h4 style="margin: 0 0 1rem; color: #e65100; font-size: 1rem;">🎤 INTERVIEW KEY - Specialization/Centrality</h4>
+                    <ul style="margin: 0; padding-left: 1.5rem; color: #424242; line-height: 1.7; font-size: 0.9rem;">
+                        <li style="margin-bottom: 0.5rem;"><strong>We measure CENTRALITY, not full "specialization":</strong> Landon et al. (2026) new guidance—if you don't measure all 3 dimensions (behavioral commitment, psychological commitment, skill/cognition), don't call it "specialization." Use the specific dimension name.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Centrality = psychological commitment:</strong> "How central is fishing to your life/identity?" Validated 3-5 item scales from Kyle et al. (2026) compendium (DOI: 10.18738/T8/LFWX64)</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Why centrality matters:</strong> Predicts conservation-oriented behavior (C&R) during ecological stress (Sutton & Ditton 2001). More centrally-involved anglers are "more sensitive to fishing-related stimuli" and "more likely to engage in protective behaviors" (Landon et al. 2026, p.171)</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Context-dependent relationships:</strong> Specialized anglers under stress may show LOWER satisfaction due to violated expectations (Koemle et al. 2024)—competing hypothesis to test</li>
+                        <li style="margin-bottom: 0;"><strong>Q12 proxy for centrality:</strong> "How important is fishing to you?" captures centrality dimension but validated multi-item scale preferred. Keep brief for on-site interview (<8 min target)</li>
+                    </ul>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q9.</span> How many years have you been fishing?
+                    </label>
+                    <input type="number" name="years_fishing" min="0" max="80" placeholder="Enter number of years" required>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q10.</span> About how many times do you go fishing per year?
+                    </label>
+                    <select name="trips_per_year" required>
+                        <option value="">Select frequency</option>
+                        <option value="1-5">1-5 times</option>
+                        <option value="6-10">6-10 times</option>
+                        <option value="11-20">11-20 times</option>
+                        <option value="21-50">21-50 times</option>
+                        <option value="50+">More than 50 times</option>
+                    </select>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q11.</span> How would you rate your fishing skill level?
+                    </label>
+                    <div class="likert-scale">
+                        <label class="likert-option">
+                            <input type="radio" name="skill_level" value="1" required>
+                            <div class="likert-bubble">1</div>
+                            <span class="likert-label">Beginner</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="skill_level" value="2">
+                            <div class="likert-bubble">2</div>
+                            <span class="likert-label">Novice</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="skill_level" value="3">
+                            <div class="likert-bubble">3</div>
+                            <span class="likert-label">Intermediate</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="skill_level" value="4">
+                            <div class="likert-bubble">4</div>
+                            <span class="likert-label">Advanced</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="skill_level" value="5">
+                            <div class="likert-bubble">5</div>
+                            <span class="likert-label">Expert</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q12.</span> How important is fishing to you as an activity?
+                    </label>
+                    <div class="likert-scale">
+                        <label class="likert-option">
+                            <input type="radio" name="fishing_importance" value="1" required>
+                            <div class="likert-bubble">1</div>
+                            <span class="likert-label">Not at all important</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="fishing_importance" value="2">
+                            <div class="likert-bubble">2</div>
+                            <span class="likert-label">Slightly important</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="fishing_importance" value="3">
+                            <div class="likert-bubble">3</div>
+                            <span class="likert-label">Moderately important</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="fishing_importance" value="4">
+                            <div class="likert-bubble">4</div>
+                            <span class="likert-label">Very important</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="fishing_importance" value="5">
+                            <div class="likert-bubble">5</div>
+                            <span class="likert-label">Extremely important</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Values & Priorities -->
+            <div class="section">
+                <h2 class="section-title">What Matters Most</h2>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q13.</span> How crowded does this fishing spot feel today?
+                    </label>
+                    <div class="likert-scale">
+                        <label class="likert-option">
+                            <input type="radio" name="crowding" value="1" required>
+                            <div class="likert-bubble">1</div>
+                            <span class="likert-label">Not at all crowded</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="crowding" value="2">
+                            <div class="likert-bubble">2</div>
+                            <span class="likert-label">Slightly crowded</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="crowding" value="3">
+                            <div class="likert-bubble">3</div>
+                            <span class="likert-label">Moderately crowded</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="crowding" value="4">
+                            <div class="likert-bubble">4</div>
+                            <span class="likert-label">Very crowded</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="crowding" value="5">
+                            <div class="likert-bubble">5</div>
+                            <span class="likert-label">Extremely crowded</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label class="question-label">
+                        <span class="question-number">Q14.</span> How important do you think stocking (releasing hatchery-raised fish) is for maintaining good fishing in the Oder River?
+                    </label>
+                    <div class="likert-scale">
+                        <label class="likert-option">
+                            <input type="radio" name="stocking_importance" value="1" required>
+                            <div class="likert-bubble">1</div>
+                            <span class="likert-label">Not at all important</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="stocking_importance" value="2">
+                            <div class="likert-bubble">2</div>
+                            <span class="likert-label">Slightly important</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="stocking_importance" value="3">
+                            <div class="likert-bubble">3</div>
+                            <span class="likert-label">Moderately important</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="stocking_importance" value="4">
+                            <div class="likert-bubble">4</div>
+                            <span class="likert-label">Very important</span>
+                        </label>
+                        <label class="likert-option">
+                            <input type="radio" name="stocking_importance" value="5">
+                            <div class="likert-bubble">5</div>
+                            <span class="likert-label">Extremely important</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Submit -->
+            <div class="submit-section">
+                <button type="submit" class="submit-button">Submit Survey</button>
+                <p class="info-text">Thank you for participating! Your responses help improve Oder River management.</p>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Radio and checkbox visual feedback
+            document.querySelectorAll('.radio-option').forEach(option => {
+                const radio = option.querySelector('input[type="radio"]');
+                radio.addEventListener('change', function() {
+                    const name = this.name;
+                    document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+                        input.closest('.radio-option').classList.remove('selected');
+                    });
+                    if (this.checked) {
+                        option.classList.add('selected');
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.checkbox-option').forEach(option => {
+                const checkbox = option.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        option.classList.add('selected');
+                    } else {
+                        option.classList.remove('selected');
+                    }
+                });
+            });
+            
+            // Likert scale visual feedback
+            document.querySelectorAll('.likert-option').forEach(option => {
+                const radio = option.querySelector('input[type="radio"]');
+                radio.addEventListener('change', function() {
+                    const name = this.name;
+                    document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+                        input.closest('.likert-option').classList.remove('selected');
+                    });
+                    if (this.checked) {
+                        option.classList.add('selected');
+                    }
+                });
+            });
+            
+            // Max selection for checkboxes
+            document.querySelectorAll('input[type="checkbox"][data-max-selection]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const maxSelection = parseInt(this.getAttribute('data-max-selection'));
+                    const name = this.name;
+                    const checked = document.querySelectorAll(`input[name="${name}"]:checked`);
+                    
+                    if (checked.length > maxSelection) {
+                        this.checked = false;
+                        this.closest('.checkbox-option').classList.remove('selected');
+                        alert(`Please select a maximum of ${maxSelection} options.`);
+                    }
+                });
+            });
+            
+            // Form submission
+            const form = document.getElementById('anglerForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Thank you for completing the survey! Your responses have been recorded.');
+                console.log('Form data would be submitted');
+            });
+        });
+    </script>
+</body>
+</html>

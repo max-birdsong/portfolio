@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Workshop Agenda - OderTogether Stakeholder Engagement</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            line-height: 1.7;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        
+        header {
+            margin-bottom: 4rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+        
+        h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 3rem 0 1.5rem;
+            letter-spacing: -0.01em;
+        }
+        
+        h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2B5F7C;
+            margin: 2rem 0 0.75rem;
+        }
+        
+        .workshop-header {
+            background: linear-gradient(135deg, #2B5F7C 0%, #1a4058 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 3rem;
+        }
+        
+        .workshop-header h2 {
+            color: white;
+            margin: 0 0 1rem;
+            font-size: 1.8rem;
+        }
+        
+        .workshop-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+        }
+        
+        .meta-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .meta-value {
+            font-size: 0.95rem;
+        }
+        
+        .objectives-box {
+            background: #f0f7ff;
+            border-left: 4px solid #2B5F7C;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-radius: 6px;
+        }
+        
+        .objectives-box h3 {
+            color: #2B5F7C;
+            margin-top: 0;
+        }
+        
+        .objectives-box ul {
+            margin: 1rem 0 0 1.5rem;
+        }
+        
+        .objectives-box li {
+            margin-bottom: 0.75rem;
+        }
+        
+        .agenda-section {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin: 2rem 0;
+            overflow: hidden;
+        }
+        
+        .agenda-header {
+            background: #f9f9f9;
+            padding: 1.5rem;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .time-badge {
+            background: #2B5F7C;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        
+        .session-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            flex-grow: 1;
+        }
+        
+        .duration {
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .agenda-content {
+            padding: 1.5rem;
+        }
+        
+        .content-row {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .content-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .content-label {
+            font-weight: 600;
+            color: #2B5F7C;
+            font-size: 0.9rem;
+        }
+        
+        .content-detail {
+            font-size: 0.95rem;
+            color: #333;
+        }
+        
+        .content-detail ul {
+            margin: 0.5rem 0 0 1.5rem;
+        }
+        
+        .content-detail li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .facilitator-notes {
+            background: #fff9e6;
+            border-left: 4px solid #d4a574;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+        }
+        
+        .facilitator-notes h4 {
+            color: #7c5c3a;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .facilitator-notes p {
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        .materials-list {
+            background: #f0f7f0;
+            border: 2px solid #4A7C3A;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 6px;
+        }
+        
+        .materials-list h3 {
+            color: #4A7C3A;
+            margin-top: 0;
+        }
+        
+        .expected-outcomes {
+            background: #f0f7ff;
+            border: 2px solid #2B5F7C;
+            padding: 2rem;
+            margin: 3rem 0;
+            border-radius: 8px;
+        }
+        
+        .expected-outcomes h3 {
+            color: #2B5F7C;
+            margin-top: 0;
+        }
+        
+        .participant-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .participant-group {
+            background: white;
+            border: 1px solid #e0e0e0;
+            padding: 1rem;
+            border-radius: 6px;
+        }
+        
+        .participant-group h4 {
+            color: #2B5F7C;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .participant-group ul {
+            margin: 0;
+            padding-left: 1.25rem;
+            font-size: 0.9rem;
+        }
+        
+        .back-link {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .back-link a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .content-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sample Stakeholder Workshop</h1>
+            <p class="subtitle">Transboundary Oder River Ecosystem Services: Preliminary Research Findings & Stakeholder Perspectives</p>
+            
+            <!-- INTERVIEW KEY BOX -->
+            <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 3px solid #4caf50; border-radius: 8px; padding: 2rem; margin-top: 2rem; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);">
+                <h3 style="margin: 0 0 1rem; color: #1b5e20; font-size: 1.4rem;">🎤 INTERVIEW KEY - Co-Production Framework</h3>
+                <p style="margin-bottom: 1rem; color: #2e7d32; font-weight: 600;">Based on Arlinghaus et al. (2026) "Knowledge Co-production for Recreational Fisheries" in Pope et al. (2026)</p>
+                <ul style="margin: 0; padding-left: 1.5rem; color: #424242; line-height: 1.8;">
+                    <li style="margin-bottom: 0.75rem;"><strong>Four-Step Framework (Bath 2010):</strong> (1) Build relationships with diverse actors (listening phase, one-on-one interviews, common ground matrix), (2) Understand consensus and disagreement (surveys, secondary data), (3) Implement facilitated workshop series (repeated interactions), (4) Evaluate process (beyond goal achievement)</li>
+                    <li style="margin-bottom: 0.75rem;"><strong>Trust takes TIME:</strong> "Each co-production relationship fundamentally requires trust and relationship building, which necessitates large investments in face-to-face time... Successful co-production initiatives can easily take years to occur" (p.541). 2-year postdoc = co-ASSESSMENT, not full co-production.</li>
+                    <li style="margin-bottom: 0.75rem;"><strong>"Blue Fear":</strong> "Fear that outcomes of research may have negative consequences such as motivating stricter regulatory control" (p.541). German anglers may fear data will justify more restrictions post-disaster. Address through transparency about data use and decision-making.</li>
+                    <li style="margin-bottom: 0.75rem;"><strong>Power Imbalances:</strong> Scientists with formal training vs. stakeholders without creates advantage in interpreting data. Solution: neutral facilitator, transparent data sharing, co-interpret findings together.</li>
+                    <li style="margin-bottom: 0.75rem;"><strong>Professional Facilitation REQUIRED:</strong> "Formal workshops often need to be professionally moderated" (p.543). Poor facilitation "can quickly degrade a process." Budget for external facilitator with transboundary experience.</li>
+                    <li style="margin-bottom: 0.75rem;"><strong>German Anglers = Rights Holders:</strong> "Angler communities in central Europe who are rights holders in local ﬁsheries" (p.544). Higher ethical bar—OCAP principles apply (Ownership, Control, Access, Possession).</li>
+                    <li style="margin-bottom: 0;"><strong>Besatzfisch Example:</strong> IGB's 5-year German stocking co-production (2009-2014) changed attitudes AND practices. Won 2014 UNESCO Education Award. Demonstrates feasibility—but requires long-term commitment.</li>
+                </ul>
+            </div>
+        </header>
+        
+        <main>
+            <div class="workshop-header">
+                <h2>Workshop 1: Preliminary Findings & Stakeholder Input</h2>
+                <p style="margin: 0.5rem 0;">Building shared understanding of Oder River recovery dynamics and angler perspectives</p>
+                <div class="workshop-meta">
+                    <div class="meta-item">
+                        <div>
+                            <div class="meta-label">DATE:</div>
+                            <div class="meta-value">June 15, 2027 (Year 2, Q2)</div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div>
+                            <div class="meta-label">TIME:</div>
+                            <div class="meta-value">9:00 - 16:00 (7 hours)</div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div>
+                            <div class="meta-label">LOCATION:</div>
+                            <div class="meta-value">IFB Potsdam / Hybrid</div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div>
+                            <div class="meta-label">LANGUAGE:</div>
+                            <div class="meta-value">German, Polish (translation)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="objectives-box">
+                <h3>Workshop Objectives</h3>
+                <ul>
+                    <li><strong>Share preliminary findings</strong> from catch log analysis (Papers 1-3) on angler recovery patterns, satisfaction, and harvest behavior</li>
+                    <li><strong>Gather stakeholder perspectives</strong> on whether findings align with on-the-ground experiences and local knowledge</li>
+                    <li><strong>Identify priorities</strong> for resident ecosystem services survey design and ensure stakeholder needs are reflected</li>
+                    <li><strong>Build trust</strong> between German and Polish stakeholders through structured dialogue and shared learning</li>
+                    <li><strong>Inform management</strong> by connecting research findings to policy questions and identifying actionable insights</li>
+                </ul>
+            </div>
+            
+            <h2>Target Participants (25-30 people)</h2>
+            
+            <div class="participant-list">
+                <div class="participant-group">
+                    <h4>🎣 Angling Community (8-10)</h4>
+                    <ul>
+                        <li>German angling club presidents (3-4)</li>
+                        <li>Polish angling association reps (2-3)</li>
+                        <li>Individual anglers (2-3)</li>
+                    </ul>
+                </div>
+                
+                <div class="participant-group">
+                    <h4>🏛️ Government Agencies (6-8)</h4>
+                    <ul>
+                        <li>Brandenburg State Fisheries (2)</li>
+                        <li>Polish Water Management (2)</li>
+                        <li>Environmental ministries (2-3)</li>
+                        <li>Regional authorities (1-2)</li>
+                    </ul>
+                </div>
+                
+                <div class="participant-group">
+                    <h4>🌱 NGOs & Conservation (4-5)</h4>
+                    <ul>
+                        <li>WWF Germany/Poland</li>
+                        <li>River restoration groups</li>
+                        <li>Water quality advocates</li>
+                        <li>Environmental justice orgs</li>
+                    </ul>
+                </div>
+                
+                <div class="participant-group">
+                    <h4>🔬 Research & Academic (4-5)</h4>
+                    <ul>
+                        <li>IFB team members</li>
+                        <li>Polish university partners</li>
+                        <li>Independent researchers</li>
+                        <li>Graduate students</li>
+                    </ul>
+                </div>
+                
+                <div class="participant-group">
+                    <h4>🏘️ Community Representatives (2-3)</h4>
+                    <ul>
+                        <li>Riverside community leaders</li>
+                        <li>Tourism operators</li>
+                        <li>Local business owners</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h2>Detailed Agenda</h2>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">9:00 - 9:30</div>
+                    <div class="session-title">Welcome & Orientation</div>
+                    <div class="duration">30 min</div>
+                </div>
+                <div class="agenda-content">
+                    <div class="content-row">
+                        <div class="content-label">Purpose</div>
+                        <div class="content-detail">
+                            Set tone, establish ground rules, and create inclusive atmosphere for transboundary dialogue
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Activities</div>
+                        <div class="content-detail">
+                            <ul>
+                                <li><strong>Welcome (5 min):</strong> PI opens workshop, thanks participants, introduces research team</li>
+                                <li><strong>Participant introductions (15 min):</strong> Round-robin: Name, organization, one hope for today's discussion (use timer: 30 seconds each)</li>
+                                <li><strong>Workshop overview (5 min):</strong> Present agenda, objectives, ground rules</li>
+                                <li><strong>Logistics (5 min):</strong> Translation protocol, break schedule, where to find materials</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Ground Rules</div>
+                        <div class="content-detail">
+                            <ul>
+                                <li>Respectful dialogue across perspectives</li>
+                                <li>One person speaks at a time</li>
+                                <li>Questions welcomed; note "parking lot" for off-agenda items</li>
+                                <li>Chatham House Rule: Ideas can be shared, but not attributed without permission</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="facilitator-notes">
+                        <h4>Facilitator Notes:</h4>
+                        <p>Build rapport early. Use icebreaker to help German/Polish participants connect. Emphasize that all perspectives are valuable—researchers don't have all answers. This is collaborative learning.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">9:30 - 10:15</div>
+                    <div class="session-title">Context: The 2022 Disaster & Recovery Efforts</div>
+                    <div class="duration">45 min</div>
+                </div>
+                <div class="agenda-content">
+                    <div class="content-row">
+                        <div class="content-label">Purpose</div>
+                        <div class="content-detail">
+                            Establish shared factual baseline about the disaster, ecological impacts, and response efforts. Ensure all participants operating from common understanding.
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Presentations</div>
+                        <div class="content-detail">
+                            <ul>
+                                <li><strong>Disaster timeline & impacts (10 min):</strong> IFB ecologist presents biological data on fish mortality, species affected, spatial extent</li>
+                                <li><strong>Response & recovery actions (10 min):</strong> Government agency rep summarizes restocking, habitat work, monitoring programs</li>
+                                <li><strong>Stakeholder perspectives (15 min):</strong> 2-3 pre-selected speakers (1 German angler, 1 Polish community member, 1 NGO) share 5-minute personal accounts of how disaster affected them</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Q&A</div>
+                        <div class="content-detail">
+                            10 minutes for clarifying questions only (save discussion for later sessions)
+                        </div>
+                    </div>
+                    <div class="facilitator-notes">
+                        <h4>Facilitator Notes:</h4>
+                        <p>Keep this factual and non-controversial. Goal is alignment, not debate. Pre-coordinate with speakers to avoid surprises. Have slides in both German and Polish. Acknowledge emotional weight of topic—this was traumatic for many.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">10:15 - 10:30</div>
+                    <div class="session-title">Coffee Break</div>
+                    <div class="duration">15 min</div>
+                </div>
+            </div>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">10:30 - 11:45</div>
+                    <div class="session-title">Research Findings: Angler Recovery Patterns (Paper 1)</div>
+                    <div class="duration">75 min</div>
+                </div>
+                <div class="agenda-content">
+                    <div class="content-row">
+                        <div class="content-label">Purpose</div>
+                        <div class="content-detail">
+                            Present catch log findings on fishing effort, catch rates, and satisfaction trends 2023-2025. Validate findings with stakeholder knowledge and identify surprises.
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Presentation</div>
+                        <div class="content-detail">
+                            <strong>15 minutes:</strong> Researcher presents key findings:
+                            <ul>
+                                <li>CPUE trends: Did catch rates improve? By how much? Seasonal patterns?</li>
+                                <li>Satisfaction trajectory: Are anglers happier over time? Does it track with CPUE?</li>
+                                <li>Effort patterns: Who kept fishing? Who stopped? Differences by specialization?</li>
+                                <li>Management implications: What does recovery look like from angler perspective?</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Structured Discussion</div>
+                        <div class="content-detail">
+                            <strong>60 minutes, facilitated discussion using these prompts:</strong>
+                            <ul>
+                                <li><strong>Reality check (20 min):</strong> "Do these patterns match what you've observed? Where do findings align with your experience? Where do they diverge?"</li>
+                                <li><strong>Explanation seeking (20 min):</strong> "What might explain the trends we're seeing? Local knowledge that helps interpret data?"</li>
+                                <li><strong>Missing pieces (20 min):</strong> "What important aspects of recovery aren't captured by catch rates and satisfaction? What are we missing?"</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="facilitator-notes">
+                        <h4>Facilitator Notes:</h4>
+                        <p><strong>Facilitation approach:</strong> Use "round-robin" for first question (everyone speaks once before anyone speaks twice). Use raised hands for second/third questions. Actively invite quieter voices. If discussion goes off-track, acknowledge comment, note in "parking lot," redirect to prompt. Watch for German-Polish balance—ensure both nationalities heard equally.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">11:45 - 12:00</div>
+                    <div class="session-title">Synthesis: What We Heard</div>
+                    <div class="duration">15 min</div>
+                </div>
+                <div class="agenda-content">
+                    <div class="content-row">
+                        <div class="content-label">Purpose</div>
+                        <div class="content-detail">
+                            Capture key themes from discussion; ensure participants feel heard
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Process</div>
+                        <div class="content-detail">
+                            <ul>
+                                <li>Facilitator summarizes 3-5 main themes from discussion (prepared during discussion using notes)</li>
+                                <li>Ask: "Did I capture that accurately? What did I miss?"</li>
+                                <li>Note: "These perspectives will inform our interpretation of results and guide survey design"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">12:00 - 13:00</div>
+                    <div class="session-title">Lunch</div>
+                    <div class="duration">60 min</div>
+                </div>
+                <div class="agenda-content">
+                    <div class="content-row">
+                        <div class="content-label">Format</div>
+                        <div class="content-detail">
+                            Buffet lunch provided. Encourage cross-border conversation. Research team available for informal discussion.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">13:00 - 14:00</div>
+                    <div class="session-title">Research Findings: Motivation, Specialization & Harvest (Papers 2-3)</div>
+                    <div class="duration">60 min</div>
+                </div>
+                <div class="agenda-content">
+                    <div class="content-row">
+                        <div class="content-label">Purpose</div>
+                        <div class="content-detail">
+                            Present findings on what sustains angler satisfaction and whether harvest behavior changed post-disaster
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Presentations</div>
+                        <div class="content-detail">
+                            <strong>Paper 2 (10 min):</strong> Motivation & specialization findings
+                            <ul>
+                                <li>Which anglers maintained satisfaction despite poor catch rates?</li>
+                                <li>What besides catching fish matters for satisfaction?</li>
+                                <li>Angler typology: Different groups with different needs</li>
+                            </ul>
+                            <strong>Paper 3 (10 min):</strong> Harvest behavior findings
+                            <ul>
+                                <li>Did harvest rates change 2023-2025?</li>
+                                <li>Who practices catch-and-release? Why?</li>
+                                <li>Evidence of voluntary conservation or not?</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Discussion</div>
+                        <div class="content-detail">
+                            <strong>40 minutes:</strong> Focus on management relevance
+                            <ul>
+                                <li>Do these typologies make sense? Would different messaging strategies work?</li>
+                                <li>Is voluntary conservation sufficient or are stricter regulations needed?</li>
+                                <li>How can managers support anglers during recovery?</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="facilitator-notes">
+                        <h4>Facilitator Notes:</h4>
+                        <p>Harvest behavior can be sensitive (some anglers defensive about keeping fish). Frame as curiosity, not judgment. Emphasize goal is understanding what's happening, not prescribing what "should" happen. If debate gets heated between conservationists and consumptive anglers, acknowledge both perspectives are valid and ask: "What information would help resolve this tension?"</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">14:00 - 15:15</div>
+                    <div class="session-title">Breakout Groups: Resident Survey Priorities</div>
+                    <div class="duration">75 min</div>
+                </div>
+                <div class="agenda-content">
+                    <div class="content-row">
+                        <div class="content-label">Purpose</div>
+                        <div class="content-detail">
+                            Gather input on upcoming resident ecosystem services survey. Ensure it addresses stakeholder priorities and captures what matters to communities.
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Setup</div>
+                        <div class="content-detail">
+                            <strong>Introduction (10 min):</strong> Explain survey scope, show draft question areas, describe breakout task
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Breakout Groups</div>
+                        <div class="content-detail">
+                            <strong>45 minutes in 3 mixed groups (8-10 people each):</strong>
+                            <ul>
+                                <li>Each group assigned 2 ecosystem service categories (e.g., Group 1: Provisioning + Cultural)</li>
+                                <li>Task: "What questions should we ask residents? What's most important to measure?"</li>
+                                <li>Groups write ideas on flip charts</li>
+                                <li>Ensure mix of German/Polish, anglers/non-anglers, government/NGO/community in each group</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Report Back</div>
+                        <div class="content-detail">
+                            <strong>20 minutes:</strong> Each group presents top 3-5 priorities (5 min each), facilitator synthesizes common themes
+                        </div>
+                    </div>
+                    <div class="facilitator-notes">
+                        <h4>Facilitator Notes:</h4>
+                        <p>Assign strong facilitator to each breakout (pre-briefed on task). Provide clear instructions and time warnings. Groups should feel ownership over survey design—this increases buy-in for results later. Capture all ideas (photos of flip charts) for analysis after workshop.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">15:15 - 15:30</div>
+                    <div class="session-title">Coffee Break</div>
+                    <div class="duration">15 min</div>
+                </div>
+            </div>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">15:30 - 15:55</div>
+                    <div class="session-title">Next Steps & Commitments</div>
+                    <div class="duration">25 min</div>
+                </div>
+                <div class="agenda-content">
+                    <div class="content-row">
+                        <div class="content-label">Purpose</div>
+                        <div class="content-detail">
+                            Close workshop with clear action items and maintain momentum
+                        </div>
+                    </div>
+                    <div class="content-row">
+                        <div class="content-label">Activities</div>
+                        <div class="content-detail">
+                            <ul>
+                                <li><strong>Research team commitments (5 min):</strong> What we'll do with today's input, timeline for sharing results</li>
+                                <li><strong>Participant commitments (10 min):</strong> Discussion: How can stakeholders support the research? (e.g., help recruit survey respondents, share findings with networks)</li>
+                                <li><strong>Workshop series preview (5 min):</strong> Overview of Workshop 2 (survey results) and Workshop 3 (policy recommendations)</li>
+                                <li><strong>Feedback (5 min):</strong> Quick poll: What worked today? What should we improve for next workshop?</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="agenda-section">
+                <div class="agenda-header">
+                    <div class="time-badge">15:55 - 16:00</div>
+                    <div class="session-title">Closing Remarks</div>
+                    <div class="duration">5 min</div>
+                </div>
+                <div class="agenda-content">
+                    <div class="content-row">
+                        <div class="content-label">Content</div>
+                        <div class="content-detail">
+                            <ul>
+                                <li>Thank participants for time and expertise</li>
+                                <li>Reiterate value of their perspectives</li>
+                                <li>Commit to sharing workshop summary within 2 weeks</li>
+                                <li>Invite ongoing communication (provide contact info)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="materials-list">
+                <h3>Materials & Logistics</h3>
+                
+                <h4 style="margin: 1.5rem 0 0.75rem;">Pre-Workshop (sent 2 weeks in advance)</h4>
+                <ul style="margin-left: 1.5rem;">
+                    <li>Workshop agenda and objectives</li>
+                    <li>One-page summary of preliminary findings (non-technical)</li>
+                    <li>Background reading: Brief Oder disaster timeline</li>
+                    <li>Logistics: Travel info, hotel recommendations, dietary preferences form</li>
+                </ul>
+                
+                <h4 style="margin: 1.5rem 0 0.75rem;">Day-of Materials</h4>
+                <ul style="margin-left: 1.5rem;">
+                    <li>Name tags with organization and country</li>
+                    <li>Printed agenda (German and Polish)</li>
+                    <li>Presentation slides (bilingual)</li>
+                    <li>Flip chart paper and markers for breakout groups</li>
+                    <li>Notepads and pens</li>
+                    <li>Comment cards for anonymous feedback</li>
+                </ul>
+                
+                <h4 style="margin: 1.5rem 0 0.75rem;">Technology Needs</h4>
+                <ul style="margin-left: 1.5rem;">
+                    <li>Translation equipment (simultaneous German-Polish interpretation)</li>
+                    <li>Zoom setup for hybrid participants</li>
+                    <li>Presentation laptop and backup</li>
+                    <li>Microphones for room audio</li>
+                    <li>Recording equipment (with participant consent)</li>
+                </ul>
+                
+                <h4 style="margin: 1.5rem 0 0.75rem;">Food & Breaks</h4>
+                <ul style="margin-left: 1.5rem;">
+                    <li>Coffee/tea station (available all day)</li>
+                    <li>Morning snacks (pastries, fruit)</li>
+                    <li>Buffet lunch (vegetarian and vegan options)</li>
+                    <li>Afternoon snacks</li>
+                </ul>
+            </div>
+            
+            <div class="expected-outcomes">
+                <h3>Expected Outcomes</h3>
+                
+                <p><strong>By the end of this workshop, we will have:</strong></p>
+                <ul style="margin: 1rem 0 1.5rem 1.5rem;">
+                    <li>✓ Validated preliminary research findings with stakeholder knowledge</li>
+                    <li>✓ Identified gaps or surprises in catch log analysis</li>
+                    <li>✓ Gathered stakeholder priorities for resident survey design</li>
+                    <li>✓ Established trust and rapport between German and Polish stakeholders</li>
+                    <li>✓ Created foundation for ongoing engagement through Workshop series</li>
+                    <li>✓ Generated list of management-relevant questions to explore in future analysis</li>
+                </ul>
+                
+                <p><strong>Post-workshop deliverables (within 2 weeks):</strong></p>
+                <ul style="margin: 1rem 0 0 1.5rem;">
+                    <li>Workshop summary document (distributed to all participants)</li>
+                    <li>Synthesis of stakeholder input on survey priorities</li>
+                    <li>Action item list with responsible parties and timelines</li>
+                    <li>Photos and documentation for project records</li>
+                </ul>
+            </div>
+            
+            <h2>Facilitation Strategy</h2>
+            
+            <p style="font-style: italic; margin-bottom: 1.5rem;">Drawing on experience facilitating Gulf of Mexico Fishery Management Council meetings AND Arlinghaus et al. (2026) knowledge co-production framework from IGB's successful Besatzfisch project, this workshop emphasizes clear scope definition, structured participation, and inclusive dialogue across diverse stakeholder groups.</p>
+            
+            <div style="background: #f9f9f9; padding: 2rem; border-radius: 8px; margin: 2rem 0;">
+                <h3 style="margin-top: 0;">Key Facilitation Principles 🎤</h3>
+                <p style="background: #fff3e0; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; border-left: 4px solid #ff9800;"><strong>Based on Arlinghaus et al. (2026) co-production guidelines:</strong> Professional facilitation is essential. Budget for external facilitator with transboundary experience. Poor facilitation "can quickly degrade a process."</p>
+                
+                <h4 style="color: #2B5F7C; margin: 1.5rem 0 0.75rem;">1. Clear Scope & Purpose (Arlinghaus: "Define What Co-Production Means")</h4>
+                <p>Every session has explicit objectives and defined scope. Participants know what's in-bounds vs. out-of-bounds. Use "parking lot" for important but off-agenda items. <strong>Critical:</strong> Clarify that this is co-ASSESSMENT (presenting findings, jointly interpreting), not full co-production (which takes 5+ years). Set realistic expectations.</p>
+                
+                <h4 style="color: #2B5F7C; margin: 1.5rem 0 0.75rem;">2. Structured Participation (Arlinghaus: "Facilitation Techniques")</h4>
+                <p><strong>Use specific techniques from Arlinghaus et al. (2026, p.546-547):</strong></p>
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li><strong>Silent discussion:</strong> Participants write ideas on sticky notes, facilitator groups by theme. Reduces dominance by vocal participants.</li>
+                    <li><strong>Five-times-why:</strong> Repeatedly ask "why?" to get to root causes of disagreements, not just surface positions.</li>
+                    <li><strong>Small group rotation:</strong> Break into mixed German-Polish groups, rotate, cross-pollinate ideas.</li>
+                    <li><strong>Nominal group technique:</strong> Structured turn-taking ensures equal voice.</li>
+                </ul>
+                
+                <h4 style="color: #2B5F7C; margin: 1.5rem 0 0.75rem;">3. Cultural & Language Sensitivity + Power Balance</h4>
+                <p>Monitor German-Polish balance. Pause for translation. Acknowledge different cultural norms around conflict and directness. Frame disagreements as productive diversity, not problems. <strong>Address power imbalances (Arlinghaus et al. p.543):</strong> Scientists have advantage interpreting data—mitigate by presenting findings in accessible formats, co-interpreting results, and valuing local knowledge equally.</p>
+                
+                <h4 style="color: #2B5F7C; margin: 1.5rem 0 0.75rem;">4. Active Listening & Synthesis</h4>
+                <p>Paraphrase complex comments to ensure understanding. Identify common ground across perspectives. Synthesize themes periodically. Show how input shapes next steps. <strong>Document EVERYTHING:</strong> Transparent record of how stakeholder input influences decisions builds trust.</p>
+                
+                <h4 style="color: #2B5F7C; margin: 1.5rem 0 0.75rem;">5. Conflict Management + "Blue Fear" Mitigation</h4>
+                <p>Anticipate tension points (harvest regulations, conservation priorities). Acknowledge competing interests. Redirect to shared goals (healthy river, vibrant fishery). Focus on interests, not positions. <strong>Address "blue fear" explicitly (Arlinghaus et al. p.541):</strong> German anglers may fear data will justify stricter regulations. Be transparent: "This research informs management but doesn't dictate policy. Your participation helps ensure decisions reflect stakeholder priorities."</p>
+                
+                <h4 style="color: #2B5F7C; margin: 1.5rem 0 0.75rem;">6. Time Management + Social Connection</h4>
+                <p>Assign timekeeper. Give 5-minute warnings before transitions. Be willing to cut discussion if unproductive, extend if valuable. Respect lunch and break times. <strong>Arlinghaus emphasis (p.543):</strong> "Developing relationships is ultimately about sharing time and own values, meeting face-to-face, having meals together and thereby building trust." BUDGET for quality catering, social breaks, informal conversation time.</p>
+            </div>
+            
+            <h2>Success Metrics</h2>
+            
+            <p>This workshop will be considered successful if:</p>
+            <ul style="margin: 1.5rem 0 1.5rem 2rem;">
+                <li>≥80% of invited stakeholders attend</li>
+                <li>Both German and Polish perspectives represented roughly equally in discussions</li>
+                <li>All participant groups (anglers, government, NGOs, community, research) contribute meaningfully</li>
+                <li>Concrete survey design input gathered that can be implemented</li>
+                <li>Post-workshop feedback shows ≥75% found it "valuable" or "very valuable"</li>
+                <li>Stakeholders express interest in attending Workshop 2</li>
+                <li>No major conflicts or walkouts (disagreement is fine; breakdown is not)</li>
+            </ul>
+            
+            <div class="back-link">
+                <a href="survey-framework.html">← Back to Survey Framework</a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>OderTogether Research Project — January 2026</p>
+        </footer>
+    </div>
+</body>
+</html>
