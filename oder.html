@@ -191,49 +191,20 @@
               Cross-border political and scientific crisis between Germany and Poland.
             </div>
             <p>
-              As part of the <strong>OderTogether project at IFB Potsdam</strong>, I am developing a
-              cross-border social-ecological assessment of how the disaster affected cultural ecosystem
+              As part of the <strong>OderTogether project at IFB Potsdam</strong>, the broader goal is
+              a cross-border social-ecological assessment of how the disaster affected cultural ecosystem
               services (CES) — the non-material benefits people derive from their relationship with the
-              river. This analysis uses three independent citizen science and angling datasets to document
-              CES intensity before and after the disaster, covering recreational fishing, nature-based
-              tourism, and biodiversity appreciation.
+              river. The centrepiece of that work will be a representative resident survey on both sides
+              of the border. This page documents the <strong>exploratory spatial analysis that precedes
+              that survey</strong> — three independent citizen science and angling datasets used to
+              characterise who uses the corridor, where activity concentrates, and what preliminary
+              signals (if any) are detectable in the data. The methods here are the part I'm most
+              invested in: CLIP-based image filtering, PPGIS-style density mapping, and multi-dataset
+              triangulation are all approaches I'm developing for the first time on this project and
+              plan to formalise in a methods paper. The numbers themselves should be treated as
+              exploratory — these are self-selected, non-representative datasets and none of the
+              pre/post comparisons are causal.
             </p>
-
-            <!-- ── Key Findings ── -->
-            <hr class="major" />
-            <h2>Key Findings</h2>
-            <div class="findings-grid">
-              <div class="finding-card">
-                <div class="stat down">−24%</div>
-                <p>Catches per active angler per year post-disaster, after effort normalization — suggestive of reduced angling productivity but based on a self-selected app dataset</p>
-                <span class="src">Alle Angeln</span>
-              </div>
-              <div class="finding-card">
-                <div class="stat down">−51%</div>
-                <p>Zander (pike-perch) catch rate post-disaster — one of the largest declines among species tracked, with little apparent recovery through 2025</p>
-                <span class="src">Alle Angeln</span>
-              </div>
-              <div class="finding-card">
-                <div class="stat down">−64%</div>
-                <p>Rapfen (asp) catch rate post-disaster — largest observed decline among species in the dataset; sample sizes are small and results should be interpreted cautiously</p>
-                <span class="src">Alle Angeln</span>
-              </div>
-              <div class="finding-card">
-                <div class="stat up">×4</div>
-                <p>iNaturalist observations increased fourfold post-disaster — likely driven largely by platform growth and post-disaster monitoring interest rather than ecological recovery</p>
-                <span class="src">iNaturalist</span>
-              </div>
-              <div class="finding-card">
-                <div class="stat neutral">525 km</div>
-                <p>Median travel distance of iNaturalist visitors to the corridor — suggests the river attracts observers from beyond the immediate region, though the iNaturalist user base is not representative</p>
-                <span class="src">iNaturalist</span>
-              </div>
-              <div class="finding-card">
-                <div class="stat neutral">60 / 40</div>
-                <p>Approximate visitor-to-local ratio among iNaturalist users — contrasts with the more locally concentrated Alle Angeln user base, though both datasets are self-selected</p>
-                <span class="src">iNaturalist · Alle Angeln</span>
-              </div>
-            </div>
 
             <!-- ── Study Area ── -->
             <hr class="major" />
@@ -288,11 +259,22 @@
 
             <h3>Observer Origins</h3>
             <p>
-              User origins were inferred from observation patterns using Nominatim geocoding. Approximately
-              sixty percent of observers were classified as visitors (≥60% of observations outside the
-              corridor), with a median travel distance of 525 km. These figures suggest the corridor
-              attracts users from beyond the immediate region, though iNaturalist users are not
-              representative of the general public and results should be treated as indicative only.
+              Since iNaturalist does not provide user home locations, origins were inferred indirectly.
+              For each user, I geocoded all of their observations <em>outside</em> the Oder corridor
+              using the Nominatim API (OpenStreetMap), then computed the centroid of those observations
+              as a proxy for their home region. Users with ≥60% of their observations inside the
+              corridor were classified as <strong>locals</strong>; all others as <strong>visitors</strong>.
+              Travel distance was calculated as the straight-line distance from the inferred home centroid
+              to the nearest point on the Oder centerline.
+            </p>
+            <p>
+              This is a rough heuristic — it works reasonably well for users with many observations
+              spread across their home region, but breaks down for occasional users or people who
+              observe heavily in multiple places. It also can't distinguish someone who lives 10 km
+              from the corridor but happens to observe mostly elsewhere. With those caveats, roughly
+              60% of users were classified as visitors, with a median inferred travel distance of
+              525 km. These numbers are exploratory and not directly comparable to, for example,
+              survey-based visitor origin data.
             </p>
             <span class="image fit">
               <img src="images/origins_fig4_map.png" alt="iNaturalist user origins map" style="width:75%; display:block; margin:0 auto;" />
@@ -505,35 +487,36 @@
             <hr class="major" />
             <h2>Cross-Dataset Spatial Comparison</h2>
             <p>
-              Placing the three hexbin maps side by side allows visual comparison of where different
-              forms of CES activity are recorded along the corridor. Frankfurt (Oder) and Schwedt/Oder
-              appear as relatively high-density nodes across all three datasets — a convergence worth
-              noting, though each dataset has its own biases and the overlap should not be
-              over-interpreted.
+              Placing the "all years combined" panel from each dataset side by side gives the
+              clearest spatial comparison — free from the pre/post platform growth confounds that
+              complicate the individual period maps.
             </p>
-            <div style="display:flex; flex-direction:column; gap:2rem; margin: 1.5rem 0;">
-              <div>
-                <img src="images/inat_hotspots_hexbin.png"
-                     alt="iNaturalist hexbin map"
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin: 1.5rem 0; align-items: start;">
+              <div style="text-align:center;">
+                <img src="images/inat_hotspots_hexbin_comb_cropped.png"
+                     alt="iNaturalist all years combined hexbin"
                      style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
-                <p style="font-size:.85rem; color:#555; margin:.5rem 0 0;">
-                  <strong>iNaturalist</strong> — Biodiversity observations (unique observers per hex cell)
+                <p style="font-size:.82rem; color:#555; margin:.5rem 0 0;">
+                  <strong>iNaturalist</strong><br>Biodiversity observations<br>
+                  <span style="color:#999; font-size:.75rem;">2015–2025 · unique observers</span>
                 </p>
               </div>
-              <div>
-                <img src="images/flickr_fig_hexbin_main.png"
-                     alt="Flickr hexbin map"
+              <div style="text-align:center;">
+                <img src="images/flickr_fig_hexbin_main_comb_cropped.png"
+                     alt="Flickr all years combined hexbin"
                      style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
-                <p style="font-size:.85rem; color:#555; margin:.5rem 0 0;">
-                  <strong>Flickr</strong> — Nature photography density (unique photographers per hex cell)
+                <p style="font-size:.82rem; color:#555; margin:.5rem 0 0;">
+                  <strong>Flickr</strong><br>Nature photography<br>
+                  <span style="color:#999; font-size:.75rem;">2015–2025 · unique photographers</span>
                 </p>
               </div>
-              <div>
-                <img src="images/aa_fig_hexbin_main.png"
-                     alt="Alle Angeln hexbin map"
+              <div style="text-align:center;">
+                <img src="images/aa_fig_hexbin_main_comb_cropped.png"
+                     alt="Alle Angeln all years combined hexbin"
                      style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
-                <p style="font-size:.85rem; color:#555; margin:.5rem 0 0;">
-                  <strong>Alle Angeln</strong> — Recreational angling intensity (unique anglers per hex cell)
+                <p style="font-size:.82rem; color:#555; margin:.5rem 0 0;">
+                  <strong>Alle Angeln</strong><br>Recreational angling<br>
+                  <span style="color:#999; font-size:.75rem;">2012–2025 · unique anglers</span>
                 </p>
               </div>
             </div>
@@ -667,5 +650,11 @@
       </div>
     </div>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="assets/js/jquery.min.js"></script>
-    <script sr
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/browser.min.js"></script>
+    <script src="assets/js/breakpoints.min.js"></script>
+    <script src="assets/js/util.js"></script>
+    <script src="assets/js/main.js"></script>
+  </body>
+</html>
