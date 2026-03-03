@@ -387,6 +387,34 @@
               Post-disaster intensity is visibly reduced in mid-corridor sections.</em>
             </p>
 
+            <h3>Angler Origins</h3>
+            <p>
+              Angler home locations were inferred from zip codes in the Alle Angeln user database,
+              then geocoded via Nominatim to get coordinates. Each angler was linked to their
+              primary fishing water (most catches logged), and straight-line travel distance was
+              calculated between home zip centroid and water centroid. Of 647 anglers with
+              complete zip and catch data, the median travel distance was just <strong>33 km</strong>
+              — confirming that this dataset captures a predominantly local user base, in contrast
+              to the visitor-dominated iNaturalist signal. However, the mean distance is
+              <strong>174 km</strong>, pulled up by a tail of anglers travelling from across Germany,
+              particularly from Berlin, Hamburg, and the coast.
+            </p>
+            <p>
+              The largest fishing water by far is <strong>Oder (Frankfurt/Oder)</strong> with 285
+              anglers, followed by the Hohensaaten-Friedrichsthaler Wasserstraße at Schwedt (76)
+              and the Alte Oder at Gorgast-Golzow (60) — consistent with the hexbin hotspot pattern.
+            </p>
+            <span class="image fit">
+              <img src="images/aa_fig_flowmap.png" alt="Alle Angeln angler origin flow map" />
+            </span>
+            <p class="viz-caption">
+              <em>Fig. 8 — Angler origin–destination flow map. Lines connect home zip code centroid
+              (blue circles, size = n anglers) to primary fishing water (orange triangles, size =
+              n anglers). Line colour indicates travel distance (yellow = near, red = far).
+              n=647 anglers with complete data. Median distance 33 km; mean 174 km driven by a
+              long-distance tail.</em>
+            </p>
+
             <h3>Species-Level Impact — Catch Rates</h3>
             <p>
               Annual catches per active angler broken down by species reveal contrasting trajectories
@@ -400,7 +428,7 @@
               <img src="images/aa_fig1_annual_by_species.png" alt="Annual catches per active angler by species" />
             </span>
             <p class="viz-caption">
-              <em>Fig. 8 — Annual catches per active angler by species (effort-normalized).
+              <em>Fig. 9 — Annual catches per active angler by species (effort-normalized).
               Colors indicate pre-disaster (blue), disaster year 2022 (orange), and post-disaster
               (red). Vertical dashed line marks August 2022 disaster onset. Zander −51%,
               Rapfen −64%, Wels −23% post-disaster. Results are indicative only given small
@@ -420,7 +448,7 @@
               <img src="images/aa_fig4_size_distributions.png" alt="Catch size distributions pre vs post disaster" />
             </span>
             <p class="viz-caption">
-              <em>Fig. 9 — Catch size distributions for six species, pre- vs. post-disaster.
+              <em>Fig. 10 — Catch size distributions for six species, pre- vs. post-disaster.
               Histograms show length (cm) with median lines marked. The Wels median dropped
               62 cm post-disaster — the largest size-structure shift in the dataset and among
               the least effort-dependent signals. Sample sizes shown in legend; interpret with caution.</em>
@@ -493,7 +521,7 @@
             </p>
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin: 1.5rem 0; align-items: start;">
               <div style="text-align:center;">
-                <img src="images/inat_hotspots_hexbin_comb_cropped.PNG"
+                <img src="images/inat_hotspots_hexbin_comb_cropped.png"
                      alt="iNaturalist all years combined hexbin"
                      style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
                 <p style="font-size:.82rem; color:#555; margin:.5rem 0 0;">
@@ -502,7 +530,7 @@
                 </p>
               </div>
               <div style="text-align:center;">
-                <img src="images/flickr_fig_hexbin_main_comb_cropped.PNG"
+                <img src="images/flickr_fig_hexbin_main_comb_cropped.png"
                      alt="Flickr all years combined hexbin"
                      style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
                 <p style="font-size:.82rem; color:#555; margin:.5rem 0 0;">
@@ -511,7 +539,7 @@
                 </p>
               </div>
               <div style="text-align:center;">
-                <img src="images/aa_fig_hexbin_main_comb_cropped.PNG"
+                <img src="images/aa_fig_hexbin_main_comb_cropped.png"
                      alt="Alle Angeln all years combined hexbin"
                      style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
                 <p style="font-size:.82rem; color:#555; margin:.5rem 0 0;">
