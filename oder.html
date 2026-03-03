@@ -239,10 +239,14 @@
             <hr class="major" />
             <h2>Study Area</h2>
             <p>
-              The study corridor spans approximately 300 km of the Oder River along the German-Polish
-              border, from Eisenhüttenstadt in the south to Szczecin Lagoon in the north. The corridor
-              crosses Brandenburg (Germany) and Lubuskie and Zachodniopomorskie (Poland), encompassing
-              a mix of protected floodplain habitats, industrial towns, and small rural communities.
+              The study corridor follows approximately 280 km of the Oder River along the German-Polish
+              border, from Eisenhüttenstadt in the south (52.1°N) to Schwedt/Oder in the north
+              (53.1°N). On the German side, the corridor spans the districts of Oder-Spree,
+              Märkisch-Oderland, Barnim, and Uckermark in Brandenburg. On the Polish side it covers
+              the Lubuskie and Zachodniopomorskie voivodeships, with the cities of Słubice, Zielona
+              Góra, and Gorzów Wielkopolski as the main urban centres. Frankfurt (Oder) / Słubice
+              forms the largest cross-border urban agglomeration within the study area and is the
+              dominant hotspot in all three datasets.
             </p>
             <span class="image fit">
               <img src="images/population_map.png" alt="Study area population density map" />
@@ -307,7 +311,8 @@
               May to September. Post-2022 increases in observation density reflect platform growth
               alongside genuine monitoring interest following the disaster.
             </p>
-            <video controls style="width:70%; display:block; margin:0 auto; border: 1px solid #e5e7eb; border-radius:4px;"
+            <video controls controlsList="nofullscreen nodownload" disablePictureInPicture
+                   style="width:50%; max-width:480px; display:block; margin:0 auto; border: 1px solid #e5e7eb; border-radius:4px;"
                    poster="images/inat_hotspots_hexbin.png">
               <source src="images/oder_inat_animation_monthly.mp4" type="video/mp4" />
               Your browser does not support the video tag.
@@ -494,6 +499,48 @@
                 fishing CES picture incomplete for the Polish side of the corridor.</p>
               </div>
             </div>
+
+            <!-- ── Cross-Dataset Comparison ── -->
+            <hr class="major" />
+            <h2>Cross-Dataset Spatial Comparison</h2>
+            <p>
+              Placing the three hexbin maps side by side reveals where different forms of CES
+              activity concentrate along the corridor. Frankfurt (Oder) and Schwedt/Oder emerge
+              as consistent hotspots across all three datasets, providing convergent spatial
+              evidence from three independent data sources.
+            </p>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0;">
+              <div style="text-align:center;">
+                <img src="images/inat_hotspots_hexbin.png"
+                     alt="iNaturalist hexbin map"
+                     style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
+                <p style="font-size:.8rem; color:#666; margin:.5rem 0 0;">
+                  <strong>iNaturalist</strong><br>Biodiversity observations
+                </p>
+              </div>
+              <div style="text-align:center;">
+                <img src="images/flickr_fig_hexbin_main.png"
+                     alt="Flickr hexbin map"
+                     style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
+                <p style="font-size:.8rem; color:#666; margin:.5rem 0 0;">
+                  <strong>Flickr</strong><br>Nature photography
+                </p>
+              </div>
+              <div style="text-align:center;">
+                <img src="images/aa_fig_hexbin_main.png"
+                     alt="Alle Angeln hexbin map"
+                     style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
+                <p style="font-size:.8rem; color:#666; margin:.5rem 0 0;">
+                  <strong>Alle Angeln</strong><br>Recreational angling
+                </p>
+              </div>
+            </div>
+            <p class="viz-caption">
+              <em>Each map shows unique users per hex cell (log scale), pre-disaster / post-disaster /
+              all years combined. Despite covering different user communities and CES types, all three
+              datasets independently identify Frankfurt (Oder) and Schwedt/Oder as the primary
+              activity nodes along the corridor.</em>
+            </p>
 
             <!-- ── Implications ── -->
             <hr class="major" />
