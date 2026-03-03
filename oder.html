@@ -180,9 +180,9 @@
               In August 2022, a mass fish kill devastated the Oder River — one of Central Europe's most
               ecologically significant transboundary waterways. An algal bloom triggered by elevated
               salinity, warm temperatures, and low flow caused a catastrophic die-off of fish along
-              approximately 500 km of the river, crossing the German-Polish border. The disaster destroyed
-              recreational fishing, reduced biodiversity, and disrupted long-standing cultural connections
-              to the river on both sides of the border.
+              approximately 500 km of the river, crossing the German-Polish border. The disaster severely
+              impacted recreational fishing and biodiversity, and may have disrupted long-standing cultural
+              connections to the river on both sides of the border — the extent of which remains unclear.
             </p>
             <div class="disaster-callout">
               <strong>August 2022 — Oder Ecological Disaster:</strong> Mass fish kill caused by
@@ -205,32 +205,32 @@
             <div class="findings-grid">
               <div class="finding-card">
                 <div class="stat down">−24%</div>
-                <p>Catches per active angler per year declined post-disaster, after controlling for platform growth via active-user normalization</p>
+                <p>Catches per active angler per year post-disaster, after effort normalization — suggestive of reduced angling productivity but based on a self-selected app dataset</p>
                 <span class="src">Alle Angeln</span>
               </div>
               <div class="finding-card">
                 <div class="stat down">−51%</div>
-                <p>Zander (pike-perch) catch rate — most severe predator species decline, with limited recovery through 2025</p>
+                <p>Zander (pike-perch) catch rate post-disaster — one of the largest declines among species tracked, with little apparent recovery through 2025</p>
                 <span class="src">Alle Angeln</span>
               </div>
               <div class="finding-card">
                 <div class="stat down">−64%</div>
-                <p>Rapfen (asp) catch rate — largest decline of all species, consistent with mass die-off of large pelagic predators</p>
+                <p>Rapfen (asp) catch rate post-disaster — largest observed decline among species in the dataset; sample sizes are small and results should be interpreted cautiously</p>
                 <span class="src">Alle Angeln</span>
               </div>
               <div class="finding-card">
                 <div class="stat up">×4</div>
-                <p>iNaturalist observations increased fourfold post-disaster, reflecting platform growth and heightened ecological monitoring interest</p>
+                <p>iNaturalist observations increased fourfold post-disaster — likely driven largely by platform growth and post-disaster monitoring interest rather than ecological recovery</p>
                 <span class="src">iNaturalist</span>
               </div>
               <div class="finding-card">
                 <div class="stat neutral">525 km</div>
-                <p>Median travel distance of iNaturalist visitors to the corridor — the river draws dedicated nature observers from across Europe</p>
+                <p>Median travel distance of iNaturalist visitors to the corridor — suggests the river attracts observers from beyond the immediate region, though the iNaturalist user base is not representative</p>
                 <span class="src">iNaturalist</span>
               </div>
               <div class="finding-card">
                 <div class="stat neutral">60 / 40</div>
-                <p>Visitor-to-local ratio among iNaturalist users, contrasting sharply with the predominantly local angler community on Alle Angeln</p>
+                <p>Approximate visitor-to-local ratio among iNaturalist users — contrasts with the more locally concentrated Alle Angeln user base, though both datasets are self-selected</p>
                 <span class="src">iNaturalist · Alle Angeln</span>
               </div>
             </div>
@@ -245,11 +245,11 @@
               Märkisch-Oderland, Barnim, and Uckermark in Brandenburg. On the Polish side it covers
               the Lubuskie and Zachodniopomorskie voivodeships, with the cities of Słubice, Zielona
               Góra, and Gorzów Wielkopolski as the main urban centres. Frankfurt (Oder) / Słubice
-              forms the largest cross-border urban agglomeration within the study area and is the
-              dominant hotspot in all three datasets.
+              forms the largest cross-border urban agglomeration within the study area and appears as a
+              consistent activity node across all three datasets.
             </p>
             <span class="image fit">
-              <img src="images/population_map.png" alt="Study area population density map" />
+              <img src="images/population_map.png" alt="Study area population density map" style="width:80%; display:block; margin:0 auto;" />
             </span>
             <p class="viz-caption">
               <em>Fig. 1 — Study area and population context. Population density maps show the
@@ -279,37 +279,38 @@
               <img src="images/inat_hotspots_hexbin.png" alt="iNaturalist observation hotspots hexbin map" />
             </span>
             <p class="viz-caption">
-              <em>Fig. 2 — iNaturalist observation hotspots along the Oder corridor (hexbin, log scale).
+              <em>Fig. 2 — iNaturalist observation density along the Oder corridor (hexbin, log scale).
               Pre-disaster (2015–Jun 2022, n=5,001), post-disaster (Aug 2022–2025, n=19,244), and all
-              years combined (n=24,245). Frankfurt (Oder) and Schwedt/Oder emerge as consistent hotspots.
-              The post-disaster increase reflects platform growth and heightened monitoring interest
-              rather than ecological recovery alone.</em>
+              years combined (n=24,245). Frankfurt (Oder) and Schwedt/Oder show the highest densities.
+              The post-disaster increase likely reflects platform growth and monitoring interest
+              rather than ecological recovery, and should not be over-interpreted.</em>
             </p>
 
             <h3>Observer Origins</h3>
             <p>
-              User origins were inferred from observation patterns using Nominatim geocoding. Sixty
-              percent of observers were classified as visitors (≥60% of observations outside the
-              corridor), with a median travel distance of 525 km. The corridor attracts dedicated
-              nature observers from across Germany, Poland, and beyond — a strong signal of its
-              regional CES value for biodiversity appreciation.
+              User origins were inferred from observation patterns using Nominatim geocoding. Approximately
+              sixty percent of observers were classified as visitors (≥60% of observations outside the
+              corridor), with a median travel distance of 525 km. These figures suggest the corridor
+              attracts users from beyond the immediate region, though iNaturalist users are not
+              representative of the general public and results should be treated as indicative only.
             </p>
             <span class="image fit">
-              <img src="images/origins_fig4_map.png" alt="iNaturalist user origins map" />
+              <img src="images/origins_fig4_map.png" alt="iNaturalist user origins map" style="width:75%; display:block; margin:0 auto;" />
             </span>
             <p class="viz-caption">
-              <em>Fig. 3 — iNaturalist observer origins. Proportional symbols show the number of
-              observers per home location. 60% of users are visitors (median travel distance 525 km),
-              predominantly from Germany and Poland but with international observers from 20+ countries.
-              Local observers concentrate in Märkisch-Oderland and Zielona Góra districts.</em>
+              <em>Fig. 3 — iNaturalist observer origins (inferred from observation patterns, not verified home locations).
+              Proportional symbols show observers per home location. Approximately 60% of users are classified
+              as visitors (median travel distance 525 km), mostly from Germany and Poland with some
+              international observers. Results are exploratory — iNaturalist users are a self-selected,
+              non-representative group.</em>
             </p>
 
             <h3>Temporal Animation — Monthly Observations 2019–2025</h3>
             <p>
               Monthly animation of iNaturalist observations colored by taxonomic group. Each frame
-              represents one month. Strong seasonality is evident throughout, with peak activity from
-              May to September. Post-2022 increases in observation density reflect platform growth
-              alongside genuine monitoring interest following the disaster.
+              represents one month. Activity is strongly seasonal, peaking from May to September.
+              Post-2022 increases in observation density are visible but likely driven largely by
+              platform growth rather than recovery.
             </p>
             <video controls
                    style="width:50%; max-width:480px; display:block; margin:0 auto; border: 1px solid #e5e7eb; border-radius:4px;"
@@ -426,12 +427,12 @@
 
             <h3>Catch Size Distributions</h3>
             <p>
-              Catch size distributions offer a more direct ecological signal than catch rates, as
-              they do not depend on effort normalization or platform growth assumptions. The most
-              striking pattern is a dramatic decline in median Wels (catfish) length — from 111 cm
-              pre-disaster to 50 cm post-disaster — consistent with the preferential loss of large
-              individuals during the fish kill. Size changes in other species are smaller and
-              less conclusive.
+              Catch size distributions depend less on effort normalization assumptions than catch rates,
+              making them a somewhat more direct signal. The most notable pattern is a large drop in
+              median Wels (catfish) length — from 111 cm pre-disaster to 50 cm post-disaster. This
+              could be consistent with preferential loss of large individuals during the fish kill,
+              though sample sizes are small and alternative explanations (e.g. targeting behaviour,
+              reporting changes) cannot be ruled out. Patterns in other species are less pronounced.
             </p>
             <span class="image fit">
               <img src="images/aa_fig4_size_distributions.png" alt="Catch size distributions pre vs post disaster" />
@@ -439,8 +440,8 @@
             <p class="viz-caption">
               <em>Fig. 9 — Catch size distributions for six species, pre- vs. post-disaster.
               Histograms show length (cm) with median lines marked. The Wels median dropped
-              62 cm post-disaster — the clearest size-structure signal in the dataset and the
-              least dependent on effort assumptions. Sample sizes shown in legend.</em>
+              62 cm post-disaster — the largest size-structure shift in the dataset and among
+              the least effort-dependent signals. Sample sizes shown in legend; interpret with caution.</em>
             </p>
 
 
@@ -504,10 +505,11 @@
             <hr class="major" />
             <h2>Cross-Dataset Spatial Comparison</h2>
             <p>
-              Placing the three hexbin maps side by side reveals where different forms of CES
-              activity concentrate along the corridor. Frankfurt (Oder) and Schwedt/Oder emerge
-              as consistent hotspots across all three datasets, providing convergent spatial
-              evidence from three independent data sources.
+              Placing the three hexbin maps side by side allows visual comparison of where different
+              forms of CES activity are recorded along the corridor. Frankfurt (Oder) and Schwedt/Oder
+              appear as relatively high-density nodes across all three datasets — a convergence worth
+              noting, though each dataset has its own biases and the overlap should not be
+              over-interpreted.
             </p>
             <div style="display:flex; flex-direction:column; gap:2rem; margin: 1.5rem 0;">
               <div>
@@ -537,9 +539,9 @@
             </div>
             <p class="viz-caption">
               <em>Each map shows unique users per hex cell (log scale), pre-disaster / post-disaster /
-              all years combined. Despite covering different user communities and CES types, all three
-              datasets independently identify Frankfurt (Oder) and Schwedt/Oder as the primary
-              activity nodes along the corridor.</em>
+              all years combined. Frankfurt (Oder) and Schwedt/Oder appear as relatively active nodes
+              across datasets, though the spatial patterns reflect each platform's own user base and
+              geographic biases as much as underlying CES intensity.</em>
             </p>
 
             <!-- ── Implications ── -->
@@ -556,21 +558,22 @@
             </p>
             <ul style="margin: .6rem 0 1rem 1.2rem; line-height: 1.65;">
               <li><strong>Spatial triangulation:</strong>
-                All three datasets independently identify Frankfurt (Oder) and Schwedt/Oder as
-                the most active CES nodes along the corridor — convergent evidence across very
-                different data types that strengthens confidence in these locations as genuine
-                hotspots rather than artefacts of any single platform.</li>
+                All three datasets show relatively higher activity around Frankfurt (Oder) and
+                Schwedt/Oder. This convergence across independent data sources is suggestive, though
+                each dataset has distinct geographic biases (e.g. Alle Angeln is limited to waters
+                with registered catches, iNaturalist skews to accessible habitats near roads and paths).
+                The overlap helps narrow down priority areas for follow-up survey sampling.</li>
               <li><strong>Complementary user communities:</strong>
-                iNaturalist is predominantly visitor-driven (60% visitors, median 525 km travel),
-                Alle Angeln is predominantly local. Flickr sits somewhere between. This contrast
-                is itself a finding — different CES are experienced by different populations,
-                with implications for who is affected by disaster and recovery.</li>
+                iNaturalist skews heavily visitor (roughly 60%, median 525 km travel distance),
+                Alle Angeln skews local. Flickr is harder to characterize. This contrast may be
+                informative for thinking about which populations are likely affected by disaster and
+                recovery, but neither dataset is representative of the broader public.</li>
               <li><strong>Suggestive post-disaster signals:</strong>
                 The Alle Angeln size data (Wels −62 cm median) and effort-normalized catch rate
-                declines for predatory species are the most defensible impact signals in the
-                dataset, as they depend least on platform growth assumptions. iNaturalist and
-                Flickr pre/post comparisons are heavily confounded by platform trends and should
-                not be over-interpreted.</li>
+                declines for predatory species are the most defensible signals in the dataset,
+                as they depend least on platform growth assumptions. Even so, sample sizes are
+                small. iNaturalist and Flickr pre/post comparisons are heavily confounded by
+                platform trends and should not be interpreted as impact estimates.</li>
               <li><strong>Cross-border gap:</strong>
                 All three datasets skew toward the German side. No equivalent Polish angling
                 dataset exists, and Polish participation in iNaturalist and Flickr is lower.
