@@ -311,7 +311,7 @@
               May to September. Post-2022 increases in observation density reflect platform growth
               alongside genuine monitoring interest following the disaster.
             </p>
-            <video controls controlsList="nofullscreen nodownload" disablePictureInPicture
+            <video controls
                    style="width:50%; max-width:480px; display:block; margin:0 auto; border: 1px solid #e5e7eb; border-radius:4px;"
                    poster="images/inat_hotspots_hexbin.png">
               <source src="images/oder_inat_animation_monthly.mp4" type="video/mp4" />
@@ -509,29 +509,29 @@
               as consistent hotspots across all three datasets, providing convergent spatial
               evidence from three independent data sources.
             </p>
-            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0;">
-              <div style="text-align:center;">
+            <div style="display:flex; flex-direction:column; gap:2rem; margin: 1.5rem 0;">
+              <div>
                 <img src="images/inat_hotspots_hexbin.png"
                      alt="iNaturalist hexbin map"
                      style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
-                <p style="font-size:.8rem; color:#666; margin:.5rem 0 0;">
-                  <strong>iNaturalist</strong><br>Biodiversity observations
+                <p style="font-size:.85rem; color:#555; margin:.5rem 0 0;">
+                  <strong>iNaturalist</strong> — Biodiversity observations (unique observers per hex cell)
                 </p>
               </div>
-              <div style="text-align:center;">
+              <div>
                 <img src="images/flickr_fig_hexbin_main.png"
                      alt="Flickr hexbin map"
                      style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
-                <p style="font-size:.8rem; color:#666; margin:.5rem 0 0;">
-                  <strong>Flickr</strong><br>Nature photography
+                <p style="font-size:.85rem; color:#555; margin:.5rem 0 0;">
+                  <strong>Flickr</strong> — Nature photography density (unique photographers per hex cell)
                 </p>
               </div>
-              <div style="text-align:center;">
+              <div>
                 <img src="images/aa_fig_hexbin_main.png"
                      alt="Alle Angeln hexbin map"
                      style="width:100%; border-radius:4px; border:1px solid #e5e7eb;" />
-                <p style="font-size:.8rem; color:#666; margin:.5rem 0 0;">
-                  <strong>Alle Angeln</strong><br>Recreational angling
+                <p style="font-size:.85rem; color:#555; margin:.5rem 0 0;">
+                  <strong>Alle Angeln</strong> — Recreational angling intensity (unique anglers per hex cell)
                 </p>
               </div>
             </div>
