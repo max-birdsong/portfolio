@@ -307,7 +307,7 @@
               May to September. Post-2022 increases in observation density reflect platform growth
               alongside genuine monitoring interest following the disaster.
             </p>
-            <video controls style="width:100%; border: 1px solid #e5e7eb; border-radius:4px;"
+            <video controls style="width:70%; display:block; margin:0 auto; border: 1px solid #e5e7eb; border-radius:4px;"
                    poster="images/inat_hotspots_hexbin.png">
               <source src="images/oder_inat_animation_monthly.mp4" type="video/mp4" />
               Your browser does not support the video tag.
@@ -399,14 +399,14 @@
               Post-disaster intensity is visibly reduced in mid-corridor sections.</em>
             </p>
 
-            <h3>Species-Level Impact</h3>
+            <h3>Species-Level Impact — Catch Rates</h3>
             <p>
-              Annual catches per active angler broken down by species reveal contrasting recovery
-              trajectories. Large predatory species (Zander, Rapfen, Wels) show the steepest
-              post-disaster declines, consistent with the fish kill disproportionately affecting
-              large-bodied fish. Hecht (pike) and Flussbarsch (perch) show counterintuitive
-              increases, potentially reflecting competitive release following predator-prey
-              restructuring of the fish community.
+              Annual catches per active angler broken down by species reveal contrasting trajectories
+              post-disaster. Large predatory species (Zander, Rapfen, Wels) show the steepest
+              declines, while Hecht (pike) and Flussbarsch (perch) show increases possibly reflecting
+              competitive release. These patterns are suggestive but should be interpreted cautiously
+              — they depend on effort normalization assumptions and the active angler definition, and
+              per-species sample sizes are modest.
             </p>
             <span class="image fit">
               <img src="images/aa_fig1_annual_by_species.png" alt="Annual catches per active angler by species" />
@@ -415,9 +415,29 @@
               <em>Fig. 8 — Annual catches per active angler by species (effort-normalized).
               Colors indicate pre-disaster (blue), disaster year 2022 (orange), and post-disaster
               (red). Vertical dashed line marks August 2022 disaster onset. Zander −51%,
-              Rapfen −64%, Wels −23% post-disaster. Hecht and Flussbarsch increases may reflect
-              competitive release following predator community restructuring.</em>
+              Rapfen −64%, Wels −23% post-disaster. Results are indicative only given small
+              per-species sample sizes.</em>
             </p>
+
+            <h3>Catch Size Distributions</h3>
+            <p>
+              Catch size distributions offer a more direct ecological signal than catch rates, as
+              they do not depend on effort normalization or platform growth assumptions. The most
+              striking pattern is a dramatic decline in median Wels (catfish) length — from 111 cm
+              pre-disaster to 50 cm post-disaster — consistent with the preferential loss of large
+              individuals during the fish kill. Size changes in other species are smaller and
+              less conclusive.
+            </p>
+            <span class="image fit">
+              <img src="images/aa_fig4_size_distributions.png" alt="Catch size distributions pre vs post disaster" />
+            </span>
+            <p class="viz-caption">
+              <em>Fig. 9 — Catch size distributions for six species, pre- vs. post-disaster.
+              Histograms show length (cm) with median lines marked. The Wels median dropped
+              62 cm post-disaster — the clearest size-structure signal in the dataset and the
+              least dependent on effort assumptions. Sample sizes shown in legend.</em>
+            </p>
+
 
             <!-- ── Methods ── -->
             <hr class="major" />
@@ -470,37 +490,47 @@
                 <p>Citizen science data subject to observer bias and platform adoption trends.
                 Flickr platform decline since ~2019 confounds pre/post comparisons. Alle Angeln
                 lacks trip-level effort data. iNaturalist post-disaster increase partly reflects
-                platform growth. All three datasets skew toward the German side of the corridor.</p>
+                platform growth. No equivalent Polish angling dataset exists, leaving the recreational
+                fishing CES picture incomplete for the Polish side of the corridor.</p>
               </div>
             </div>
 
             <!-- ── Implications ── -->
             <hr class="major" />
-            <h2>Implications for CES Assessment</h2>
+            <h2>What These Data Can and Can't Tell Us</h2>
             <p>
-              Together, these three datasets triangulate cultural ecosystem service impacts from
-              complementary angles — biodiversity appreciation (iNaturalist), aesthetic/scenic value
-              (Flickr), and recreational fishing (Alle Angeln). Each captures a different user
-              community and CES dimension:
+              These three datasets are opportunistic — collected via apps and platforms not designed
+              for CES research — and none is population-representative. They should be interpreted
+              as exploratory rather than definitive. Their primary value is methodological: together
+              they help spatially characterize where CES activity is concentrated along the corridor,
+              identify which user communities are engaged, and generate hypotheses for follow-up
+              surveys. A future paper may formalize this triangulation approach, but the datasets
+              alone cannot support causal claims about disaster impact on CES at a population level.
             </p>
             <ul style="margin: .6rem 0 1rem 1.2rem; line-height: 1.65;">
-              <li><strong>Angling CES is predominantly local and most directly impacted:</strong>
-                The Alle Angeln data show clear, effort-normalized declines in catch rates for
-                predatory species, representing a measurable ongoing loss of a locally important
-                CES with limited recovery through 2025.</li>
-              <li><strong>Biodiversity observation CES is visitor-dominated and growing:</strong>
-                The iNaturalist increase reflects genuine platform growth, but also suggests rising
-                interest in ecological monitoring post-disaster — a response CES signal as much as
-                a recovery indicator.</li>
-              <li><strong>Photographic/aesthetic CES is harder to disentangle:</strong>
-                Flickr declines are confounded by platform-wide trends, but spatial hotspot patterns
-                are consistent across periods, suggesting the corridor retains scenic value even
-                post-disaster.</li>
-              <li><strong>Cross-border asymmetry:</strong>
-                All three datasets skew toward the German side, reflecting differential app adoption
-                and data infrastructure between Germany and Poland. Complementary resident surveys
-                are planned to capture Polish CES perceptions directly.</li>
+              <li><strong>Spatial triangulation:</strong>
+                All three datasets independently identify Frankfurt (Oder) and Schwedt/Oder as
+                the most active CES nodes along the corridor — convergent evidence across very
+                different data types that strengthens confidence in these locations as genuine
+                hotspots rather than artefacts of any single platform.</li>
+              <li><strong>Complementary user communities:</strong>
+                iNaturalist is predominantly visitor-driven (60% visitors, median 525 km travel),
+                Alle Angeln is predominantly local. Flickr sits somewhere between. This contrast
+                is itself a finding — different CES are experienced by different populations,
+                with implications for who is affected by disaster and recovery.</li>
+              <li><strong>Suggestive post-disaster signals:</strong>
+                The Alle Angeln size data (Wels −62 cm median) and effort-normalized catch rate
+                declines for predatory species are the most defensible impact signals in the
+                dataset, as they depend least on platform growth assumptions. iNaturalist and
+                Flickr pre/post comparisons are heavily confounded by platform trends and should
+                not be over-interpreted.</li>
+              <li><strong>Cross-border gap:</strong>
+                All three datasets skew toward the German side. No equivalent Polish angling
+                dataset exists, and Polish participation in iNaturalist and Flickr is lower.
+                Resident surveys on both sides of the border are the essential next step for
+                a complete cross-border CES assessment.</li>
             </ul>
+
 
           </section>
         </div>
