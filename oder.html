@@ -1,0 +1,591 @@
+<!DOCTYPE HTML>
+<!--
+  Editorial by HTML5 UP
+  html5up.net | @ajlkn
+  Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+  <head>
+    <title>Oder River — Cultural Ecosystem Services</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+  </head>
+  <body class="is-preload">
+
+    <div id="wrapper">
+      <div id="main">
+        <div class="inner">
+
+          <header id="header">
+            <a href="index.html" class="logo">Max Birdsong | PhD</a>
+            <ul class="icons">
+              <li><a href="https://github.com/max-birdsong" class="icon brands fa-github"><span class="label">GitHub</span></a></li>
+              <li><a href="https://www.researchgate.net/profile/Max-Birdsong/research" class="icon brands fa-researchgate"><span class="label">ResearchGate</span></a></li>
+            </ul>
+          </header>
+
+          <section>
+            <header class="main">
+              <h1>Oder River — Cultural Ecosystem Services</h1>
+            </header>
+
+            <span class="image main">
+              <img src="images/oder_hero.jpg" alt="Oder River corridor" />
+            </span>
+
+            <style>
+              html { scroll-behavior: smooth; }
+              .toc-card {
+                max-width: 900px; margin: 1rem auto 2rem;
+                background: #f7f7f9; border: 1px solid #e5e7eb;
+                border-radius: 10px; padding: 1rem 1.25rem;
+                box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+              }
+              .toc-title { margin: 0 0 .5rem 0; font-size: 1.15rem; }
+              .toc-list { list-style: none; margin: 0; padding-left: 0; line-height: 1.55; }
+              .toc-list > li { margin: .25rem 0; }
+              .toc-sublist { list-style: none; margin: .2rem 0 .4rem 1rem; padding-left: 0; }
+              .toc a { text-decoration: none; color: #1f2937; }
+              .toc a:hover { text-decoration: underline; }
+              .toc a.is-active { font-weight: 700; text-decoration: underline; }
+              .viz-caption {
+                text-align: center; font-size: 0.9rem;
+                color: #444; margin-top: 0.6rem; line-height: 1.5;
+              }
+              .dataset-tag {
+                display: inline-block; font-size: 0.72rem; font-weight: 600;
+                letter-spacing: 0.06em; text-transform: uppercase;
+                background: #eef2ff; color: #3730a3;
+                padding: 0.15rem 0.6rem; border-radius: 2rem; margin-bottom: 0.75rem;
+              }
+              .findings-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 1rem; margin: 1.5rem 0 2rem;
+              }
+              .finding-card {
+                background: #f7f7f9; border: 1px solid #e5e7eb;
+                border-radius: 8px; padding: 1rem 1.25rem;
+              }
+              .finding-card .stat {
+                font-size: 1.9rem; font-weight: 700;
+                line-height: 1.1; margin-bottom: 0.3rem;
+              }
+              .finding-card .stat.down    { color: #c0392b; }
+              .finding-card .stat.up      { color: #16a34a; }
+              .finding-card .stat.neutral { color: #2563a8; }
+              .finding-card p { font-size: 0.83rem; color: #555; line-height: 1.5; margin: 0; }
+              .finding-card .src {
+                display: inline-block; margin-top: 0.6rem;
+                font-size: 0.65rem; font-weight: 600; letter-spacing: 0.07em;
+                text-transform: uppercase; background: #eef2ff; color: #3730a3;
+                padding: 0.15rem 0.5rem; border-radius: 2rem;
+              }
+              .disaster-callout {
+                background: #fff5f5; border: 1px solid #fecaca;
+                border-left: 4px solid #c0392b; border-radius: 0 6px 6px 0;
+                padding: 1rem 1.25rem; margin: 1.5rem 0;
+                font-size: 0.92rem; color: #7f1d1d; line-height: 1.65;
+              }
+              .disaster-callout strong { color: #c0392b; }
+              .methods-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 1.25rem; margin-top: 1rem;
+              }
+              .method-card {
+                background: #f7f7f9; border: 1px solid #e5e7eb;
+                border-radius: 8px; padding: 1.25rem;
+              }
+              .method-card h4 { margin: 0 0 0.5rem; font-size: 1rem; }
+              .method-card p { font-size: 0.83rem; color: #555; line-height: 1.6; margin: 0; }
+              .method-card code {
+                font-size: 0.78rem; background: #eef2ff; color: #3730a3;
+                padding: 0.1rem 0.35rem; border-radius: 3px;
+              }
+              @media (max-width: 640px) {
+                .findings-grid, .methods-grid { grid-template-columns: 1fr; }
+              }
+            </style>
+
+            <!-- TOC -->
+            <nav class="toc-card toc" id="auto-toc" aria-label="Table of contents">
+              <h3 class="toc-title">Table of Contents</h3>
+              <ul class="toc-list" id="toc-list"></ul>
+            </nav>
+            <script>
+              (function () {
+                function buildTOC() {
+                  const contentRoot = document.querySelector('#main .inner');
+                  const tocRoot = document.getElementById('toc-list');
+                  if (!contentRoot || !tocRoot) return;
+                  const headings = Array.from(contentRoot.querySelectorAll('h2, h3'))
+                    .filter(h => !h.closest('#auto-toc') && h.textContent.trim().length > 0);
+                  const used = new Set();
+                  const slugify = t => t.toLowerCase().replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-');
+                  const ensureId = el => {
+                    if (el.id && !used.has(el.id)) { used.add(el.id); return el.id; }
+                    const base = slugify(el.textContent);
+                    let id = base, i = 2;
+                    while (document.getElementById(id) || used.has(id)) id = `${base}-${i++}`;
+                    el.id = id; used.add(id); return id;
+                  };
+                  tocRoot.innerHTML = '';
+                  let currentSub = null;
+                  headings.forEach(h => {
+                    const id = ensureId(h);
+                    const link = document.createElement('a');
+                    link.href = `#${id}`; link.textContent = h.textContent.trim();
+                    if (h.tagName === 'H2') {
+                      const li = document.createElement('li');
+                      const span = document.createElement('span');
+                      span.appendChild(link); li.appendChild(span);
+                      currentSub = document.createElement('ul');
+                      currentSub.className = 'toc-sublist';
+                      li.appendChild(currentSub); tocRoot.appendChild(li);
+                    } else {
+                      if (!currentSub) {
+                        const li = document.createElement('li');
+                        currentSub = document.createElement('ul');
+                        currentSub.className = 'toc-sublist';
+                        li.appendChild(currentSub); tocRoot.appendChild(li);
+                      }
+                      const subLi = document.createElement('li');
+                      subLi.appendChild(link); currentSub.appendChild(subLi);
+                    }
+                  });
+                  const observer = new IntersectionObserver(entries => {
+                    entries.forEach(entry => {
+                      const id = entry.target.id;
+                      const a = document.querySelector(`.toc a[href="#${CSS.escape(id)}"]`);
+                      if (!a) return;
+                      if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc a.is-active').forEach(e => e.classList.remove('is-active'));
+                        a.classList.add('is-active');
+                      }
+                    });
+                  }, { rootMargin: '-30% 0px -65% 0px', threshold: 0 });
+                  headings.forEach(h => observer.observe(h));
+                }
+                if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildTOC);
+                else buildTOC();
+              })();
+            </script>
+
+            <!-- ── Background ── -->
+            <hr class="major" />
+            <h2>Background</h2>
+            <p>
+              In August 2022, a mass fish kill devastated the Oder River — one of Central Europe's most
+              ecologically significant transboundary waterways. An algal bloom triggered by elevated
+              salinity, warm temperatures, and low flow caused a catastrophic die-off of fish along
+              approximately 500 km of the river, crossing the German-Polish border. The disaster destroyed
+              recreational fishing, reduced biodiversity, and disrupted long-standing cultural connections
+              to the river on both sides of the border.
+            </p>
+            <div class="disaster-callout">
+              <strong>August 2022 — Oder Ecological Disaster:</strong> Mass fish kill caused by
+              <em>Prymnesium parvum</em> algal bloom, triggered by elevated salinity and temperatures.
+              Estimated 100+ tonnes of fish lost across ~500 km. Recreational fishing suspended.
+              Cross-border political and scientific crisis between Germany and Poland.
+            </div>
+            <p>
+              As part of the <strong>OderTogether project at IFB Potsdam</strong>, I am developing a
+              cross-border social-ecological assessment of how the disaster affected cultural ecosystem
+              services (CES) — the non-material benefits people derive from their relationship with the
+              river. This analysis uses three independent citizen science and angling datasets to document
+              CES intensity before and after the disaster, covering recreational fishing, nature-based
+              tourism, and biodiversity appreciation.
+            </p>
+
+            <!-- ── Key Findings ── -->
+            <hr class="major" />
+            <h2>Key Findings</h2>
+            <div class="findings-grid">
+              <div class="finding-card">
+                <div class="stat down">−24%</div>
+                <p>Catches per active angler per year declined post-disaster, after controlling for platform growth via active-user normalization</p>
+                <span class="src">Alle Angeln</span>
+              </div>
+              <div class="finding-card">
+                <div class="stat down">−51%</div>
+                <p>Zander (pike-perch) catch rate — most severe predator species decline, with limited recovery through 2025</p>
+                <span class="src">Alle Angeln</span>
+              </div>
+              <div class="finding-card">
+                <div class="stat down">−64%</div>
+                <p>Rapfen (asp) catch rate — largest decline of all species, consistent with mass die-off of large pelagic predators</p>
+                <span class="src">Alle Angeln</span>
+              </div>
+              <div class="finding-card">
+                <div class="stat up">×4</div>
+                <p>iNaturalist observations increased fourfold post-disaster, reflecting platform growth and heightened ecological monitoring interest</p>
+                <span class="src">iNaturalist</span>
+              </div>
+              <div class="finding-card">
+                <div class="stat neutral">525 km</div>
+                <p>Median travel distance of iNaturalist visitors to the corridor — the river draws dedicated nature observers from across Europe</p>
+                <span class="src">iNaturalist</span>
+              </div>
+              <div class="finding-card">
+                <div class="stat neutral">60 / 40</div>
+                <p>Visitor-to-local ratio among iNaturalist users, contrasting sharply with the predominantly local angler community on Alle Angeln</p>
+                <span class="src">iNaturalist · Alle Angeln</span>
+              </div>
+            </div>
+
+            <!-- ── Study Area ── -->
+            <hr class="major" />
+            <h2>Study Area</h2>
+            <p>
+              The study corridor spans approximately 300 km of the Oder River along the German-Polish
+              border, from Eisenhüttenstadt in the south to Szczecin Lagoon in the north. The corridor
+              crosses Brandenburg (Germany) and Lubuskie and Zachodniopomorskie (Poland), encompassing
+              a mix of protected floodplain habitats, industrial towns, and small rural communities.
+            </p>
+            <span class="image fit">
+              <img src="images/population_map.png" alt="Study area population density map" />
+            </span>
+            <p class="viz-caption">
+              <em>Fig. 1 — Study area and population context. Population density maps show the
+              urban-rural gradient influencing CES demand on both sides of the German-Polish border.
+              Frankfurt (Oder) / Słubice form the largest urban centre within the corridor.</em>
+            </p>
+
+            <!-- ── iNaturalist ── -->
+            <hr class="major" />
+            <h2>Dataset 1 — iNaturalist: Biodiversity Observations</h2>
+            <p><span class="dataset-tag">Citizen Science · Biodiversity · Visitors + Locals</span></p>
+            <p>
+              iNaturalist records geotagged biodiversity observations submitted by citizen scientists.
+              Along the Oder corridor, observations reflect both ecological monitoring activity and
+              nature-based recreation — a proxy for biodiversity-related CES. Observations were
+              collected via the iNaturalist API within a 5 km buffer of the Oder centerline.
+            </p>
+            <ul>
+              <li><strong>24,245</strong> total observations (2015–2025)</li>
+              <li><strong>5,001</strong> pre-disaster (2015–Jun 2022) · <strong>19,244</strong> post-disaster (Aug 2022–2025)</li>
+              <li><strong>665</strong> unique users · <strong>60%</strong> classified as visitors</li>
+              <li>Median visitor travel distance: <strong>525 km</strong> · observers from 20+ countries</li>
+            </ul>
+
+            <h3>Spatial Hotspots — Pre vs. Post Disaster</h3>
+            <span class="image fit">
+              <img src="images/inat_hotspots_hexbin.png" alt="iNaturalist observation hotspots hexbin map" />
+            </span>
+            <p class="viz-caption">
+              <em>Fig. 2 — iNaturalist observation hotspots along the Oder corridor (hexbin, log scale).
+              Pre-disaster (2015–Jun 2022, n=5,001), post-disaster (Aug 2022–2025, n=19,244), and all
+              years combined (n=24,245). Frankfurt (Oder) and Schwedt/Oder emerge as consistent hotspots.
+              The post-disaster increase reflects platform growth and heightened monitoring interest
+              rather than ecological recovery alone.</em>
+            </p>
+
+            <h3>Observer Origins</h3>
+            <p>
+              User origins were inferred from observation patterns using Nominatim geocoding. Sixty
+              percent of observers were classified as visitors (≥60% of observations outside the
+              corridor), with a median travel distance of 525 km. The corridor attracts dedicated
+              nature observers from across Germany, Poland, and beyond — a strong signal of its
+              regional CES value for biodiversity appreciation.
+            </p>
+            <span class="image fit">
+              <img src="images/origins_fig4_map.png" alt="iNaturalist user origins map" />
+            </span>
+            <p class="viz-caption">
+              <em>Fig. 3 — iNaturalist observer origins. Proportional symbols show the number of
+              observers per home location. 60% of users are visitors (median travel distance 525 km),
+              predominantly from Germany and Poland but with international observers from 20+ countries.
+              Local observers concentrate in Märkisch-Oderland and Zielona Góra districts.</em>
+            </p>
+
+            <h3>Temporal Animation — Monthly Observations 2019–2025</h3>
+            <p>
+              Monthly animation of iNaturalist observations colored by taxonomic group. Each frame
+              represents one month. Strong seasonality is evident throughout, with peak activity from
+              May to September. Post-2022 increases in observation density reflect platform growth
+              alongside genuine monitoring interest following the disaster.
+            </p>
+            <video controls style="width:100%; border: 1px solid #e5e7eb; border-radius:4px;"
+                   poster="images/inat_hotspots_hexbin.png">
+              <source src="images/oder_inat_animation_monthly.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+            <p class="viz-caption">
+              <em>Fig. 4 — Monthly iNaturalist observations, 2019–2025. Points colored by taxonomic
+              group (insects, plants, birds, fish, fungi, mammals). Observer and observation counts
+              shown in real time. Strong seasonal signal and post-2022 platform growth both visible.</em>
+            </p>
+
+            <!-- ── Flickr ── -->
+            <hr class="major" />
+            <h2>Dataset 2 — Flickr: Nature Photography</h2>
+            <p><span class="dataset-tag">Citizen Science · Aesthetic CES · Visitors</span></p>
+            <p>
+              Geotagged Flickr photos within a 2 km buffer of the Oder centerline were collected and
+              filtered using <strong>CLIP zero-shot image classification</strong>
+              (<code>openai/clip-vit-base-patch32</code>) to retain only nature- and river-relevant
+              images. CLIP was applied with 16 relevant prompts (river, wetland, wildlife, landscape,
+              floodplain meadow, etc.) and 18 irrelevant prompts (trains, buildings, interiors,
+              statues, etc.). Softmax scoring with a threshold of 0.55 retained approximately 25%
+              of photos as CES-relevant. The 2 km buffer was chosen over the 5 km iNaturalist buffer
+              to reduce urban noise while retaining riverbank photography.
+            </p>
+            <ul>
+              <li><strong>2,504</strong> total photos collected (2015–2025)</li>
+              <li><strong>~25%</strong> retained after CLIP filtering as nature/river relevant</li>
+              <li>Dominant noise source: railway photography at Frankfurt/Oder rail bridge</li>
+              <li>2 km river buffer · predominantly visitor photographers</li>
+            </ul>
+
+            <h3>CLIP-Filtered Sample</h3>
+            <p>
+              The contact sheet below shows a random sample of 48 photos retained by the CLIP
+              classifier, illustrating the range of nature- and river-relevant content captured
+              in the dataset. Scores shown are the softmax relevance probability; green indicates
+              above-threshold (kept), red below-threshold (removed).
+            </p>
+            <span class="image fit">
+              <img src="images/contact_sheet_kept.png" alt="Sample of CLIP-filtered Flickr photos retained as nature-relevant" />
+            </span>
+            <p class="viz-caption">
+              <em>Fig. 5 — Random sample of 48 Flickr photos retained by CLIP classification
+              (relevance probability ≥ 0.55). Content spans river landscapes, wetlands, wildlife,
+              floodplain meadows, and water recreation — the core CES-relevant categories for
+              the Oder corridor analysis.</em>
+            </p>
+
+            <h3>Photo Density — Pre vs. Post Disaster</h3>
+            <span class="image fit">
+              <img src="images/flickr_fig_hexbin_main.png" alt="Flickr nature photography density hexbin map" />
+            </span>
+            <p class="viz-caption">
+              <em>Fig. 6 — Flickr nature photography density along the Oder corridor (unique
+              photographers per hex cell, log scale). Pre-disaster (2015–Jun 2022), post-disaster
+              (Jul 2022–2025), and all years combined. Hotspots concentrate around Frankfurt (Oder)
+              and Schwedt/Oder. Post-disaster density is lower, though confounded by general Flickr
+              platform decline since ~2019.</em>
+            </p>
+
+            <!-- ── Alle Angeln ── -->
+            <hr class="major" />
+            <h2>Dataset 3 — Alle Angeln: Recreational Fishing</h2>
+            <p><span class="dataset-tag">Angling App · Recreational CES · Local Users</span></p>
+            <p>
+              Alle Angeln is a German angling app used to log catch records. Data from IFB Potsdam
+              covering 53 fishing waters in the Brandenburg/Oder region provide a direct measure of
+              recreational fishing activity — a CES severely impacted by the 2022 fish kill. Unlike
+              iNaturalist and Flickr, the Alle Angeln user base is predominantly local Brandenburg
+              residents, making it the strongest signal of CES experienced by riparian communities.
+              Catches were normalized by active anglers per year (≥1 catch logged) to control for
+              platform growth.
+            </p>
+            <ul>
+              <li><strong>2,603</strong> catch records · <strong>4,531</strong> registered anglers</li>
+              <li><strong>36</strong> species recorded · <strong>53</strong> fishing waters</li>
+              <li>Date range: 2012–2025 · predominantly local Brandenburg anglers</li>
+              <li>Effort proxy: active anglers per year (≥1 catch logged)</li>
+            </ul>
+
+            <h3>Angling Intensity — Pre vs. Post Disaster</h3>
+            <span class="image fit">
+              <img src="images/aa_fig_hexbin_main.png" alt="Alle Angeln angling intensity hexbin map" />
+            </span>
+            <p class="viz-caption">
+              <em>Fig. 7 — Angling intensity along the Oder corridor (unique anglers per hex cell,
+              log scale; proxy for angling effort). Pre-disaster (2017–Jun 2022), post-disaster
+              (Aug 2022–2025), and all years combined. Frankfurt (Oder) dominates both periods.
+              Post-disaster intensity is visibly reduced in mid-corridor sections.</em>
+            </p>
+
+            <h3>Species-Level Impact</h3>
+            <p>
+              Annual catches per active angler broken down by species reveal contrasting recovery
+              trajectories. Large predatory species (Zander, Rapfen, Wels) show the steepest
+              post-disaster declines, consistent with the fish kill disproportionately affecting
+              large-bodied fish. Hecht (pike) and Flussbarsch (perch) show counterintuitive
+              increases, potentially reflecting competitive release following predator-prey
+              restructuring of the fish community.
+            </p>
+            <span class="image fit">
+              <img src="images/aa_fig1_annual_by_species.png" alt="Annual catches per active angler by species" />
+            </span>
+            <p class="viz-caption">
+              <em>Fig. 8 — Annual catches per active angler by species (effort-normalized).
+              Colors indicate pre-disaster (blue), disaster year 2022 (orange), and post-disaster
+              (red). Vertical dashed line marks August 2022 disaster onset. Zander −51%,
+              Rapfen −64%, Wels −23% post-disaster. Hecht and Flussbarsch increases may reflect
+              competitive release following predator community restructuring.</em>
+            </p>
+
+            <!-- ── Methods ── -->
+            <hr class="major" />
+            <h2>Methods</h2>
+            <p>
+              Three independent citizen science datasets were collected, cleaned, and analyzed using
+              Python. Spatial analysis was conducted within 2–5 km buffers of the Oder centerline
+              (Natural Earth 1:10m river layer). All hexbin maps use a shared geographic extent
+              (13.8–16.0°E, 51.4–53.1°N) with gridsize = 20 (~2 km cells) and log-normalized
+              shared color scales across pre/post/combined panels.
+            </p>
+            <div class="methods-grid">
+              <div class="method-card">
+                <h4>iNaturalist</h4>
+                <p>Observations collected via <code>iNaturalist API v1</code> within a 5 km river
+                buffer. User origins inferred from observation patterns using Nominatim geocoding
+                with a 60% inside-corridor threshold for local/visitor classification. Hexbin
+                intensity = unique observers per cell.</p>
+              </div>
+              <div class="method-card">
+                <h4>Flickr + CLIP</h4>
+                <p>Photos collected via <code>Flickr API</code> within a 2 km buffer. Zero-shot
+                classification using <code>openai/clip-vit-base-patch32</code>: 16 relevant +
+                18 irrelevant prompts, softmax scoring, threshold = 0.55. ~25% of photos retained.
+                Hexbin intensity = unique photographers per cell.</p>
+              </div>
+              <div class="method-card">
+                <h4>Alle Angeln</h4>
+                <p>Catch records from IFB Potsdam database (2012–2025). Active angler = ≥1 catch
+                logged per year, used as effort denominator. Pre/post comparison: 2017–Jun 2022
+                vs. Aug 2022–2025. Species-level analysis for 14 species with ≥30 catch records.
+                Hexbin intensity = unique anglers per cell.</p>
+              </div>
+              <div class="method-card">
+                <h4>Disaster Periods</h4>
+                <p>Disaster onset defined as August 2022 (peak fish kill reports). Pre-disaster
+                baselines: 2017–Jun 2022 (Alle Angeln), 2015–Jun 2022 (Flickr, iNaturalist).
+                July 2022 excluded as transition month. Platform growth confounds acknowledged;
+                active-user normalization applied where possible.</p>
+              </div>
+              <div class="method-card">
+                <h4>Spatial Analysis</h4>
+                <p>Hexbin aggregation (<code>gridsize=20</code>, ~2 km cells) on a shared geographic
+                extent. Unique users/photographers/anglers per hex cell used as intensity metric to
+                reduce influence of prolific individual contributors. Log-normalized color scales
+                shared across panels per dataset.</p>
+              </div>
+              <div class="method-card">
+                <h4>Limitations</h4>
+                <p>Citizen science data subject to observer bias and platform adoption trends.
+                Flickr platform decline since ~2019 confounds pre/post comparisons. Alle Angeln
+                lacks trip-level effort data. iNaturalist post-disaster increase partly reflects
+                platform growth. All three datasets skew toward the German side of the corridor.</p>
+              </div>
+            </div>
+
+            <!-- ── Implications ── -->
+            <hr class="major" />
+            <h2>Implications for CES Assessment</h2>
+            <p>
+              Together, these three datasets triangulate cultural ecosystem service impacts from
+              complementary angles — biodiversity appreciation (iNaturalist), aesthetic/scenic value
+              (Flickr), and recreational fishing (Alle Angeln). Each captures a different user
+              community and CES dimension:
+            </p>
+            <ul style="margin: .6rem 0 1rem 1.2rem; line-height: 1.65;">
+              <li><strong>Angling CES is predominantly local and most directly impacted:</strong>
+                The Alle Angeln data show clear, effort-normalized declines in catch rates for
+                predatory species, representing a measurable ongoing loss of a locally important
+                CES with limited recovery through 2025.</li>
+              <li><strong>Biodiversity observation CES is visitor-dominated and growing:</strong>
+                The iNaturalist increase reflects genuine platform growth, but also suggests rising
+                interest in ecological monitoring post-disaster — a response CES signal as much as
+                a recovery indicator.</li>
+              <li><strong>Photographic/aesthetic CES is harder to disentangle:</strong>
+                Flickr declines are confounded by platform-wide trends, but spatial hotspot patterns
+                are consistent across periods, suggesting the corridor retains scenic value even
+                post-disaster.</li>
+              <li><strong>Cross-border asymmetry:</strong>
+                All three datasets skew toward the German side, reflecting differential app adoption
+                and data infrastructure between Germany and Poland. Complementary resident surveys
+                are planned to capture Polish CES perceptions directly.</li>
+            </ul>
+
+          </section>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div id="sidebar">
+        <div class="inner">
+
+          <section id="search" class="alt">
+            <form method="post" action="#">
+              <input type="text" name="query" id="query" placeholder="Search" />
+            </form>
+          </section>
+
+          <nav id="menu">
+            <header class="major"><h2>Menu</h2></header>
+            <ul>
+              <li><a href="index.html">Homepage</a></li>
+              <li>
+                <span class="opener">Specific Projects</span>
+                <ul>
+                  <li><a href="oder.html">Oder River — CES Assessment</a></li>
+                  <li><a href="wolf.html">Wolf Survey — Data Pipeline &amp; Classification Modeling (SQL + Python)</a></li>
+                  <li><a href="mtb.html">Mountain Biking — Feature Engineering &amp; Predictive Modeling</a></li>
+                  <li><a href="social.html">Social Identity &amp; Tolerance — Structural Equation Modeling (SEM)</a></li>
+                  <li><a href="catch_sat.html">Angler Satisfaction — Regression &amp; Mixed-Effects Modeling</a></li>
+                  <li><a href="hunting.html">Hunting Socialization — Pathway Modeling &amp; Cohort Analysis</a></li>
+                  <li><a href="harvest.html">Harvest Behavior — Predictive Modeling with Cultural Features</a></li>
+                  <li><a href="feedback.html">Fishermen Feedback — NLP Sentiment Analysis &amp; Spatial Data Viz</a></li>
+                  <li><a href="meta.html">Evidence Synthesis — Meta-Analysis &amp; Data Integration</a></li>
+                </ul>
+              </li>
+              <li>
+                <span class="opener">Interactive Apps</span>
+                <ul>
+                  <li><a href="https://wolf-tolerance-predictor-app.streamlit.app/?utm_source=portfolio_menu"
+                         target="_blank" rel="noopener" class="icon solid fa-external-link-alt">Wolf Tolerance Predictor</a></li>
+                  <li><a href="https://fishingclusters.streamlit.app/?utm_source=portfolio_sidebar"
+                         target="_blank" rel="noopener" class="icon solid fa-external-link-alt">Angler Clusters</a></li>
+                </ul>
+              </li>
+              <li><a href="portfolio.html">Portfolio</a></li>
+            </ul>
+          </nav>
+
+          <section>
+            <header class="major"><h2>Recent</h2></header>
+            <div class="mini-posts">
+              <article>
+                <a href="mtb.html" class="image"><img src="images/mtb.png" alt="Mountain biking" loading="lazy" /></a>
+                <p>Mountain Biking: Preferences &amp; Behavior</p>
+              </article>
+              <article>
+                <a href="wolf.html" class="image"><img src="images/wolf.JPG" alt="Wolf survey" loading="lazy" /></a>
+                <p>Wolf Project: Longitudinal survey trends</p>
+              </article>
+              <article>
+                <a href="catch_sat.html" class="image"><img src="images/CatchSat.JPG" alt="Angler satisfaction" loading="lazy" /></a>
+                <p>Angler Satisfaction Model</p>
+              </article>
+              <article>
+                <a href="feedback.html" class="image"><img src="images/feedback.JPG" alt="Fishermen feedback" loading="lazy" /></a>
+                <p>Fishermen Feedback: Sentiment + Locations</p>
+              </article>
+            </div>
+          </section>
+
+          <section>
+            <header class="major"><h2>Get in touch</h2></header>
+            <p>I'm always open to discussing research opportunities, collaborations, or applications of data science to natural resource management.</p>
+            <ul class="contact">
+              <li class="icon solid fa-envelope"><a href="#"><span class="__cf_email__" data-cfemail="1c717d647e756e786f73727b2d2e2e2d5c7b717d7570327f7371">[email&#160;protected]</span></a></li>
+              <li class="icon solid fa-phone">+49 15129688479</li>
+              <li class="icon solid fa-home">Berlin, DE</li>
+            </ul>
+          </section>
+
+          <footer id="footer">
+            <p class="copyright">&copy; You. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+          </footer>
+
+        </div>
+      </div>
+    </div>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="assets/js/jquery.min.js"></script>
+    <script sr
