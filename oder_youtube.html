@@ -235,45 +235,109 @@
 
             <!-- ── Data ── -->
             <hr class="major" />
-            <h2>Data</h2>
+            <h2>Data &amp; Sample</h2>
             <p><span class="dataset-tag">YouTube API · German &amp; Polish · Machine-translated</span></p>
             <p>
               YouTube videos were retrieved using the YouTube Data API v3 with German and Polish search
-              terms related to the Oder/Odra River disaster and recreational fishing. Comments were
-              collected for each video, language-detected, and machine-translated to English using
-              Google Translate via the <code>deep-translator</code> library. All topic modeling and
-              classification was performed on the English translations.
+              terms related to the Oder/Odra River disaster and recreational fishing (e.g.
+              <em>Fischsterben Oder, Oderkatastrophe, Oder angeln, katastrofa Odry, śnięcie ryb Odra</em>).
+              Comments were collected for each video, language-detected using <code>langdetect</code>,
+              and machine-translated to English using Google Translate via <code>deep-translator</code>.
+              All topic modeling and classification was performed on the English translations.
             </p>
 
             <div class="findings-grid">
               <div class="finding-card">
                 <div class="stat neutral">86</div>
-                <p>Unique videos collected (31 disaster-related, 55 general fishing/nature)</p>
+                <p>Unique videos collected — 31 disaster-related, 55 general fishing/nature</p>
+                <span class="src">YouTube API</span>
+              </div>
+              <div class="finding-card">
+                <div class="stat neutral">5,368</div>
+                <p>Raw comments collected before filtering</p>
                 <span class="src">YouTube API</span>
               </div>
               <div class="finding-card">
                 <div class="stat neutral">4,329</div>
                 <p>Comments analysed after filtering (≥20 chars, off-topic videos excluded)</p>
-                <span class="src">YouTube API</span>
+                <span class="src">After filtering</span>
               </div>
               <div class="finding-card">
-                <div class="stat neutral">1,733</div>
-                <p>German comments (de)</p>
-                <span class="src">langdetect</span>
-              </div>
-              <div class="finding-card">
-                <div class="stat neutral">2,596</div>
-                <p>Polish comments (pl)</p>
+                <div class="stat neutral">~50/50</div>
+                <p>German/Polish split — 2,614 DE and 2,754 PL in the raw corpus</p>
                 <span class="src">langdetect</span>
               </div>
             </div>
 
+            <span class="image fit">
+              <img src="images/oder_overview_charts.png" alt="Oder YouTube analysis overview — video categories, language split, comments over time, top videos" />
+            </span>
+            <p class="viz-caption">
+              <em>Fig. 1 — Dataset overview. Top left: video corpus composition (64% general fishing/nature, 36% disaster-related).
+              Top right: near-equal German/Polish language split in raw comments.
+              Bottom left: comment volume over time — sharp spike at the August 2022 disaster onset, rapid decay, and sustained lower-level
+              engagement through 2025. Bottom right: top 12 videos by comment count; red = disaster-related, blue = general.</em>
+            </p>
+
+            <p>
+              The temporal pattern is striking: comment volume spikes sharply in August–September 2022 and then
+              drops steeply, with both German and Polish communities responding simultaneously. This confirms
+              the disaster was a shared cross-border public event rather than a nationally siloed news story.
+              The sustained tail of comments through 2023–2025 on general fishing/nature videos suggests
+              ongoing ecosystem services discourse well beyond the initial crisis period.
+            </p>
             <p>
               Videos were classified as <strong>disaster-related</strong> or <strong>general fishing/nature</strong>
               based on title keywords (e.g. <em>Katastrophe, Fischsterben, zatrut, katastrofa</em>). Off-topic
               videos (DSDS talent show, Everest documentary, Jan Heweliusz shipwreck) were excluded before analysis.
               General fishing and nature videos were retained rather than discarded — the contrast between disaster
-              and general video discourse is itself analytically informative.
+              and general video discourse is itself analytically informative for survey design.
+            </p>
+
+            <!-- ── Video Corpus ── -->
+            <hr class="major" />
+            <h2>Video Corpus &amp; Interpretation Context</h2>
+            <p>
+              Comment analysis never occurs in a vacuum — what themes emerge in comments is partly
+              a function of what videos people were watching and reacting to. This is both a limitation
+              and an analytically meaningful signal in its own right.
+            </p>
+            <p>
+              The top disaster videos in the German corpus tend toward explanatory and investigative
+              framing: <em>"Lebt noch was in der Oder? Ursache? Täter? Aktuell…"</em> (Is anything
+              still alive in the Oder? Causes? Perpetrators?) and <em>"Schöne, tote Ostsee: Das
+              Dorschsterben und die Folgen…"</em> (Beautiful, dead Baltic Sea: The cod die-off and
+              its consequences). The top Polish disaster videos are more politically charged and
+              accusatory: <em>"Tony martwych ryb! Trucizna zabija ryby w rzece O…"</em> (Tonnes of
+              dead fish! Poison kills fish in the river), <em>"ODRA UMARŁA — Kto jest winny
+              Katastrofy Ekologiczn…"</em> (THE ODER IS DEAD — Who is guilty of the ecological
+              catastrophe), and <em>"TRUJĄ NAM RZEKI! RZEKA ODRA, NER ZATRUTA #wędkars…"</em>
+              (THEY ARE POISONING OUR RIVERS! The Oder, Ner poisoned).
+            </p>
+            <p>
+              This framing difference is itself a finding: Polish YouTube discourse about the disaster
+              is structured around guilt, accusation, and political responsibility, while German
+              discourse mixes investigative journalism with broader environmental concern. The elevated
+              Polish blame and call-for-action scores in the zero-shot results are partly a product
+              of this video corpus composition — but that composition reflects how each community
+              actually processed and shared information about the event, making it culturally
+              informative rather than merely a confound.
+            </p>
+            <p>
+              The general fishing/nature videos introduce a different kind of context-dependence.
+              German general videos are predominantly lure fishing and technique tutorials
+              (<em>"BARSCHANGELN in kleinen Flüssen — beste Stellen…"</em>), while Polish general
+              videos include more documentary-style river content (<em>"Szukam życia… | Odra
+              obecnie"</em> — Searching for life… | The Oder today). Comments on the Polish
+              "general" videos therefore still carry substantial disaster awareness, which is
+              consistent with the higher Polish scores on disaster-related constructs even
+              outside explicitly disaster-framed content.
+            </p>
+            <p>
+              The practical implication for survey design: the asymmetry in how German and Polish
+              communities framed the disaster on YouTube — blame-focused vs. explanation-focused —
+              may warrant country-specific question ordering or framing, rather than a single
+              translated instrument applied identically in both countries.
             </p>
 
             <!-- ── Methods ── -->
@@ -734,7 +798,7 @@
             <header class="major"><h2>Get in touch</h2></header>
             <p>I'm always open to discussing research opportunities, collaborations, or applications of data science to natural resource management.</p>
             <ul class="contact">
-              <li class="icon solid fa-envelope"><a href="mailto:maxbirdsong1221@gmail.com">maxbirdsong1221@gmail.com</a></li>
+              <li class="icon solid fa-envelope"><a href="/cdn-cgi/l/email-protection#771a160f151e0513041819104645454637101a161e1b5914181a"><span class="__cf_email__" data-cfemail="781519001a110a1c0b17161f494a4a49381f15191114561b1715">[email&#160;protected]</span></a></li>
               <li class="icon solid fa-phone">+49 15129688479</li>
               <li class="icon solid fa-home">Berlin, DE</li>
             </ul>
@@ -748,10 +812,4 @@
       </div>
     </div>
 
-    <script src="assets/js/jquery.min.js"></script>
-    <script src="assets/js/browser.min.js"></script>
-    <script src="assets/js/breakpoints.min.js"></script>
-    <script src="assets/js/util.js"></script>
-    <script src="assets/js/main.js"></script>
-  </body>
-</html>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="
