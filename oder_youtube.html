@@ -1,0 +1,757 @@
+<!DOCTYPE HTML>
+<!--
+  Editorial by HTML5 UP
+  html5up.net | @ajlkn
+  Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+  <head>
+    <title>Oder River — YouTube Comment Analysis</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+  </head>
+  <body class="is-preload">
+
+    <div id="wrapper">
+      <div id="main">
+        <div class="inner">
+
+          <header id="header">
+            <a href="index.html" class="logo">Max Birdsong | PhD</a>
+            <ul class="icons">
+              <li><a href="https://github.com/max-birdsong" class="icon brands fa-github"><span class="label">GitHub</span></a></li>
+              <li><a href="https://www.researchgate.net/profile/Max-Birdsong/research" class="icon brands fa-researchgate"><span class="label">ResearchGate</span></a></li>
+            </ul>
+          </header>
+
+          <section>
+            <header class="main">
+              <h1>Oder River — YouTube Comment Analysis</h1>
+            </header>
+
+            <style>
+              html { scroll-behavior: smooth; }
+              .toc-card {
+                max-width: 900px; margin: 1rem auto 2rem;
+                background: #f7f7f9; border: 1px solid #e5e7eb;
+                border-radius: 10px; padding: 1rem 1.25rem;
+                box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+              }
+              .toc-title { margin: 0 0 .5rem 0; font-size: 1.15rem; }
+              .toc-list { list-style: none; margin: 0; padding-left: 0; line-height: 1.55; }
+              .toc-list > li { margin: .25rem 0; }
+              .toc-sublist { list-style: none; margin: .2rem 0 .4rem 1rem; padding-left: 0; }
+              .toc a { text-decoration: none; color: #1f2937; }
+              .toc a:hover { text-decoration: underline; }
+              .toc a.is-active { font-weight: 700; text-decoration: underline; }
+              .dataset-tag {
+                display: inline-block; font-size: 0.72rem; font-weight: 600;
+                letter-spacing: 0.06em; text-transform: uppercase;
+                background: #eef2ff; color: #3730a3;
+                padding: 0.15rem 0.6rem; border-radius: 2rem; margin-bottom: 0.75rem;
+              }
+              .findings-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 1rem; margin: 1.5rem 0 2rem;
+              }
+              .finding-card {
+                background: #f7f7f9; border: 1px solid #e5e7eb;
+                border-radius: 8px; padding: 1rem 1.25rem;
+              }
+              .finding-card .stat {
+                font-size: 1.9rem; font-weight: 700;
+                line-height: 1.1; margin-bottom: 0.3rem;
+              }
+              .finding-card .stat.down    { color: #c0392b; }
+              .finding-card .stat.up      { color: #16a34a; }
+              .finding-card .stat.neutral { color: #2563a8; }
+              .finding-card p { font-size: 0.83rem; color: #555; line-height: 1.5; margin: 0; }
+              .finding-card .src {
+                display: inline-block; margin-top: 0.6rem;
+                font-size: 0.65rem; font-weight: 600; letter-spacing: 0.07em;
+                text-transform: uppercase; background: #eef2ff; color: #3730a3;
+                padding: 0.15rem 0.5rem; border-radius: 2rem;
+              }
+              .disaster-callout {
+                background: #fff5f5; border: 1px solid #fecaca;
+                border-left: 4px solid #c0392b; border-radius: 0 6px 6px 0;
+                padding: 1rem 1.25rem; margin: 1.5rem 0;
+                font-size: 0.92rem; color: #7f1d1d; line-height: 1.65;
+              }
+              .disaster-callout strong { color: #c0392b; }
+              .insight-callout {
+                background: #f0fdf4; border: 1px solid #bbf7d0;
+                border-left: 4px solid #16a34a; border-radius: 0 6px 6px 0;
+                padding: 1rem 1.25rem; margin: 1rem 0;
+                font-size: 0.92rem; color: #14532d; line-height: 1.65;
+              }
+              .insight-callout strong { color: #16a34a; }
+              .methods-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 1.25rem; margin-top: 1rem;
+              }
+              .method-card {
+                background: #f7f7f9; border: 1px solid #e5e7eb;
+                border-radius: 8px; padding: 1.25rem;
+              }
+              .method-card h4 { margin: 0 0 0.5rem; font-size: 1rem; }
+              .method-card p { font-size: 0.83rem; color: #555; line-height: 1.6; margin: 0; }
+              .method-card code {
+                font-size: 0.78rem; background: #eef2ff; color: #3730a3;
+                padding: 0.1rem 0.35rem; border-radius: 3px;
+              }
+              .viz-caption {
+                text-align: center; font-size: 0.9rem;
+                color: #444; margin-top: 0.6rem; line-height: 1.5;
+              }
+              /* Zero-shot heatmap table */
+              .zs-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 1rem 0; }
+              .zs-table th {
+                background: #1e3a5f; color: white;
+                padding: 8px 10px; text-align: center; font-size: 0.72rem;
+                font-weight: 600; letter-spacing: 0.03em;
+              }
+              .zs-table th.row-header { text-align: left; }
+              .zs-table td {
+                padding: 7px 10px; border-bottom: 1px solid #e5e7eb;
+                text-align: center; font-size: 0.82rem; font-weight: 600;
+              }
+              .zs-table td.row-label { text-align: left; font-weight: 700; font-size: 0.83rem; }
+              .zs-table tr:hover td { background: rgba(37,99,168,0.04); }
+              .score-high  { background: #d1fae5; color: #065f46; }
+              .score-med   { background: #fef9c3; color: #713f12; }
+              .score-low   { background: #f9fafb; color: #374151; }
+              /* Topic table */
+              .topic-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 1rem 0; }
+              .topic-table th {
+                background: #1e3a5f; color: white;
+                padding: 8px 10px; text-align: left; font-size: 0.75rem;
+                font-weight: 600; letter-spacing: 0.03em;
+              }
+              .topic-table td {
+                padding: 8px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top;
+              }
+              .topic-table tr:hover td { background: #f0f7ff; }
+              .badge-high   { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
+              .badge-medium { background: #fef9c3; color: #713f12; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
+              .badge-low    { background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
+              .kw { color: #2563a8; font-weight: 600; font-size: 0.8rem; }
+              .ex { color: #555; font-style: italic; font-size: 0.77rem; line-height: 1.5; }
+              @media (max-width: 640px) {
+                .findings-grid, .methods-grid { grid-template-columns: 1fr; }
+              }
+            </style>
+
+            <!-- TOC -->
+            <nav class="toc-card toc" id="auto-toc" aria-label="Table of contents">
+              <h3 class="toc-title">Table of Contents</h3>
+              <ul class="toc-list" id="toc-list"></ul>
+            </nav>
+            <script>
+              (function () {
+                function buildTOC() {
+                  const contentRoot = document.querySelector('#main .inner');
+                  const tocRoot = document.getElementById('toc-list');
+                  if (!contentRoot || !tocRoot) return;
+                  const headings = Array.from(contentRoot.querySelectorAll('h2, h3'))
+                    .filter(h => !h.closest('#auto-toc') && h.textContent.trim().length > 0);
+                  const used = new Set();
+                  const slugify = t => t.toLowerCase().replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-');
+                  const ensureId = el => {
+                    if (el.id && !used.has(el.id)) { used.add(el.id); return el.id; }
+                    const base = slugify(el.textContent);
+                    let id = base, i = 2;
+                    while (document.getElementById(id) || used.has(id)) id = `${base}-${i++}`;
+                    el.id = id; used.add(id); return id;
+                  };
+                  tocRoot.innerHTML = '';
+                  let currentSub = null;
+                  headings.forEach(h => {
+                    const id = ensureId(h);
+                    const link = document.createElement('a');
+                    link.href = `#${id}`; link.textContent = h.textContent.trim();
+                    if (h.tagName === 'H2') {
+                      const li = document.createElement('li');
+                      const span = document.createElement('span');
+                      span.appendChild(link); li.appendChild(span);
+                      currentSub = document.createElement('ul');
+                      currentSub.className = 'toc-sublist';
+                      li.appendChild(currentSub); tocRoot.appendChild(li);
+                    } else {
+                      if (!currentSub) {
+                        const li = document.createElement('li');
+                        currentSub = document.createElement('ul');
+                        currentSub.className = 'toc-sublist';
+                        li.appendChild(currentSub); tocRoot.appendChild(li);
+                      }
+                      const subLi = document.createElement('li');
+                      subLi.appendChild(link); currentSub.appendChild(subLi);
+                    }
+                  });
+                  const observer = new IntersectionObserver(entries => {
+                    entries.forEach(entry => {
+                      const id = entry.target.id;
+                      const a = document.querySelector(`.toc a[href="#${CSS.escape(id)}"]`);
+                      if (!a) return;
+                      if (entry.isIntersecting) {
+                        document.querySelectorAll('.toc a.is-active').forEach(e => e.classList.remove('is-active'));
+                        a.classList.add('is-active');
+                      }
+                    });
+                  }, { rootMargin: '-30% 0px -65% 0px', threshold: 0 });
+                  headings.forEach(h => observer.observe(h));
+                }
+                if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildTOC);
+                else buildTOC();
+              })();
+            </script>
+
+            <!-- ── Background ── -->
+            <hr class="major" />
+            <h2>Background</h2>
+            <p>
+              As part of the <strong>OderTogether project at IFB Potsdam</strong>, a cross-border resident survey
+              will assess how the 2022 Oder River ecological disaster affected cultural ecosystem services (CES)
+              on both sides of the German-Polish border. Before that survey launches, this analysis uses
+              YouTube comments as a digital trace data source to explore what themes and concerns are
+              salient in public discourse — and whether those themes differ between German and Polish communities.
+            </p>
+            <div class="disaster-callout">
+              <strong>August 2022 — Oder Ecological Disaster:</strong> Mass fish kill caused by
+              <em>Prymnesium parvum</em> algal bloom, triggered by elevated salinity and temperatures.
+              Estimated 100+ tonnes of fish lost across ~500 km. Cross-border political and scientific
+              crisis between Germany and Poland.
+            </div>
+            <p>
+              YouTube comments offer a unique window into organic public reaction — unlike surveys, they
+              capture discourse that emerges spontaneously, both on disaster-framed news videos and on
+              everyday fishing and nature content. This dual framing is intentional: comparing comments
+              on disaster videos vs. general river and fishing videos reveals whether ecosystem services
+              concerns appear only when explicitly prompted, or persist in everyday recreational discourse.
+            </p>
+
+            <!-- ── Data ── -->
+            <hr class="major" />
+            <h2>Data</h2>
+            <p><span class="dataset-tag">YouTube API · German &amp; Polish · Machine-translated</span></p>
+            <p>
+              YouTube videos were retrieved using the YouTube Data API v3 with German and Polish search
+              terms related to the Oder/Odra River disaster and recreational fishing. Comments were
+              collected for each video, language-detected, and machine-translated to English using
+              Google Translate via the <code>deep-translator</code> library. All topic modeling and
+              classification was performed on the English translations.
+            </p>
+
+            <div class="findings-grid">
+              <div class="finding-card">
+                <div class="stat neutral">86</div>
+                <p>Unique videos collected (31 disaster-related, 55 general fishing/nature)</p>
+                <span class="src">YouTube API</span>
+              </div>
+              <div class="finding-card">
+                <div class="stat neutral">4,329</div>
+                <p>Comments analysed after filtering (≥20 chars, off-topic videos excluded)</p>
+                <span class="src">YouTube API</span>
+              </div>
+              <div class="finding-card">
+                <div class="stat neutral">1,733</div>
+                <p>German comments (de)</p>
+                <span class="src">langdetect</span>
+              </div>
+              <div class="finding-card">
+                <div class="stat neutral">2,596</div>
+                <p>Polish comments (pl)</p>
+                <span class="src">langdetect</span>
+              </div>
+            </div>
+
+            <p>
+              Videos were classified as <strong>disaster-related</strong> or <strong>general fishing/nature</strong>
+              based on title keywords (e.g. <em>Katastrophe, Fischsterben, zatrut, katastrofa</em>). Off-topic
+              videos (DSDS talent show, Everest documentary, Jan Heweliusz shipwreck) were excluded before analysis.
+              General fishing and nature videos were retained rather than discarded — the contrast between disaster
+              and general video discourse is itself analytically informative.
+            </p>
+
+            <!-- ── Methods ── -->
+            <hr class="major" />
+            <h2>Methods</h2>
+            <div class="methods-grid">
+              <div class="method-card">
+                <h4>BERTopic</h4>
+                <p>Unsupervised topic modeling using <code>BERTopic 0.17</code> with
+                <code>paraphrase-multilingual-MiniLM-L12-v2</code> sentence embeddings,
+                UMAP dimensionality reduction, and KMeans clustering (k=25).
+                Topic keywords extracted via c-TF-IDF. Representative comments
+                selected per topic for qualitative interpretation.</p>
+              </div>
+              <div class="method-card">
+                <h4>Zero-shot Classification</h4>
+                <p>Each comment classified against 10 theory-driven labels using
+                <code>facebook/bart-large-mnli</code> with multi-label inference
+                (<code>transformers</code> pipeline). Labels map directly to
+                survey constructs: blame, emotional grief, recreational impact,
+                government failure, cross-border tension, recovery hope, health
+                concerns, economic loss, institutional distrust, call for action.</p>
+              </div>
+              <div class="method-card">
+                <h4>Translation</h4>
+                <p>German and Polish comments translated to English using Google
+                Translate via <code>deep-translator</code>. Translation quality is
+                generally good for standard German and Polish but may degrade for
+                colloquialisms, slang, and very short comments. All analysis
+                performed on translated text.</p>
+              </div>
+              <div class="method-card">
+                <h4>Filtering</h4>
+                <p>Comments shorter than 20 characters excluded (emoji-only,
+                single words). Off-topic videos excluded by title keyword matching.
+                4,329 comments retained from an original 5,368. No deduplication —
+                reply threads retained to capture conversational context.</p>
+              </div>
+            </div>
+
+            <!-- ── Key Findings ── -->
+            <hr class="major" />
+            <h2>Key Findings</h2>
+
+            <div class="insight-callout">
+              <strong>🔴 Polish discourse is dominated by blame and calls for accountability.</strong>
+              Polish comments score 0.526 on blame vs. 0.268 for German, and 0.622 on call for action vs. 0.441.
+              Two BERTopic topics are almost exclusively Polish: criminal penalties/prison (96.2% Polish)
+              and fines/PLN (96.6% Polish). Legal justice is a distinctly Polish concern barely present in German discourse.
+            </div>
+            <div class="insight-callout">
+              <strong>🎣 German discourse is dominated by recreational fishing identity and loss.</strong>
+              German comments score 0.530 on recreational fishing impact in general videos — nearly double the
+              Polish score (0.276). German anglers express ecosystem services loss through fishing identity
+              even outside disaster-framed content, suggesting this is an organic rather than prompted concern.
+            </div>
+            <div class="insight-callout">
+              <strong>💔 Emotional grief and place attachment are cross-national but more intense in Polish comments.</strong>
+              Both language groups show elevated distress on disaster videos, but Polish comments score consistently
+              higher on distress (0.285 vs. 0.217) and institutional distrust (0.403 vs. 0.190).
+              Topic 7 — a 100% Polish topic — is a lengthy, detailed critique of PiS government failure and
+              institutional cover-up, representing some of the most politically charged content in the dataset.
+            </div>
+            <div class="insight-callout">
+              <strong>🌊 General fishing videos are not noise — ecosystem services loss persists in everyday discourse.</strong>
+              Polish general video comments score 0.368 on blame and 0.307 on institutional distrust.
+              German general video comments score 0.530 on recreational fishing impact.
+              These are substantive signals appearing without disaster prompting, directly relevant to
+              survey design: questions about river use and attachment should precede disaster-framed items.
+            </div>
+
+            <!-- ── Zero-shot Results ── -->
+            <hr class="major" />
+            <h2>Zero-shot Classification Results</h2>
+            <p>
+              Mean classification scores per group (0–1 scale, independent per label).
+              <span style="background:#d1fae5;padding:2px 6px;border-radius:3px;font-size:0.85rem;">Green ≥ 0.45</span>&nbsp;
+              <span style="background:#fef9c3;padding:2px 6px;border-radius:3px;font-size:0.85rem;">Yellow ≥ 0.30</span>
+            </p>
+
+            <table class="zs-table">
+              <thead>
+                <tr>
+                  <th class="row-header">Group</th>
+                  <th>N</th>
+                  <th>Economic Loss</th>
+                  <th>Call for Action</th>
+                  <th>Blame</th>
+                  <th>Govt Failure</th>
+                  <th>Distrust</th>
+                  <th>Emotional Grief</th>
+                  <th>Recovery Hope</th>
+                  <th>Fishing Impact</th>
+                  <th>Health/Safety</th>
+                  <th>Cross-border Tension</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="row-label">🇩🇪 DE — Disaster videos</td>
+                  <td>678</td>
+                  <td class="score-med">0.328</td><td class="score-med">0.441</td><td class="score-low">0.268</td>
+                  <td class="score-low">0.153</td><td class="score-low">0.190</td><td class="score-low">0.217</td>
+                  <td class="score-low">0.252</td><td class="score-med">0.330</td><td class="score-low">0.192</td><td class="score-low">0.057</td>
+                </tr>
+                <tr>
+                  <td class="row-label">🇩🇪 DE — General videos</td>
+                  <td>1,055</td>
+                  <td class="score-med">0.314</td><td class="score-med">0.367</td><td class="score-low">0.188</td>
+                  <td class="score-low">0.118</td><td class="score-low">0.162</td><td class="score-low">0.155</td>
+                  <td class="score-low">0.221</td><td class="score-high">0.530</td><td class="score-low">0.147</td><td class="score-low">0.043</td>
+                </tr>
+                <tr>
+                  <td class="row-label">🇵🇱 PL — Disaster videos</td>
+                  <td>1,548</td>
+                  <td class="score-med">0.429</td><td class="score-high">0.622</td><td class="score-high">0.526</td>
+                  <td class="score-med">0.344</td><td class="score-med">0.403</td><td class="score-low">0.285</td>
+                  <td class="score-low">0.102</td><td class="score-low">0.199</td><td class="score-low">0.296</td><td class="score-low">0.074</td>
+                </tr>
+                <tr>
+                  <td class="row-label">🇵🇱 PL — General videos</td>
+                  <td>1,048</td>
+                  <td class="score-med">0.359</td><td class="score-high">0.539</td><td class="score-med">0.368</td>
+                  <td class="score-low">0.249</td><td class="score-med">0.307</td><td class="score-low">0.264</td>
+                  <td class="score-low">0.162</td><td class="score-low">0.276</td><td class="score-low">0.233</td><td class="score-low">0.064</td>
+                </tr>
+                <tr style="border-top: 2px solid #1e3a5f;">
+                  <td class="row-label">🇩🇪 DE — All</td>
+                  <td>1,733</td>
+                  <td class="score-med">0.319</td><td class="score-med">0.396</td><td class="score-low">0.219</td>
+                  <td class="score-low">0.132</td><td class="score-low">0.173</td><td class="score-low">0.179</td>
+                  <td class="score-low">0.233</td><td class="score-high">0.452</td><td class="score-low">0.165</td><td class="score-low">0.048</td>
+                </tr>
+                <tr>
+                  <td class="row-label">🇵🇱 PL — All</td>
+                  <td>2,596</td>
+                  <td class="score-med">0.400</td><td class="score-high">0.589</td><td class="score-high">0.462</td>
+                  <td class="score-med">0.306</td><td class="score-med">0.364</td><td class="score-low">0.277</td>
+                  <td class="score-low">0.126</td><td class="score-low">0.230</td><td class="score-low">0.271</td><td class="score-low">0.070</td>
+                </tr>
+                <tr style="border-top: 2px solid #1e3a5f; background: #f0f7ff;">
+                  <td class="row-label"><strong>All comments</strong></td>
+                  <td><strong>4,329</strong></td>
+                  <td class="score-med"><strong>0.368</strong></td><td class="score-high"><strong>0.512</strong></td><td class="score-med"><strong>0.365</strong></td>
+                  <td class="score-low"><strong>0.236</strong></td><td class="score-low"><strong>0.288</strong></td><td class="score-low"><strong>0.238</strong></td>
+                  <td class="score-low"><strong>0.169</strong></td><td class="score-med"><strong>0.319</strong></td><td class="score-low"><strong>0.228</strong></td><td class="score-low"><strong>0.061</strong></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- ── BERTopic Results ── -->
+            <hr class="major" />
+            <h2>BERTopic Topics</h2>
+            <p>
+              24 topics discovered from 4,329 comments. Topics sorted by survey relevance, then size.
+              DE%/PL% shows language composition; Disaster% shows share from disaster-framed videos.
+            </p>
+
+            <h3>High Survey Relevance</h3>
+            <table class="topic-table">
+              <thead>
+                <tr>
+                  <th style="width:3%">#</th>
+                  <th style="width:4%">N</th>
+                  <th style="width:18%">Theme</th>
+                  <th style="width:22%">Top Keywords</th>
+                  <th style="width:10%">DE% / PL%</th>
+                  <th style="width:8%">Disaster%</th>
+                  <th style="width:35%">Example Comment</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>10</td><td>366</td>
+                  <td><strong>Government blame &amp; accountability</strong></td>
+                  <td class="kw">country, government, people, money, happened, responsible</td>
+                  <td>22% / 78%</td><td>70%</td>
+                  <td class="ex">"One thing is who is directly responsible for it. The second is the reaction of the services and the government — this includes resignation and charges, but I do not believe that they will be held accountable."</td>
+                </tr>
+                <tr>
+                  <td>12</td><td>302</td>
+                  <td><strong>Dead fish &amp; ecological disaster</strong></td>
+                  <td class="kw">fish, dead, dead fish, water, algae, river, oder, odra</td>
+                  <td>25% / 75%</td><td>60%</td>
+                  <td class="ex">"As a resident of the Bug River — the fish that appeared after being poisoned are simply the result of migration from the upper section. The loss of fish stock is huge."</td>
+                </tr>
+                <tr>
+                  <td>23</td><td>302</td>
+                  <td><strong>Recreational fishing impact</strong></td>
+                  <td class="kw">fish, fishing, fishermen, catch, eat, tons, anglers, caught</td>
+                  <td>47% / 53%</td><td>46%</td>
+                  <td class="ex">"First the fish, then us."</td>
+                </tr>
+                <tr>
+                  <td>11</td><td>277</td>
+                  <td><strong>Sewage &amp; industrial pollution</strong></td>
+                  <td class="kw">water, river, sewage, treatment, plant, rivers, sewage treatment</td>
+                  <td>23% / 77%</td><td>61%</td>
+                  <td class="ex">"It is common practice in almost all sewage treatment plants in Germany that during heavy rain, wastewater that the plant can no longer handle is discharged into the river."</td>
+                </tr>
+                <tr>
+                  <td>13</td><td>268</td>
+                  <td><strong>River identity (Oder/Odra)</strong></td>
+                  <td class="kw">river, oder, odra, rivers, odra river, canal, people</td>
+                  <td>19% / 81%</td><td>55%</td>
+                  <td class="ex">"Respect for nature is the primary essence... if we round up the 742 km of the Odra River flowing through our country and calculate on average that about 400 illegal connections to this river are detected per 50 km, we have on average 6,000 illegal discharges into the Oder along its entire length."</td>
+                </tr>
+                <tr>
+                  <td>6</td><td>245</td>
+                  <td><strong>German-Polish cross-border tension</strong></td>
+                  <td class="kw">poland, polish, german, berlin, germany, government, poles, germans</td>
+                  <td>25% / 76%</td><td>63%</td>
+                  <td class="ex">"This is Poland! Sad :("</td>
+                </tr>
+                <tr>
+                  <td>5</td><td>185</td>
+                  <td><strong>Criminal penalties &amp; perpetrators</strong></td>
+                  <td class="kw">penalty, death, culprits, prosecutor, responsible, prison, guilty</td>
+                  <td>4% / <strong>96%</strong></td><td>80%</td>
+                  <td class="ex">"If they do not find the culprits for this disaster and subsequent poisonings in the era of technology and monitoring, it will mean that certain services/government do not want to find the culprits."</td>
+                </tr>
+                <tr>
+                  <td>15</td><td>183</td>
+                  <td><strong>Emotional grief &amp; tragedy</strong></td>
+                  <td class="kw">god, jesus, sad, tragedy, makes want, heart, want</td>
+                  <td>30% / 70%</td><td>59%</td>
+                  <td class="ex">"It makes you want to cry when you see what is happening. Tragedy. No words."</td>
+                </tr>
+                <tr>
+                  <td>9</td><td>167</td>
+                  <td><strong>Environmental activism</strong></td>
+                  <td class="kw">man, ecologists, nature, people, planet, green, world, destroy</td>
+                  <td>26% / 74%</td><td>64%</td>
+                  <td class="ex">"Man is the biggest pest on the planet."</td>
+                </tr>
+                <tr>
+                  <td>22</td><td>119</td>
+                  <td><strong>Polish Waters contamination</strong></td>
+                  <td class="kw">polish, polish waters, waters, water, poland, rivers, state, river</td>
+                  <td>9% / <strong>91%</strong></td><td>66%</td>
+                  <td class="ex">"Doesn't Polish Waters belong to the TAHAL company? A few years ago, this company was very involved in the area Polish Waters."</td>
+                </tr>
+                <tr>
+                  <td>0</td><td>115</td>
+                  <td><strong>Scientific analysis (mercury, oxygen)</strong></td>
+                  <td class="kw">mercury, water, higher, afraid, germans, oxygen, samples, salinity</td>
+                  <td>12% / 88%</td><td>70%</td>
+                  <td class="ex">"Water poisoned by mercury."</td>
+                </tr>
+                <tr>
+                  <td>4</td><td>111</td>
+                  <td><strong>Poisoning &amp; chemical contamination</strong></td>
+                  <td class="kw">poisoning, poisoned, poison, chernobyl, chemical, substance, waste</td>
+                  <td>14% / 87%</td><td>63%</td>
+                  <td class="ex">"Someone really wants not to suffer the consequences. Why are these offices there when ordinary people do better work?"</td>
+                </tr>
+                <tr>
+                  <td>24</td><td>87</td>
+                  <td><strong>Fines &amp; legal consequences</strong></td>
+                  <td class="kw">company, river, fine, penalty, pln, fines, million, prison</td>
+                  <td>3% / <strong>97%</strong></td><td>71%</td>
+                  <td class="ex">"Very nice company! :)" <em>[sarcastic]</em></td>
+                </tr>
+                <tr>
+                  <td>7</td><td>61</td>
+                  <td><strong>PiS &amp; environmental protection failure</strong></td>
+                  <td class="kw">measles, state, protection, pis, environmental protection, ecological</td>
+                  <td><strong>0%</strong> / <strong>100%</strong></td><td>59%</td>
+                  <td class="ex">"The PiS fat cats sitting on the boards of these institutions tried to sweep everything under the carpet, until the Germans officially asked about the reasons for the poisoning of the river."</td>
+                </tr>
+                <tr>
+                  <td>20</td><td>9</td>
+                  <td><strong>Opole province (upstream origin)</strong></td>
+                  <td class="kw">opole province, province, attack, opole, environment, lives</td>
+                  <td><strong>0%</strong> / <strong>100%</strong></td><td>100%</td>
+                  <td class="ex">"I'm from the Opole province, this is an attack on our lives and environment."</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3>Medium Survey Relevance</h3>
+            <table class="topic-table">
+              <thead>
+                <tr>
+                  <th style="width:3%">#</th><th style="width:4%">N</th>
+                  <th style="width:18%">Theme</th><th style="width:22%">Top Keywords</th>
+                  <th style="width:10%">DE% / PL%</th><th style="width:8%">Disaster%</th>
+                  <th style="width:35%">Example Comment</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2</td><td>134</td>
+                  <td><strong>Baltic Sea fisheries decline</strong></td>
+                  <td class="kw">sea, cod, baltic sea, baltic, fishing, years, fish, fishermen</td>
+                  <td>84% / 16%</td><td>25%</td>
+                  <td class="ex">"My grandfather has been dead for a long time now and I am grateful that he did not have to see his beloved Baltic Sea being destroyed."</td>
+                </tr>
+                <tr>
+                  <td>1</td><td>207</td>
+                  <td><strong>News reactions &amp; general comments</strong></td>
+                  <td class="kw">like, comment, thanks, plan, report, thank, don, news</td>
+                  <td>50% / 50%</td><td>44%</td>
+                  <td class="ex">"Thanks for this factual and topic-focused report, thanks to which I was able to learn some new things. Despite all the terrifying news, let's not lose hope that better times will come for our beloved Odra."</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- ── Survey Implications ── -->
+            <hr class="major" />
+            <h2>Implications for Survey Design</h2>
+            <p>
+              The primary purpose of this analysis is to inform the OderTogether resident survey.
+              The table below maps the comment analysis findings to specific survey design recommendations.
+            </p>
+
+            <table class="topic-table">
+              <thead>
+                <tr>
+                  <th style="width:20%">Survey Construct</th>
+                  <th style="width:25%">Evidence from Comments</th>
+                  <th style="width:20%">DE vs PL Difference</th>
+                  <th style="width:35%">Suggested Survey Approach</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Blame &amp; accountability</strong></td>
+                  <td>Topics 10, 5, 24; ZS blame DE=0.27 vs PL=0.53</td>
+                  <td><strong>Strong — PL ~2× higher</strong></td>
+                  <td>Items on perceived responsibility (industry, government, both countries). Consider country-specific framing — Polish respondents may be more primed for accountability discourse.</td>
+                </tr>
+                <tr>
+                  <td><strong>Recreational fishing loss</strong></td>
+                  <td>Topics 23, 8; ZS fishing impact DE=0.45 vs PL=0.23</td>
+                  <td><strong>Strong — DE ~2× higher</strong></td>
+                  <td>Items on changes in fishing frequency, willingness to return, species-specific loss. German anglers express this organically — items should not require disaster prompting.</td>
+                </tr>
+                <tr>
+                  <td><strong>Place attachment / river identity</strong></td>
+                  <td>Topic 13 (oder/odra/rivers); ZS grief elevated cross-nationally</td>
+                  <td>Moderate — PL slightly higher</td>
+                  <td>Validated place attachment scale already planned. Ensure items capture river-specific identity. Consider items explicitly naming Oder/Odra.</td>
+                </tr>
+                <tr>
+                  <td><strong>Emotional distress &amp; grief</strong></td>
+                  <td>Topic 15 (tragedy, heart, god); ZS grief DE=0.18 vs PL=0.28</td>
+                  <td>Moderate — PL higher</td>
+                  <td>Include psychological/emotional impact items. Consider wellbeing battery. Disaster context elevates both — buffer sections between river use and disaster items important.</td>
+                </tr>
+                <tr>
+                  <td><strong>Distrust of institutions</strong></td>
+                  <td>Topic 7 (PiS, environmental protection); ZS distrust DE=0.17 vs PL=0.36</td>
+                  <td><strong>Strong — PL ~2× higher</strong></td>
+                  <td>Items on trust in German/Polish environmental authorities and cross-border cooperation. May need separate items for national vs. cross-border institutional trust.</td>
+                </tr>
+                <tr>
+                  <td><strong>Economic loss</strong></td>
+                  <td>Topics 24, 5; ZS economic loss DE=0.32 vs PL=0.40</td>
+                  <td>Moderate</td>
+                  <td>Items on perceived economic impacts (fishing days lost, local business, tourism, property values). Legal compensation discourse is Polish-specific.</td>
+                </tr>
+                <tr>
+                  <td><strong>Ecological recovery perception</strong></td>
+                  <td>ZS recovery hope DE=0.23 vs PL=0.13</td>
+                  <td>Moderate — DE more hopeful</td>
+                  <td>Items on perceived recovery status, timeline expectations, future use intentions. German commenters appear more optimistic — worth testing whether this holds in survey data.</td>
+                </tr>
+                <tr>
+                  <td><strong>Cross-border tension</strong></td>
+                  <td>Topic 6 (poland/german/berlin); ZS tension low overall (0.05–0.07)</td>
+                  <td>Low in organic discourse</td>
+                  <td>Low salience in unprompted comments but may emerge more strongly when explicitly asked. Include items on cross-border cooperation attitudes and perceptions of the other country's response.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- ── Caveats ── -->
+            <hr class="major" />
+            <h2>Limitations</h2>
+            <ul style="line-height: 1.75;">
+              <li><strong>Non-representative sample:</strong> YouTube commenters are a self-selected group. Comment behavior (who comments, on what, how much) differs systematically from the broader riparian population the survey targets.</li>
+              <li><strong>Machine translation:</strong> German and Polish comments translated to English before analysis. Quality is generally good but idiomatic expressions, political slang, and short comments may be mistranslated. Analysis on translated text may miss language-specific nuance.</li>
+              <li><strong>Video corpus drives comment content:</strong> What themes appear depends partly on what videos were returned by search queries. Cross-language comparisons should account for possible differences in video corpus composition.</li>
+              <li><strong>Zero-shot model limitations:</strong> <code>facebook/bart-large-mnli</code> was trained primarily on English text. Multi-label scores are independent (do not sum to 1) and represent the model's confidence that each label applies, not a probability distribution. Scores should be interpreted comparatively rather than as absolute measures.</li>
+              <li><strong>BERTopic with KMeans:</strong> KMeans requires a fixed number of topics (k=25) rather than discovering the optimal number automatically. Some topics may be over-split or under-split.</li>
+            </ul>
+
+          </section>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div id="sidebar">
+        <div class="inner">
+
+          <section id="search" class="alt">
+            <form method="post" action="#">
+              <input type="text" name="query" id="query" placeholder="Search" />
+            </form>
+          </section>
+
+          <nav id="menu">
+            <header class="major"><h2>Menu</h2></header>
+            <ul>
+              <li><a href="index.html">Homepage</a></li>
+              <li>
+                <span class="opener">Specific Projects</span>
+                <ul>
+                  <li><a href="oder.html">Oder River — CES Assessment</a></li>
+                  <li><a href="oder_youtube.html">Oder River — YouTube Comment Analysis</a></li>
+                  <li><a href="wolf.html">Wolf Survey — Data Pipeline &amp; Classification Modeling (SQL + Python)</a></li>
+                  <li><a href="mtb.html">Mountain Biking — Feature Engineering &amp; Predictive Modeling</a></li>
+                  <li><a href="social.html">Social Identity &amp; Tolerance — Structural Equation Modeling (SEM)</a></li>
+                  <li><a href="catch_sat.html">Angler Satisfaction — Regression &amp; Mixed-Effects Modeling</a></li>
+                  <li><a href="hunting.html">Hunting Socialization — Pathway Modeling &amp; Cohort Analysis</a></li>
+                  <li><a href="harvest.html">Harvest Behavior — Predictive Modeling with Cultural Features</a></li>
+                  <li><a href="feedback.html">Fishermen Feedback — NLP Sentiment Analysis &amp; Spatial Data Viz</a></li>
+                  <li><a href="meta.html">Evidence Synthesis — Meta-Analysis &amp; Data Integration</a></li>
+                </ul>
+              </li>
+              <li>
+                <span class="opener">Interactive Apps</span>
+                <ul>
+                  <li><a href="https://wolf-tolerance-predictor-app.streamlit.app/?utm_source=portfolio_menu"
+                         target="_blank" rel="noopener" class="icon solid fa-external-link-alt">Wolf Tolerance Predictor</a></li>
+                  <li><a href="https://fishingclusters.streamlit.app/?utm_source=portfolio_sidebar"
+                         target="_blank" rel="noopener" class="icon solid fa-external-link-alt">Angler Clusters</a></li>
+                </ul>
+              </li>
+              <li><a href="portfolio.html">Portfolio</a></li>
+            </ul>
+          </nav>
+
+          <section>
+            <header class="major"><h2>Recent</h2></header>
+            <div class="mini-posts">
+              <article>
+                <a href="oder.html" class="image"><img src="images/oder_hero.jpg" alt="Oder River CES" loading="lazy" /></a>
+                <p>Oder River: Cultural Ecosystem Services Assessment</p>
+              </article>
+              <article>
+                <a href="mtb.html" class="image"><img src="images/mtb.png" alt="Mountain biking" loading="lazy" /></a>
+                <p>Mountain Biking: Preferences &amp; Behavior</p>
+              </article>
+              <article>
+                <a href="wolf.html" class="image"><img src="images/wolf.JPG" alt="Wolf survey" loading="lazy" /></a>
+                <p>Wolf Project: Longitudinal survey trends</p>
+              </article>
+              <article>
+                <a href="feedback.html" class="image"><img src="images/feedback.JPG" alt="Fishermen feedback" loading="lazy" /></a>
+                <p>Fishermen Feedback: Sentiment + Locations</p>
+              </article>
+            </div>
+          </section>
+
+          <section>
+            <header class="major"><h2>Get in touch</h2></header>
+            <p>I'm always open to discussing research opportunities, collaborations, or applications of data science to natural resource management.</p>
+            <ul class="contact">
+              <li class="icon solid fa-envelope"><a href="mailto:maxbirdsong1221@gmail.com">maxbirdsong1221@gmail.com</a></li>
+              <li class="icon solid fa-phone">+49 15129688479</li>
+              <li class="icon solid fa-home">Berlin, DE</li>
+            </ul>
+          </section>
+
+          <footer id="footer">
+            <p class="copyright">&copy; You. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+          </footer>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/browser.min.js"></script>
+    <script src="assets/js/breakpoints.min.js"></script>
+    <script src="assets/js/util.js"></script>
+    <script src="assets/js/main.js"></script>
+  </body>
+</html>
