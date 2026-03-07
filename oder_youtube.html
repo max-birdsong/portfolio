@@ -143,6 +143,33 @@
               @media (max-width: 640px) {
                 .findings-grid, .methods-grid { grid-template-columns: 1fr; }
               }
+            
+            .top-videos-table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 0.85rem;
+              margin: 1.2em 0 1.8em;
+            }
+            .top-videos-table thead th {
+              background: #f0f4f8;
+              padding: 8px 10px;
+              text-align: left;
+              font-weight: 600;
+              border-bottom: 2px solid #d0d8e4;
+            }
+            .top-videos-table tbody tr:nth-child(even) { background: #f9fafb; }
+            .top-videos-table tbody tr:hover { background: #eef2f7; }
+            .top-videos-table td {
+              padding: 7px 10px;
+              border-bottom: 1px solid #e8ecf0;
+              vertical-align: middle;
+            }
+            .tv-rank { color: #888; width: 2em; text-align: center; }
+            .tv-count { text-align: right; font-weight: 600; width: 5em; }
+            .tv-badges { white-space: nowrap; width: 12em; }
+            .tv-title a { color: #2563a8; text-decoration: none; }
+            .tv-title a:hover { text-decoration: underline; }
+
             </style>
 
             <!-- TOC -->
@@ -248,8 +275,8 @@
 
             <div class="findings-grid">
               <div class="finding-card">
-                <div class="stat neutral">86</div>
-                <p>Unique videos collected — 31 disaster-related, 55 general fishing/nature</p>
+                <div class="stat neutral">54</div>
+                <p>Unique videos in cleaned corpus — 33 disaster-related, 21 Oder fishing/nature</p>
                 <span class="src">YouTube API</span>
               </div>
               <div class="finding-card">
@@ -258,41 +285,127 @@
                 <span class="src">YouTube API</span>
               </div>
               <div class="finding-card">
-                <div class="stat neutral">4,329</div>
-                <p>Comments analysed after filtering (≥20 chars, off-topic videos excluded)</p>
+                <div class="stat neutral">3,196</div>
+                <p>Comments analysed after filtering (≥20 chars, off-topic &amp; non-Oder videos excluded)</p>
                 <span class="src">After filtering</span>
               </div>
               <div class="finding-card">
-                <div class="stat neutral">~50/50</div>
-                <p>German/Polish split — 2,614 DE and 2,754 PL in the raw corpus</p>
+                <div class="stat neutral">19/81</div>
+                <p>German/Polish split in cleaned corpus — 660 DE and 2,748 PL</p>
                 <span class="src">langdetect</span>
               </div>
             </div>
 
-            <span class="image fit">
-              <img src="images/oder_overview_charts.png" alt="Oder YouTube analysis overview — video categories, language split, comments over time, top videos" />
-            </span>
-            <p class="viz-caption">
-              <em>Fig. 1 — Dataset overview. Top left: video corpus composition (64% general fishing/nature, 36% disaster-related).
-              Top right: near-equal German/Polish language split in raw comments.
-              Bottom left: comment volume over time — sharp spike at the August 2022 disaster onset, rapid decay, and sustained lower-level
-              engagement through 2025. Bottom right: top 12 videos by comment count; red = disaster-related, blue = general.</em>
-            </p>
+            
 
-            <p>
-              The temporal pattern is striking: comment volume spikes sharply in August–September 2022 and then
-              drops steeply, with both German and Polish communities responding simultaneously. This confirms
-              the disaster was a shared cross-border public event rather than a nationally siloed news story.
-              The sustained tail of comments through 2023–2025 on general fishing/nature videos suggests
-              ongoing ecosystem services discourse well beyond the initial crisis period.
-            </p>
+
             <p>
               Videos were classified as <strong>disaster-related</strong> or <strong>general fishing/nature</strong>
               based on title keywords (e.g. <em>Katastrophe, Fischsterben, zatrut, katastrofa</em>). Off-topic
-              videos (DSDS talent show, Everest documentary, Jan Heweliusz shipwreck) were excluded before analysis.
-              General fishing and nature videos were retained rather than discarded — the contrast between disaster
-              and general video discourse is itself analytically informative for survey design.
+              videos and general fishing videos with no explicit Oder connection were excluded, leaving 54 videos
+              directly relevant to the Oder disaster or Oder recreational fishing. Note that after cleaning,
+              the corpus skews heavily Polish (81%) — the excluded generic fishing videos were predominantly
+              German-language, reflecting how the YouTube algorithm surfaced content differently across language communities.
             </p>
+            <h3>Top 15 Videos by Comment Count</h3>
+            <table class="top-videos-table">
+              <thead>
+                <tr><th>#</th><th>Title</th><th>Language / Type</th><th>Comments</th></tr>
+              </thead>
+              <tbody>
+              <tr>
+                <td class="tv-rank">1</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=FC9QruTGd6I" target="_blank" rel="noopener">Tony martwych ryb! Trucicza zabija  ryby w rzece Odra. Katastr…</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">204</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">2</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=h1yZUYkW_Rw" target="_blank" rel="noopener">Lebt noch was in der Oder? Ursache? Täter? Aktuelles zum Fisch…</a></td>
+                <td class="tv-badges"><span class="ei-badge de">🇩🇪 DE</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">194</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">3</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=SIJl6ILNzVY" target="_blank" rel="noopener">TRUJĄ NAM RZEKI RZEKA ODRA, NER  ZATRUTA  #wędkarstwo #rzeka #…</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">193</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">4</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=B0_CIcIfkUo" target="_blank" rel="noopener">ODRA UMARŁA - Kto jest winny Katastrofy Ekologicznej?</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">191</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">5</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=cGJErfTWidU" target="_blank" rel="noopener">Szukam życia...| Odra obecnie</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge gen">fishing</span></td>
+                <td class="tv-count">191</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">6</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=8dKh0VxEDAw" target="_blank" rel="noopener">Katastrofa ekologiczna rzeki Odry</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">186</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">7</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=BKZ2NUSVyN0" target="_blank" rel="noopener">ZATRUJ RZEKĘ i ZGARNIJ KASĘ - ODRA 2022, WARTA 2015</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge gen">fishing</span></td>
+                <td class="tv-count">186</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">8</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=iRAhr-1BJTQ" target="_blank" rel="noopener">SKAŻONA ODRA | NIE POZWÓLMY ZAPOMNIEĆ!</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">181</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">9</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=JsJKrEyhe-c" target="_blank" rel="noopener">Czy Odra się odrodzi? - BIOLOG ŚRODOWISKOWY opowiada o klęsce …</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">176</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">10</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=YQc-Fx_TKo4" target="_blank" rel="noopener">tausende tote Fische in Berlin... 😧</a></td>
+                <td class="tv-badges"><span class="ei-badge de">🇩🇪 DE</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">161</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">11</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=UC_JRhkg6cc" target="_blank" rel="noopener">Katastrofa Ekologiczna na Odrze!! Odra umiera na naszych oczac…</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">126</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">12</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=BnjgV47Gwbo" target="_blank" rel="noopener">Kabaret Skeczów Męczących - Odra | Świętokrzyska Gala Kabareto…</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge gen">fishing</span></td>
+                <td class="tv-count">118</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">13</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=evY-ZhIX4sU" target="_blank" rel="noopener">Droht uns eine Katastrophe?</a></td>
+                <td class="tv-badges"><span class="ei-badge de">🇩🇪 DE</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">117</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">14</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=ShLpAtiryEo" target="_blank" rel="noopener">Śnięte ryby w zatrutej Odrze. Odór rozkładających się ciał jes…</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">114</td>
+              </tr>
+              <tr>
+                <td class="tv-rank">15</td>
+                <td class="tv-title"><a href="https://www.youtube.com/watch?v=QZwE7MZCgmY" target="_blank" rel="noopener">Katastrofa Ekologiczna na Odrze. Fala Śmierci i Jej Żniwa! Now…</a></td>
+                <td class="tv-badges"><span class="ei-badge pl">🇵🇱 PL</span> <span class="ei-badge dis">disaster</span></td>
+                <td class="tv-count">113</td>
+              </tr>
+              </tbody>
+            </table>
+
 
             <!-- ── Video Corpus ── -->
             <hr class="major" />
