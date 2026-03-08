@@ -242,9 +242,10 @@
             <p>
               As part of the <strong>OderTogether project at IFB Potsdam</strong>, a cross-border resident survey
               will assess how the 2022 Oder River ecological disaster affected cultural ecosystem services (CES)
-              on both sides of the German-Polish border. Before that survey launches, this analysis uses
-              YouTube comments as a digital trace data source to explore what themes and concerns are
-              salient in public discourse — and whether those themes differ between German and Polish communities.
+              on both sides of the German-Polish border. This page documents an <strong>exploratory analysis</strong> of
+              YouTube comments as a digital trace data source — an early-stage exercise to surface themes and language
+              that appear in public discourse around the disaster, and to help identify constructs that may be
+              worth including in the survey. It is not intended as a systematic comparative study of German vs. Polish public opinion.
             </p>
             <div class="disaster-callout">
               <strong>August 2022 — Oder Ecological Disaster:</strong> Mass fish kill caused by
@@ -253,11 +254,12 @@
               crisis between Germany and Poland.
             </div>
             <p>
-              YouTube comments offer a unique window into organic public reaction — unlike surveys, they
-              capture discourse that emerges spontaneously, both on disaster-framed news videos and on
-              everyday fishing and nature content. This dual framing is intentional: comparing comments
-              on disaster videos vs. general river and fishing videos reveals whether ecosystem services
-              concerns appear only when explicitly prompted, or persist in everyday recreational discourse.
+              YouTube comments offer one window into organic public reaction — unlike surveys, they
+              capture discourse that emerges spontaneously. The corpus includes both disaster-framed news videos and
+              everyday fishing and nature content, providing an opportunity to observe whether ecosystem services
+              concerns surface only in disaster-specific contexts or also appear in more everyday recreational discourse.
+              Given corpus limitations (see below), patterns across these video types should be treated as
+              illustrative rather than conclusive.
             </p>
 
             <!-- ── Data ── -->
@@ -302,10 +304,12 @@
             <p>
               Videos were classified as <strong>disaster-related</strong> or <strong>general fishing/nature</strong>
               based on title keywords (e.g. <em>Katastrophe, Fischsterben, zatrut, katastrofa</em>). Off-topic
-              videos and general fishing videos with no explicit Oder connection were excluded, leaving 54 videos
-              directly relevant to the Oder disaster or Oder recreational fishing. Note that after cleaning,
-              the corpus skews heavily Polish (81%) — the excluded generic fishing videos were predominantly
-              German-language, reflecting how the YouTube algorithm surfaced content differently across language communities.
+              videos and general fishing videos with no explicit Oder connection were excluded in an attempt to retain
+              only videos directly relevant to the Oder disaster or Oder recreational fishing. Note that despite filtering,
+              the corpus likely retains some borderline inclusions (e.g., Baltic Sea fishing content; see Limitations).
+              After cleaning, the corpus skews heavily Polish (81%) — excluded generic fishing videos were predominantly
+              German-language, though it is unclear how much this reflects true algorithmic differences versus search
+              query choices.
             </p>
             <h3>Top 15 Videos by Comment Count</h3>
             <table class="top-videos-table">
@@ -427,14 +431,14 @@
               catastrophe), and <em>"TRUJĄ NAM RZEKI! RZEKA ODRA, NER ZATRUTA #wędkars…"</em>
               (THEY ARE POISONING OUR RIVERS! The Oder, Ner poisoned).
             </p>
-            <p>
-              This framing difference is itself a finding: Polish YouTube discourse about the disaster
-              is structured around guilt, accusation, and political responsibility, while German
-              discourse mixes investigative journalism with broader environmental concern. The elevated
-              Polish blame and call-for-action scores in the zero-shot results are partly a product
-              of this video corpus composition — but that composition reflects how each community
-              actually processed and shared information about the event, making it culturally
-              informative rather than merely a confound.
+              <p>
+              This framing difference is worth noting: Polish YouTube content about the disaster appears more
+              oriented toward guilt and political responsibility, while German content mixes investigative
+              journalism with broader environmental concern. The elevated Polish blame scores in the zero-shot
+              results are at least partly a product of this video corpus composition — and that composition
+              is itself partly a result of which videos the search queries happened to surface. Whether this
+              reflects genuine community-level differences in how the disaster was processed, or differences
+              in what gets uploaded and widely shared on YouTube, cannot be determined from this data alone.
             </p>
             <p>
               The general fishing/nature videos introduce a different kind of context-dependence.
@@ -446,11 +450,12 @@
               consistent with the higher Polish scores on disaster-related constructs even
               outside explicitly disaster-framed content.
             </p>
-            <p>
-              The practical implication for survey design: the asymmetry in how German and Polish
-              communities framed the disaster on YouTube — blame-focused vs. explanation-focused —
-              may warrant country-specific question ordering or framing, rather than a single
-              translated instrument applied identically in both countries.
+              <p>
+              The asymmetry in how German and Polish content in this corpus frames the disaster — more blame-focused
+              in Polish, more explanatory in German — is one pattern worth keeping in mind during survey design.
+              It raises a question (not answered here) about whether German and Polish respondents may approach
+              disaster-related questions differently. Country-specific piloting and cognitive interviews will be
+              better positioned to assess this than the current analysis.
             </p>
 
             <!-- ── Methods ── -->
@@ -493,33 +498,40 @@
 
             <!-- ── Key Findings ── -->
             <hr class="major" />
-            <h2>Key Findings</h2>
+            <h2>Observed Patterns</h2>
+            <p style="font-size:0.9rem; color:#555; margin-bottom:1rem;">
+              The following patterns emerged from topic modeling and zero-shot classification. Given the exploratory nature
+              of this analysis and the corpus limitations described above, these should be read as <em>candidate themes to investigate</em>
+              in the survey rather than confirmed findings. Differences between German and Polish scores are especially sensitive
+              to the unequal and potentially non-comparable video corpora.
+            </p>
 
             <div class="insight-callout">
-              <strong>🔴 Polish discourse is dominated by blame and calls for accountability.</strong>
-              Polish comments score 0.526 on blame vs. 0.268 for German, and 0.622 on call for action vs. 0.441.
-              Two BERTopic topics are almost exclusively Polish: criminal penalties/prison (96.2% Polish)
-              and fines/PLN (96.6% Polish). Legal justice is a distinctly Polish concern barely present in German discourse.
+              <strong>🔴 Blame and accountability language appears more prominent in Polish comments.</strong>
+              Polish comments score higher on blame (0.526 vs. 0.268 for German) and call for action (0.622 vs. 0.441).
+              Two BERTopic topics cluster around legal consequences and are predominantly Polish-language.
+              This pattern is consistent with the Polish video corpus being more explicitly accusatory in framing —
+              whether it also reflects broader community attitudes is an open question for the survey to explore.
             </div>
             <div class="insight-callout">
-              <strong>🎣 German discourse is dominated by recreational fishing identity and loss.</strong>
-              German comments score 0.530 on recreational fishing impact in general videos — nearly double the
-              Polish score (0.276). German anglers express ecosystem services loss through fishing identity
-              even outside disaster-framed content, suggesting this is an organic rather than prompted concern.
+              <strong>🎣 Recreational fishing loss language is more prominent in German comments.</strong>
+              German comments score higher on recreational fishing impact (0.530 in general videos vs. 0.276 for Polish).
+              This may reflect both genuine differences in how anglers on each side express loss and the composition of the
+              German general video corpus, which skews toward lure fishing tutorials. Worth including fishing-specific
+              loss items in the survey instrument.
             </div>
             <div class="insight-callout">
-              <strong>💔 Emotional grief and place attachment are cross-national but more intense in Polish comments.</strong>
-              Both language groups show elevated distress on disaster videos, but Polish comments score consistently
-              higher on distress (0.285 vs. 0.217) and institutional distrust (0.403 vs. 0.190).
-              Topic 7 — a 100% Polish topic — is a lengthy, detailed critique of PiS government failure and
-              institutional cover-up, representing some of the most politically charged content in the dataset.
+              <strong>💔 Emotional distress language appears in both language groups, somewhat more in Polish comments.</strong>
+              Both groups show distress-related language on disaster videos; Polish comments score higher on distress
+              (0.285 vs. 0.217) and institutional distrust (0.403 vs. 0.190).
+              Topic 7 — almost entirely Polish — contains extended criticism of government response, suggesting this
+              is a theme worth probing in the Polish survey arm. Causality cannot be established here.
             </div>
             <div class="insight-callout">
-              <strong>🌊 General fishing videos are not noise — ecosystem services loss persists in everyday discourse.</strong>
-              Polish general video comments score 0.368 on blame and 0.307 on institutional distrust.
-              German general video comments score 0.530 on recreational fishing impact.
-              These are substantive signals appearing without disaster prompting, directly relevant to
-              survey design: questions about river use and attachment should precede disaster-framed items.
+              <strong>🌊 Disaster-adjacent themes appear even in general fishing/river content.</strong>
+              Polish general video comments show elevated blame (0.368) and institutional distrust (0.307) scores.
+              German general videos show elevated recreational fishing impact (0.530). This suggests that disaster
+              awareness may be embedded in everyday river discourse — a potential design consideration for survey question ordering.
             </div>
 
             <!-- ── Voices ── -->
@@ -857,7 +869,10 @@
             <hr class="major" />
             <h2>Zero-shot Classification Results</h2>
             <p>
-              Mean classification scores per group (0–1 scale, independent per label).
+              Mean classification scores per group (0–1 scale, independent per label). These scores reflect
+              model confidence that each label applies — they are not probabilities and should not be compared
+              across labels, only within labels across groups. Differences between DE and PL groups reflect
+              a combination of language, comment content, and video corpus composition.
               <span style="background:#d1fae5;padding:2px 6px;border-radius:3px;font-size:0.85rem;">Green ≥ 0.45</span>&nbsp;
               <span style="background:#fef9c3;padding:2px 6px;border-radius:3px;font-size:0.85rem;">Yellow ≥ 0.30</span>
             </p>
@@ -936,11 +951,14 @@
             <hr class="major" />
             <h2>BERTopic Topics</h2>
             <p>
-              24 topics discovered from 4,329 comments. Topics sorted by survey relevance, then size.
-              DE%/PL% shows language composition; Disaster% shows share from disaster-framed videos.
+              24 topics extracted from ~4,300 comments using BERTopic with KMeans (k=25). Topics are grouped below
+              by apparent thematic relevance to the survey — a subjective judgment call, not a model output.
+              DE%/PL% shows language composition within each topic; Disaster% shows share from disaster-framed videos.
+              Topic coherence varies; some topics are clearly thematic while others may reflect video-specific
+              conversational artifacts. A few topics appear to involve off-topic content (e.g., Baltic Sea fishing).
             </p>
 
-            <h3>High Survey Relevance</h3>
+            <h3>Potentially Survey-Relevant Topics</h3>
             <table class="topic-table">
               <thead>
                 <tr>
@@ -1062,7 +1080,7 @@
               </tbody>
             </table>
 
-            <h3>Medium Survey Relevance</h3>
+            <h3>Lower or Unclear Survey Relevance</h3>
             <table class="topic-table">
               <thead>
                 <tr>
@@ -1092,10 +1110,12 @@
 
             <!-- ── Survey Implications ── -->
             <hr class="major" />
-            <h2>Implications for Survey Design</h2>
+            <h2>Possible Survey Considerations</h2>
             <p>
-              The primary purpose of this analysis is to inform the OderTogether resident survey.
-              The table below maps the comment analysis findings to specific survey design recommendations.
+              The table below maps themes that appeared in this exploratory analysis to constructs that might be
+              worth investigating in the OderTogether survey. These are suggestive rather than prescriptive —
+              the primary purpose is to flag themes that emerged organically in public discourse and that
+              may otherwise be underrepresented in a theory-driven instrument.
             </p>
 
             <table class="topic-table">
@@ -1104,7 +1124,7 @@
                   <th style="width:20%">Survey Construct</th>
                   <th style="width:25%">Evidence from Comments</th>
                   <th style="width:20%">DE vs PL Difference</th>
-                  <th style="width:35%">Suggested Survey Approach</th>
+                  <th style="width:35%">Possible Consideration</th>
                 </tr>
               </thead>
               <tbody>
@@ -1112,13 +1132,13 @@
                   <td><strong>Blame &amp; accountability</strong></td>
                   <td>Topics 10, 5, 24; ZS blame DE=0.27 vs PL=0.53</td>
                   <td><strong>Strong — PL ~2× higher</strong></td>
-                  <td>Items on perceived responsibility (industry, government, both countries). Consider country-specific framing — Polish respondents may be more primed for accountability discourse.</td>
+                  <td>Items on perceived responsibility (industry, government, both countries) appear worth including. The higher Polish scores likely partly reflect video framing, but blame-related themes appear consistently enough to warrant explicit measurement.</td>
                 </tr>
                 <tr>
                   <td><strong>Recreational fishing loss</strong></td>
                   <td>Topics 23, 8; ZS fishing impact DE=0.45 vs PL=0.23</td>
                   <td><strong>Strong — DE ~2× higher</strong></td>
-                  <td>Items on changes in fishing frequency, willingness to return, species-specific loss. German anglers express this organically — items should not require disaster prompting.</td>
+                  <td>Items on changes in fishing frequency, willingness to return, species-specific loss. The theme appears consistently in German general content — may be worth not requiring a disaster-specific prompt to elicit this.</td>
                 </tr>
                 <tr>
                   <td><strong>Place attachment / river identity</strong></td>
@@ -1130,7 +1150,7 @@
                   <td><strong>Emotional distress &amp; grief</strong></td>
                   <td>Topic 15 (tragedy, heart, god); ZS grief DE=0.18 vs PL=0.28</td>
                   <td>Moderate — PL higher</td>
-                  <td>Include psychological/emotional impact items. Consider wellbeing battery. Disaster context elevates both — buffer sections between river use and disaster items important.</td>
+                  <td>Psychological/emotional impact items seem worth including. Ordering effects are a real concern — separating river use items from disaster-framing items is good practice regardless of what this corpus shows.</td>
                 </tr>
                 <tr>
                   <td><strong>Distrust of institutions</strong></td>
@@ -1148,7 +1168,7 @@
                   <td><strong>Ecological recovery perception</strong></td>
                   <td>ZS recovery hope DE=0.23 vs PL=0.13</td>
                   <td>Moderate — DE more hopeful</td>
-                  <td>Items on perceived recovery status, timeline expectations, future use intentions. German commenters appear more optimistic — worth testing whether this holds in survey data.</td>
+                  <td>Items on perceived recovery status and future use intentions seem worth including. The German vs. Polish score difference is suggestive but driven by a small German subsample — not a strong basis for differential design choices.</td>
                 </tr>
                 <tr>
                   <td><strong>Cross-border tension</strong></td>
@@ -1163,9 +1183,10 @@
             <hr class="major" />
             <h2>Limitations</h2>
             <ul style="line-height: 1.75;">
+              <li><strong>Corpus inclusion errors:</strong> Despite keyword-based filtering, the corpus likely retains some incorrectly included videos (e.g., Baltic Sea fishing content appearing as a distinct BERTopic cluster; comedy/kabaret content not directly related to the disaster). These inclusions may inflate or distort topic and classification outputs in unpredictable ways.</li>
               <li><strong>Non-representative sample:</strong> YouTube commenters are a self-selected group. Comment behavior (who comments, on what, how much) differs systematically from the broader riparian population the survey targets.</li>
               <li><strong>Machine translation:</strong> German and Polish comments translated to English before analysis. Quality is generally good but idiomatic expressions, political slang, and short comments may be mistranslated. Analysis on translated text may miss language-specific nuance.</li>
-              <li><strong>Video corpus drives comment content:</strong> What themes appear depends partly on what videos were returned by search queries. Cross-language comparisons should account for possible differences in video corpus composition.</li>
+              <li><strong>Video corpus drives comment content:</strong> What themes appear in comments is heavily dependent on what videos people were watching. The German and Polish corpora contain different videos with different framing, meaning that cross-language score differences reflect a mix of genuine attitudinal differences and video content differences — these cannot be disentangled here.</li>
               <li><strong>Zero-shot model limitations:</strong> <code>facebook/bart-large-mnli</code> was trained primarily on English text. Multi-label scores are independent (do not sum to 1) and represent the model's confidence that each label applies, not a probability distribution. Scores should be interpreted comparatively rather than as absolute measures.</li>
               <li><strong>BERTopic with KMeans:</strong> KMeans requires a fixed number of topics (k=25) rather than discovering the optimal number automatically. Some topics may be over-split or under-split.</li>
             </ul>
