@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dynasty Trade Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111418;
+    --surface2: #181d23;
+    --border: #1f2730;
+    --border2: #2a3540;
+    --accent: #00e5a0;
+    --accent2: #00b87a;
+    --red: #ff4d6d;
+    --amber: #ffb830;
+    --text: #e8edf2;
+    --text2: #8a9bb0;
+    --text3: #4a5a6a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+    margin-bottom: 40px;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .logo h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .logo .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 6px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text3);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text3);
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  .status-dot.live { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+  .status-dot.warn { background: var(--amber); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* SETUP PANEL */
+  .setup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 800px) {
+    .setup-grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .panel-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+
+  .settings-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .setting-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  label {
+    font-size: 0.72rem;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  select, input[type="text"] {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    outline: none;
+    width: 100%;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  select:hover, input:hover { border-color: var(--accent); }
+  select:focus, input:focus { border-color: var(--accent); }
+
+  .btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 9px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .btn:disabled {
+    border-color: var(--text3);
+    color: var(--text3);
+    cursor: not-allowed;
+  }
+
+  .btn:disabled:hover {
+    background: transparent;
+    color: var(--text3);
+  }
+
+  .btn-danger {
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .btn-danger:hover {
+    background: var(--red);
+    color: var(--bg);
+  }
+
+  /* FILE UPLOAD */
+  .upload-zone {
+    border: 1px dashed var(--border2);
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(0,229,160,0.03);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: var(--text3);
+  }
+
+  .upload-text {
+    font-size: 0.8rem;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .upload-sub {
+    font-size: 0.68rem;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  /* FETCH STATUS */
+  .fetch-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    margin-top: 12px;
+    min-height: 40px;
+  }
+
+  .fetch-status.success { border-color: var(--accent); color: var(--accent); }
+  .fetch-status.error { border-color: var(--red); color: var(--red); }
+  .fetch-status.loading { color: var(--amber); border-color: var(--amber); }
+
+  /* MAIN TABLE AREA */
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .table-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  .table-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .filter-group {
+    display: flex;
+    gap: 0;
+  }
+
+  .filter-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    padding: 7px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: -1px;
+  }
+
+  .filter-btn:first-child { margin-left: 0; }
+  .filter-btn:hover { color: var(--text); }
+  .filter-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    z-index: 1;
+  }
+
+  .search-input {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 7px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    width: 200px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+
+  /* SORT TOGGLE */
+  .sort-group {
+    display: flex;
+    gap: 0;
+    margin-left: 8px;
+  }
+
+  /* TABLE */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  thead {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border2);
+  }
+
+  th {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 12px 16px;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+  }
+
+  th:hover { color: var(--text); }
+  th.sorted { color: var(--accent); }
+
+  th .sort-arrow {
+    margin-left: 4px;
+    opacity: 0.4;
+  }
+  th.sorted .sort-arrow { opacity: 1; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover { background: var(--surface2); }
+
+  td {
+    padding: 11px 16px;
+    white-space: nowrap;
+  }
+
+  .player-name {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .player-name.my-player {
+    color: var(--accent);
+  }
+
+  .player-pos {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    margin-left: 6px;
+    background: var(--surface2);
+    color: var(--text3);
+  }
+
+  .pos-QB { color: #ff8c42; border-left: 2px solid #ff8c42; }
+  .pos-RB { color: #4ecdc4; border-left: 2px solid #4ecdc4; }
+  .pos-WR { color: #45b7d1; border-left: 2px solid #45b7d1; }
+  .pos-TE { color: #a78bfa; border-left: 2px solid #a78bfa; }
+  .pos-K  { color: var(--text3); }
+  .pos-PICK { color: #ffb830; border-left: 2px solid #ffb830; }
+
+  .val-cell {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text2);
+  }
+
+  /* DELTA BAR */
+  .delta-cell {
+    min-width: 180px;
+  }
+
+  .delta-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .delta-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    min-width: 50px;
+    text-align: right;
+  }
+
+  .delta-num.positive { color: var(--accent); }
+  .delta-num.negative { color: var(--red); }
+  .delta-num.neutral  { color: var(--text3); }
+
+  .delta-bar-track {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .delta-bar-fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    transition: width 0.4s ease;
+  }
+
+  .delta-bar-fill.positive {
+    left: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  .delta-bar-fill.negative {
+    right: 50%;
+    background: var(--red);
+    box-shadow: 0 0 6px var(--red);
+  }
+
+  .delta-midpoint {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 1px;
+    height: 100%;
+    background: var(--border2);
+  }
+
+  /* SIGNAL BADGES */
+  .signal {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .signal-buy {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(0,229,160,0.06);
+  }
+
+  .signal-sell {
+    color: var(--red);
+    border-color: var(--red);
+    background: rgba(255,77,109,0.06);
+  }
+
+  .signal-hold {
+    color: var(--text3);
+    border-color: var(--text3);
+  }
+
+  .signal-strong-buy {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+  .signal-strong-sell {
+    color: var(--bg);
+    background: var(--red);
+    border-color: var(--red);
+    font-weight: 700;
+  }
+
+  /* TEAM BADGE */
+  .team-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text3);
+  }
+
+  .age-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text2);
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    padding: 80px 20px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    margin-top: 20px;
+  }
+
+  .empty-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+
+  .empty-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text3);
+  }
+
+  /* SUMMARY CARDS */
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  @media (max-width: 900px) {
+    .summary-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+  }
+
+  .summary-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+
+  .summary-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    line-height: 1;
+    letter-spacing: 1px;
+  }
+
+  .summary-val.green { color: var(--accent); }
+  .summary-val.red { color: var(--red); }
+  .summary-val.amber { color: var(--amber); }
+  .summary-val.neutral { color: var(--text2); }
+
+  .summary-sub {
+    font-size: 0.68rem;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  /* TOOLTIP */
+  .tooltip {
+    position: relative;
+    cursor: help;
+  }
+
+  .tooltip::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    padding: 6px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text2);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+  }
+
+  .tooltip:hover::after { opacity: 1; }
+
+  /* TOGGLE MY PLAYERS */
+  .my-player-row {
+    background: rgba(0,229,160,0.03);
+  }
+
+  .my-player-row td:first-child {
+    border-left: 2px solid var(--accent);
+  }
+
+  /* LOADING SPINNER */
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--amber);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 0;
+    margin-top: 60px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text3);
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* CSV FORMAT HINT */
+  .hint-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    margin-top: 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text3);
+    line-height: 1.8;
+  }
+
+  .hint-box code {
+    color: var(--accent);
+    background: rgba(0,229,160,0.08);
+    padding: 1px 4px;
+  }
+
+  /* SLEEPER SECTION (future) */
+  .coming-soon-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 2px;
+    color: var(--amber);
+    border: 1px solid var(--amber);
+    padding: 3px 8px;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .logo h1 { font-size: 1.4rem; }
+    .table-controls { flex-direction: column; align-items: flex-start; }
+    .search-input { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">
+        <h1>Dynasty Analyzer</h1>
+        <span class="tag">Beta</span>
+      </div>
+      <div class="header-status">
+        <span id="fc-status"><span class="status-dot"></span>FC NOT LOADED</span>
+        <span id="my-status"><span class="status-dot"></span>NO ROSTER</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- SETUP -->
+  <div class="setup-grid">
+
+    <!-- FANTASYCALC SETTINGS -->
+    <div class="panel">
+      <div class="panel-title">// FantasyCalc Settings</div>
+      <div class="settings-row">
+        <div class="setting-group">
+          <label>QB Format</label>
+          <select id="sel-qbs">
+            <option value="1">1QB</option>
+            <option value="2">Superflex / 2QB</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label>PPR</label>
+          <select id="sel-ppr">
+            <option value="1">Full PPR</option>
+            <option value="0.5">Half PPR</option>
+            <option value="0">Standard</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label>TEP</label>
+          <select id="sel-tep">
+            <option value="false">No TEP</option>
+            <option value="true">TEP</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" id="btn-fetch" onclick="fetchFC()">
+        Fetch Rankings
+      </button>
+      <div class="fetch-status" id="fc-fetch-status">
+        <span style="color:var(--text3)">Configure settings and fetch FantasyCalc rankings.</span>
+      </div>
+    </div>
+
+    <!-- MY RANKINGS UPLOAD -->
+    <div class="panel">
+      <div class="panel-title">// My Rankings <span class="coming-soon-badge" style="margin-left:8px;">Optional</span></div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="csv-input" accept=".csv" onchange="handleCSV(event)">
+        <div class="upload-icon">↑</div>
+        <div class="upload-text">Upload your rankings CSV</div>
+        <div class="upload-sub">or drag & drop</div>
+      </div>
+      <div class="hint-box">
+        Expected columns: <code>name</code>, <code>value</code> (your rank score or value)<br>
+        Optional: <code>myplayer</code> = <code>1</code> to flag your roster<br>
+        Example: <code>Justin Jefferson, 9500, 1</code>
+      </div>
+      <div class="fetch-status" id="csv-status" style="margin-top:8px;">
+        <span style="color:var(--text3)">No file loaded.</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-row" id="summary-row" style="display:none;">
+    <div class="summary-card">
+      <div class="summary-label">Total Players</div>
+      <div class="summary-val neutral" id="sum-total">—</div>
+      <div class="summary-sub">across all positions</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Strong Buys</div>
+      <div class="summary-val green" id="sum-buys">—</div>
+      <div class="summary-sub">undervalued by market</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Strong Sells</div>
+      <div class="summary-val red" id="sum-sells">—</div>
+      <div class="summary-sub">overvalued by market</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">My Roster</div>
+      <div class="summary-val amber" id="sum-roster">—</div>
+      <div class="summary-sub">loaded from CSV</div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div id="table-section">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-title">No Data Loaded</div>
+      <div class="empty-sub">Fetch FantasyCalc rankings to get started. Optionally upload your CSV to see buy/sell signals.</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="container">
+    Dynasty Analyzer — Data sourced from FantasyCalc API &nbsp;·&nbsp; Values update in real time &nbsp;·&nbsp; Sleeper integration coming soon
+  </div>
+</footer>
+
+<script>
+// ==================== STATE ====================
+let fcData = [];       // raw from fantasycalc
+let myData = {};       // name → {value, myPlayer}
+let merged = [];       // final merged rows
+let activeFilter = 'ALL';
+let sortCol = 'fcValue';
+let sortDir = -1;      // -1 = desc
+let searchQ = '';
+let showOnlyMine = false;
+
+// ==================== FETCH FC ====================
+async function fetchFC() {
+  const btn = document.getElementById('btn-fetch');
+  const status = document.getElementById('fc-fetch-status');
+  const numQbs = document.getElementById('sel-qbs').value;
+  const ppr = document.getElementById('sel-ppr').value;
+  const tep = document.getElementById('sel-tep').value;
+
+  btn.disabled = true;
+  btn.textContent = 'Fetching...';
+  status.className = 'fetch-status loading';
+  status.innerHTML = '<span class="spinner"></span> Connecting to FantasyCalc...';
+
+  const url = `https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=${numQbs}&ppr=${ppr}&tep=${tep}&includeAdp=false`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const raw = await res.json();
+
+    fcData = raw.map(r => ({
+      id: r.player?.id || Math.random(),
+      name: r.player?.name || 'Unknown',
+      pos: r.player?.position || '?',
+      team: r.player?.maybeTeam || '—',
+      age: r.player?.age || null,
+      fcValue: r.value || 0,
+      fcRank: r.overallRank || 0,
+    })).filter(p => p.fcValue > 0);
+
+    fcData.sort((a,b) => b.fcValue - a.fcValue);
+
+    status.className = 'fetch-status success';
+    status.textContent = `✓ Loaded ${fcData.length} players · Updated just now`;
+
+    document.getElementById('fc-status').innerHTML =
+      '<span class="status-dot live"></span>FC LIVE';
+
+    mergeAndRender();
+  } catch(e) {
+    status.className = 'fetch-status error';
+    status.textContent = `✗ Error: ${e.message}. Check CORS or try again.`;
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Fetch Rankings';
+}
+
+// ==================== CSV UPLOAD ====================
+function handleCSV(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  processCSVFile(file);
+}
+
+function processCSVFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    parseMyCSV(text, file.name);
+  };
+  reader.readAsText(file);
+}
+
+function parseMyCSV(text, filename) {
+  const status = document.getElementById('csv-status');
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
+  if (lines.length < 2) {
+    status.className = 'fetch-status error';
+    status.textContent = '✗ CSV appears empty or has only one row.';
+    return;
+  }
+
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const nameIdx  = headers.findIndex(h => h.includes('name'));
+  const valIdx   = headers.findIndex(h => h.includes('val') || h.includes('rank') || h.includes('score'));
+  const mineIdx  = headers.findIndex(h => h.includes('mine') || h.includes('roster') || h.includes('myplayer') || h === 'my');
+
+  if (nameIdx === -1) {
+    status.className = 'fetch-status error';
+    status.textContent = '✗ Could not find a "name" column. Check your CSV headers.';
+    return;
+  }
+
+  myData = {};
+  let count = 0;
+  let mineCount = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    const name = cols[nameIdx]?.trim();
+    if (!name) continue;
+    const value = valIdx >= 0 ? parseFloat(cols[valIdx]) || 0 : 0;
+    const isMine = mineIdx >= 0 ? (cols[mineIdx]?.trim() === '1' || cols[mineIdx]?.trim().toLowerCase() === 'true') : false;
+    const key = normName(name);
+    myData[key] = { value, myPlayer: isMine, rawName: name };
+    count++;
+    if (isMine) mineCount++;
+  }
+
+  status.className = 'fetch-status success';
+  status.textContent = `✓ ${count} players loaded from ${filename} · ${mineCount} on roster`;
+
+  const myStatusEl = document.getElementById('my-status');
+  if (mineCount > 0) {
+    myStatusEl.innerHTML = `<span class="status-dot live"></span>${mineCount} ON ROSTER`;
+  } else {
+    myStatusEl.innerHTML = `<span class="status-dot warn"></span>${count} RANKED`;
+  }
+
+  mergeAndRender();
+}
+
+function splitCSVLine(line) {
+  const result = [];
+  let cur = '';
+  let inQ = false;
+  for (const c of line) {
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function normName(name) {
+  return name.toLowerCase()
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// ==================== MERGE ====================
+function mergeAndRender() {
+  if (fcData.length === 0) return;
+
+  // Compute max my value for normalization
+  const myVals = Object.values(myData).map(d => d.value).filter(v => v > 0);
+  const maxMyVal = myVals.length ? Math.max(...myVals) : 0;
+  const maxFCVal = fcData.length ? Math.max(...fcData.map(p => p.fcValue)) : 1;
+
+  merged = fcData.map((p, i) => {
+    const key = normName(p.name);
+    const myEntry = myData[key] || null;
+
+    // Normalize values to 0–10000 scale for delta
+    const fcNorm = p.fcValue;
+    let delta = null;
+    let myValNorm = null;
+
+    if (myEntry && myEntry.value > 0 && maxMyVal > 0) {
+      // Scale my value to FC scale
+      myValNorm = (myEntry.value / maxMyVal) * maxFCVal;
+      delta = myValNorm - fcNorm; // positive = I value more than market
+    }
+
+    return {
+      ...p,
+      fcRankDisplay: i + 1,
+      myVal: myEntry?.value ?? null,
+      myValNorm,
+      myPlayer: myEntry?.myPlayer ?? false,
+      delta,
+    };
+  });
+
+  renderTable();
+  updateSummary();
+}
+
+// ==================== SUMMARY ====================
+function updateSummary() {
+  if (fcData.length === 0) return;
+  document.getElementById('summary-row').style.display = 'grid';
+  document.getElementById('empty-state').style.display = 'none';
+
+  const withDelta = merged.filter(p => p.delta !== null);
+  const maxAbs = withDelta.length ? Math.max(...withDelta.map(p => Math.abs(p.delta))) : 1;
+  const thresh = maxAbs * 0.25;
+
+  const strongBuys  = withDelta.filter(p => p.delta > thresh).length;
+  const strongSells = withDelta.filter(p => p.delta < -thresh).length;
+  const rosterCount = merged.filter(p => p.myPlayer).length;
+
+  document.getElementById('sum-total').textContent = merged.length;
+  document.getElementById('sum-buys').textContent = strongBuys || (withDelta.length ? '—' : '—');
+  document.getElementById('sum-sells').textContent = strongSells || (withDelta.length ? '—' : '—');
+  document.getElementById('sum-roster').textContent = rosterCount || '—';
+}
+
+// ==================== SIGNALS ====================
+function getSignal(delta, maxAbs) {
+  if (delta === null || maxAbs === 0) return { label: 'N/A', cls: 'signal-hold' };
+  const pct = delta / maxAbs;
+  if (pct > 0.35)  return { label: '⬆ Strong Buy',  cls: 'signal-strong-buy' };
+  if (pct > 0.12)  return { label: '↑ Buy',          cls: 'signal-buy' };
+  if (pct < -0.35) return { label: '⬇ Strong Sell', cls: 'signal-strong-sell' };
+  if (pct < -0.12) return { label: '↓ Sell',         cls: 'signal-sell' };
+  return { label: '— Hold', cls: 'signal-hold' };
+}
+
+// ==================== RENDER ====================
+function renderTable() {
+  const section = document.getElementById('table-section');
+
+  // Filter
+  let rows = merged.slice();
+
+  if (activeFilter !== 'ALL') {
+    if (activeFilter === 'MINE') {
+      rows = rows.filter(p => p.myPlayer);
+    } else {
+      rows = rows.filter(p => p.pos === activeFilter);
+    }
+  }
+
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    rows = rows.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.team || '').toLowerCase().includes(q)
+    );
+  }
+
+  // Sort
+  rows.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (av === null || av === undefined) av = sortDir < 0 ? -Infinity : Infinity;
+    if (bv === null || bv === undefined) bv = sortDir < 0 ? -Infinity : Infinity;
+    if (av < bv) return sortDir;
+    if (av > bv) return -sortDir;
+    return 0;
+  });
+
+  const withDelta = rows.filter(p => p.delta !== null);
+  const maxAbs = withDelta.length ? Math.max(...withDelta.map(p => Math.abs(p.delta))) : 1;
+  const hasMy = Object.keys(myData).length > 0;
+
+  let html = `
+  <div class="table-header">
+    <div class="table-title">Player Rankings</div>
+    <div class="table-controls">
+      <input class="search-input" type="text" placeholder="Search name / team…" value="${searchQ}" oninput="setSearch(this.value)" />
+      <div class="filter-group">
+        ${['ALL','QB','RB','WR','TE','MINE'].map(f =>
+          `<button class="filter-btn ${activeFilter===f?'active':''}" onclick="setFilter('${f}')">${f}</button>`
+        ).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="setSort('fcRankDisplay')" class="${sortCol==='fcRankDisplay'?'sorted':''}">Rank <span class="sort-arrow">${sortArrow('fcRankDisplay')}</span></th>
+          <th onclick="setSort('name')" class="${sortCol==='name'?'sorted':''}">Player <span class="sort-arrow">${sortArrow('name')}</span></th>
+          <th onclick="setSort('pos')" class="${sortCol==='pos'?'sorted':''}">Pos <span class="sort-arrow">${sortArrow('pos')}</span></th>
+          <th onclick="setSort('team')" class="${sortCol==='team'?'sorted':''}">Team <span class="sort-arrow">${sortArrow('team')}</span></th>
+          <th onclick="setSort('age')" class="${sortCol==='age'?'sorted':''}">Age <span class="sort-arrow">${sortArrow('age')}</span></th>
+          <th onclick="setSort('fcValue')" class="${sortCol==='fcValue'?'sorted':''}">FC Value <span class="sort-arrow">${sortArrow('fcValue')}</span></th>
+          ${hasMy ? `<th onclick="setSort('myVal')" class="${sortCol==='myVal'?'sorted':''}">My Value <span class="sort-arrow">${sortArrow('myVal')}</span></th>` : ''}
+          ${hasMy ? `<th onclick="setSort('delta')" class="delta-cell ${sortCol==='delta'?'sorted':''}">Delta <span class="sort-arrow">${sortArrow('delta')}</span></th>` : ''}
+          ${hasMy ? `<th>Signal</th>` : ''}
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  if (rows.length === 0) {
+    html += `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3);font-family:'DM Mono',monospace;font-size:0.75rem;">No players match filter.</td></tr>`;
+  }
+
+  for (const p of rows) {
+    const sig = getSignal(p.delta, maxAbs);
+    const deltaBarPct = p.delta !== null ? Math.min(Math.abs(p.delta) / maxAbs * 50, 50) : 0;
+    const deltaDir = p.delta !== null ? (p.delta >= 0 ? 'positive' : 'negative') : 'neutral';
+    const deltaNumCls = p.delta !== null ? (p.delta > 0 ? 'positive' : p.delta < 0 ? 'negative' : 'neutral') : 'neutral';
+    const deltaDisplay = p.delta !== null ? (p.delta >= 0 ? '+' : '') + Math.round(p.delta) : '—';
+    const rowCls = p.myPlayer ? 'my-player-row' : '';
+
+    html += `
+    <tr class="${rowCls}">
+      <td><span class="val-cell" style="color:var(--text3)">#${p.fcRankDisplay}</span></td>
+      <td>
+        <span class="player-name ${p.myPlayer ? 'my-player' : ''}">${esc(p.name)}</span>
+        ${p.myPlayer ? '<span style="font-size:0.55rem;color:var(--accent);font-family:\'DM Mono\',monospace;margin-left:6px;letter-spacing:1px;">★ MINE</span>' : ''}
+      </td>
+      <td><span class="player-pos pos-${p.pos}">${p.pos}</span></td>
+      <td><span class="team-badge">${esc(p.team || '—')}</span></td>
+      <td><span class="age-badge">${p.age ? p.age.toFixed(1) : '—'}</span></td>
+      <td><span class="val-cell">${p.fcValue.toLocaleString()}</span></td>
+      ${hasMy ? `<td><span class="val-cell">${p.myVal !== null ? p.myVal.toLocaleString() : '<span style="color:var(--text3)">—</span>'}</span></td>` : ''}
+      ${hasMy ? `
+      <td class="delta-cell">
+        <div class="delta-wrap">
+          <span class="delta-num ${deltaNumCls}">${deltaDisplay}</span>
+          <div class="delta-bar-track">
+            <div class="delta-midpoint"></div>
+            <div class="delta-bar-fill ${p.delta !== null ? deltaDir : ''}" style="width:${deltaBarPct}%"></div>
+          </div>
+        </div>
+      </td>` : ''}
+      ${hasMy ? `<td><span class="signal ${sig.cls}">${sig.label}</span></td>` : ''}
+    </tr>`;
+  }
+
+  html += `</tbody></table></div>
+  <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text3);padding:12px 0;text-align:right;">
+    ${rows.length} players shown · FC Value = FantasyCalc dynasty value · Delta = My Value (scaled) − FC Value
+  </div>`;
+
+  section.innerHTML = html;
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function sortArrow(col) {
+  if (sortCol !== col) return '↕';
+  return sortDir < 0 ? '↓' : '↑';
+}
+
+function setFilter(f) {
+  activeFilter = f;
+  renderTable();
+}
+
+function setSort(col) {
+  if (sortCol === col) { sortDir *= -1; }
+  else { sortCol = col; sortDir = -1; }
+  renderTable();
+}
+
+function setSearch(val) {
+  searchQ = val;
+  renderTable();
+}
+
+// ==================== DRAG AND DROP ====================
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) {
+    processCSVFile(file);
+  }
+});
+</script>
+</body>
+</html>
