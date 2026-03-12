@@ -1151,34 +1151,38 @@ function renderTradesTab(maxAbs, thresh) {
   const seen = new Set();
 
   for (const sell of mySells) {
-    // Group buy candidates by owner — but only where recv TAT rank is BETTER than sell TAT rank
     const byOwner = {};
     for (const buy of leagueBuys) {
       if (!buy.ownerName || buy.ownerIsMe) continue;
-      // Core filter: incoming player must have a better (lower number) TAT rank
+      // 1. I must be upgrading in TAT rank (lower number = better)
       if ((buy.tatRank||999) >= (sell.tatRank||999)) continue;
+      // 2. They must be getting equal or better FC rank (lower FC rank number = better for them)
+      //    i.e. the player they receive (sell) must have FC rank <= the player they give up (buy)
+      //    sell.fcRank <= buy.fcRank → they get a player FC rates at least as highly
+      if ((sell.fcRank||999) > (buy.fcRank||999)) continue;
       if (!byOwner[buy.ownerName]) byOwner[buy.ownerName] = [];
       byOwner[buy.ownerName].push(buy);
     }
 
     for (const [ownerName, candidates] of Object.entries(byOwner)) {
-      // Best candidate = best TAT rank (lowest number) that's also most undervalued by FC
-      candidates.sort((a,b) => (a.tatRank||999) - (b.tatRank||999));
+      // Sort by best TAT upgrade first, tiebreak by how much FC overpays them (easier sell)
+      candidates.sort((a,b) => {
+        const tatDiff = (a.tatRank||999) - (b.tatRank||999); // lower = better
+        if (tatDiff !== 0) return tatDiff;
+        return (b.rankDelta||0) - (a.rankDelta||0); // higher FC discount = easier for them to accept
+      });
       const recv = candidates[0];
       if (!recv) continue;
       const key = `${norm(sell.name)}|${norm(recv.name)}`;
       if (seen.has(key)) continue;
       seen.add(key);
 
-      // TAT rank improvement: how many spots better is the incoming player
-      const tatImprovement = (sell.tatRank||999) - (recv.tatRank||999); // positive = I'm upgrading
-      // FC discount on the target: how undervalued are they (owner may not know)
-      const fcDiscount = recv.rankDelta; // positive = TAT rates them higher than FC
-      // Sort score: primarily how much I upgrade in TAT, secondarily how mispriced the target is
-      const score = tatImprovement * 2 + fcDiscount + Math.abs(sell.rankDelta);
-      const strong = tatImprovement > 20 && (Math.abs(sell.rankDelta) > thresh*2 || recv.rankDelta > thresh*2);
+      const tatImprovement = (sell.tatRank||999) - (recv.tatRank||999); // spots I gain in TAT
+      const fcEdgeForThem  = (recv.fcRank||999) - (sell.fcRank||999);   // how much better FC looks for them (positive = they win on FC)
+      const score = tatImprovement * 2 + fcEdgeForThem + recv.rankDelta;
+      const strong = tatImprovement > 20 && Math.abs(sell.rankDelta) > thresh * 1.5;
 
-      trades.push({ sell, recv, ownerName, tatImprovement, fcDiscount, score, strong });
+      trades.push({ sell, recv, ownerName, tatImprovement, fcEdgeForThem, score, strong });
     }
   }
 
@@ -1261,15 +1265,20 @@ function tradeCard(t) {
     </div>
 
     <!-- FOOTER -->
-    <div style="grid-column:1/-1;border-top:1px solid var(--border);margin-top:12px;padding-top:8px;
-      font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-      <span>Message <span style="color:var(--accent)">${esc(t.ownerName)}</span></span>
-      <span style="color:var(--border2)">·</span>
-      <span>Offer <span style="color:var(--text2)">${esc(t.sell.name)}</span> (FC #${t.sell.fcRank||'—'} · TAT #${t.sell.tatRank||'—'})</span>
-      <span style="color:var(--border2)">·</span>
-      <span>Ask for <span style="color:var(--text2)">${esc(t.recv.name)}</span> (FC #${t.recv.fcRank||'—'} · TAT #${t.recv.tatRank||'—'})</span>
-      <span style="color:var(--border2)">·</span>
-      <span style="color:var(--accent)">You upgrade ${t.tatImprovement} TAT spots</span>
+    <div style="grid-column:1/-1;border-top:1px solid var(--border);margin-top:12px;padding-top:10px;
+      font-family:'DM Mono',monospace;font-size:.62rem;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="color:var(--text3)">
+        <span style="color:var(--accent);letter-spacing:1px;font-size:.55rem">YOU WIN ON TAT</span><br>
+        ${esc(t.recv.name)} is TAT #${t.recv.tatRank||'—'} vs your TAT #${t.sell.tatRank||'—'} — <span style="color:var(--accent)">+${t.tatImprovement} spots</span>
+      </div>
+      <div style="color:var(--text3);text-align:right">
+        <span style="color:var(--amber);letter-spacing:1px;font-size:.55rem">THEY WIN ON FC</span><br>
+        They get FC #${t.sell.fcRank||'—'}, give up FC #${t.recv.fcRank||'—'} —
+        <span style="color:var(--amber)">${t.fcEdgeForThem >= 0 ? '+'+t.fcEdgeForThem+' FC spots for them' : 'FC even'}</span>
+      </div>
+      <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:7px;color:var(--text3)">
+        Message <span style="color:var(--accent)">${esc(t.ownerName)}</span> · offer ${esc(t.sell.name)} for ${esc(t.recv.name)}
+      </div>
     </div>
   </div>`;
 }
