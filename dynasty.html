@@ -184,7 +184,7 @@
       <div class="row">
         <div class="grp">
           <label>QB Format</label>
-          <select id="sel-qbs"><option value="1">1QB</option><option value="2">Superflex / 2QB</option></select>
+          <select id="sel-qbs"><option value="1">1QB</option><option value="2" selected>Superflex / 2QB</option></select>
         </div>
         <div class="grp">
           <label>PPR</label>
@@ -301,7 +301,15 @@ const TIER_LABELS = {
 };
 
 // ── HELPERS ────────────────────────────────────────────────────
-function norm(n) { return n.toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim(); }
+// Normalize picks: TAT "2026 ROOKIE 1.01" -> "2026 pick 1.01" to match FC format
+function norm(n) {
+  return n
+    .replace(/(\d{4})\s+rookie\s+/i, '$1 Pick ')
+    .toLowerCase()
+    .replace(/[^a-z0-9 .]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ── FANTASYCALC ────────────────────────────────────────────────
@@ -321,14 +329,18 @@ async function fetchFC() {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw = await res.json();
-    fcData = raw.filter(r => r.value > 0).map((r,i) => ({
-      name: r.player?.name || 'Unknown',
-      pos:  r.player?.position || '?',
-      team: r.player?.maybeTeam || '—',
-      age:  r.player?.age || null,
-      fcValue: r.value,
-      fcRank: i + 1,
-    }));
+    fcData = raw.filter(r => r.value > 0).map((r,i) => {
+      const name = r.player?.name || 'Unknown';
+      const isPick = /\d{4}\s+pick/i.test(name);
+      return {
+        name,
+        pos:  isPick ? 'PICK' : (r.player?.position || '?'),
+        team: r.player?.maybeTeam || '—',
+        age:  r.player?.age || null,
+        fcValue: r.value,
+        fcRank: i + 1,
+      };
+    });
     bar.className = 'sbar ok';
     bar.textContent = `✓ ${fcData.length} players · live values`;
     document.getElementById('h-fc').innerHTML = '<span class="dot live"></span>FC LIVE';
