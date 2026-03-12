@@ -779,23 +779,28 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
       if (picksByRoster[cur])  picksByRoster[cur].add(key);
     }
 
-    // Step 6: try to fetch draft order (slot resolution) — optional, fail gracefully
+    // Step 6: fetch draft order for slot resolution
     let slotByRoster = {}; // String(origRosterId) -> slot number, for curSeason only
     try {
       const draftsRes = await fetch(`${SLEEPER}/league/${leagueId}/drafts`);
       if (draftsRes.ok) {
         const drafts = await draftsRes.json();
-        // Find the draft for the current season
+        // Log full draft objects so we can see what fields are available
+        console.log('[Drafts] raw response:', JSON.stringify(drafts, null, 2));
+        const dbEl = document.getElementById('pick-debug');
+        if (dbEl) {
+          const draftInfo = drafts.map(d => `draft_id:${d.draft_id} season:${d.season} status:${d.status} slot_to_roster_id:${JSON.stringify(d.slot_to_roster_id)} draft_order:${JSON.stringify(d.draft_order)}`).join(' | ');
+          dbEl.innerHTML += `<div style="margin-top:6px;color:var(--amber)">Drafts raw: ${esc(draftInfo || 'none')}</div>`;
+        }
         const curDraft = drafts.find(d => d.season === String(curSeason));
         if (curDraft?.slot_to_roster_id) {
-          // slot_to_roster_id: { "1": 3, "2": 7, ... } — slot -> roster_id
           for (const [slot, rid] of Object.entries(curDraft.slot_to_roster_id)) {
             slotByRoster[String(rid)] = parseInt(slot);
           }
         }
       }
     } catch(e) {
-      // Draft order unavailable — picks will show without slot numbers, that's fine
+      console.warn('[Drafts] fetch failed:', e);
     }
 
     // Step 7: build pickAssets: owner_id -> array of pick objects
