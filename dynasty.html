@@ -7,160 +7,150 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0c0f;
-    --surface: #111418;
-    --surface2: #181d23;
-    --border: #1f2730;
-    --border2: #2a3540;
-    --accent: #00e5a0;
-    --red: #ff4d6d;
-    --amber: #ffb830;
-    --text: #e8edf2;
-    --text2: #8a9bb0;
-    --text3: #4a5a6a;
+    --bg: #0a0c0f; --surface: #111418; --surface2: #181d23;
+    --border: #1f2730; --border2: #2a3540;
+    --accent: #00e5a0; --red: #ff4d6d; --amber: #ffb830;
+    --text: #e8edf2; --text2: #8a9bb0; --text3: #4a5a6a;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg); color: var(--text);
-    font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden;
-  }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
   body::before {
     content: ''; position: fixed; inset: 0;
-    background-image: linear-gradient(rgba(0,229,160,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,229,160,0.025) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(0,229,160,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,160,0.025) 1px, transparent 1px);
     background-size: 40px 40px; pointer-events: none; z-index: 0;
   }
-  .container { position: relative; z-index: 1; max-width: 1500px; margin: 0 auto; padding: 0 24px; }
+  .wrap { position: relative; z-index: 1; max-width: 1500px; margin: 0 auto; padding: 0 24px; }
 
-  header { border-bottom: 1px solid var(--border); padding: 18px 0; margin-bottom: 32px; }
-  .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  /* HEADER */
+  header { border-bottom: 1px solid var(--border); padding: 16px 0; margin-bottom: 28px; }
+  .hinner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .logo { display: flex; align-items: baseline; gap: 10px; }
-  .logo h1 { font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; letter-spacing: 2px; line-height: 1; }
-  .logo .tag { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--accent); border: 1px solid var(--accent); padding: 2px 7px; letter-spacing: 2px; }
-  .header-status { display: flex; gap: 20px; font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--text3); flex-wrap: wrap; }
+  .logo h1 { font-family: 'Bebas Neue', sans-serif; font-size: 1.85rem; letter-spacing: 2px; line-height: 1; }
+  .tag { font-family: 'DM Mono', monospace; font-size: .6rem; color: var(--accent); border: 1px solid var(--accent); padding: 2px 7px; letter-spacing: 2px; }
+  .hstatus { display: flex; gap: 18px; font-family: 'DM Mono', monospace; font-size: .66rem; color: var(--text3); flex-wrap: wrap; align-items: center; }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); display: inline-block; margin-right: 5px; vertical-align: middle; }
   .dot.live { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
   .dot.warn { background: var(--amber); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
-  @media(max-width:800px) { .setup-grid{grid-template-columns:1fr} }
+  /* SETUP GRID */
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  @media(max-width:1000px) { .setup-grid { grid-template-columns: 1fr 1fr; } }
+  @media(max-width:640px)  { .setup-grid { grid-template-columns: 1fr; } }
 
-  .panel { background: var(--surface); border: 1px solid var(--border); padding: 22px; position: relative; overflow: hidden; }
-  .panel::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--accent),transparent); opacity:.4; }
-  .panel-title { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 14px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); padding: 20px; position: relative; overflow: hidden; }
+  .panel::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--accent),transparent); opacity:.35; }
+  .ptitle { font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 12px; }
 
-  .settings-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
-  .setting-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 110px; }
-  label { font-size: 0.68rem; color: var(--text2); font-family: 'DM Mono', monospace; letter-spacing: 1px; text-transform: uppercase; }
-  select { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 7px 10px; font-family: 'DM Mono', monospace; font-size: 0.78rem; outline: none; width: 100%; appearance: none; cursor: pointer; transition: border-color .2s; }
-  select:hover, select:focus { border-color: var(--accent); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .grp { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 100px; }
+  label { font-size: .65rem; color: var(--text2); font-family: 'DM Mono', monospace; letter-spacing: 1px; text-transform: uppercase; }
+  select, input[type=text] { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 7px 10px; font-family: 'DM Mono', monospace; font-size: .76rem; outline: none; width: 100%; appearance: none; transition: border-color .2s; }
+  select:hover, select:focus, input:hover, input:focus { border-color: var(--accent); }
 
-  .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 18px; font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all .2s; white-space: nowrap; }
+  .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 7px 16px; font-family: 'DM Mono', monospace; font-size: .7rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all .2s; white-space: nowrap; }
   .btn:hover { background: var(--accent); color: var(--bg); }
   .btn:disabled { border-color: var(--text3); color: var(--text3); cursor: not-allowed; }
   .btn:disabled:hover { background: transparent; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  .status-bar { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface2); border: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 0.7rem; margin-top: 10px; min-height: 36px; }
-  .status-bar.ok  { border-color: var(--accent); color: var(--accent); }
-  .status-bar.err { border-color: var(--red); color: var(--red); }
-  .status-bar.loading { color: var(--amber); border-color: var(--amber); }
+  .sbar { display: flex; align-items: center; gap: 8px; padding: 8px 11px; background: var(--surface2); border: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: .68rem; margin-top: 8px; min-height: 34px; color: var(--text3); }
+  .sbar.ok  { border-color: var(--accent); color: var(--accent); }
+  .sbar.err { border-color: var(--red); color: var(--red); }
+  .sbar.loading { color: var(--amber); border-color: var(--amber); }
 
-  .upload-zone { border: 1px dashed var(--border2); padding: 22px; text-align: center; cursor: pointer; transition: all .2s; position: relative; }
+  /* LEAGUE PICKER */
+  .league-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 160px; overflow-y: auto; }
+  .league-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 11px; background: var(--surface2); border: 1px solid var(--border2); cursor: pointer; transition: all .15s; font-size: .78rem; }
+  .league-item:hover { border-color: var(--accent); background: rgba(0,229,160,.04); }
+  .league-item.selected { border-color: var(--accent); background: rgba(0,229,160,.06); }
+  .league-item.selected::before { content: '✓ '; color: var(--accent); font-family: 'DM Mono', monospace; font-size: .7rem; }
+  .league-meta { font-family: 'DM Mono', monospace; font-size: .62rem; color: var(--text3); }
+
+  /* UPLOAD */
+  .upload-zone { border: 1px dashed var(--border2); padding: 18px; text-align: center; cursor: pointer; transition: all .2s; position: relative; }
   .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(0,229,160,.03); }
   .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .upload-icon { font-size: 1.4rem; margin-bottom: 6px; color: var(--text3); }
-  .upload-text { font-size: 0.78rem; color: var(--text2); font-family: 'DM Mono', monospace; }
-  .upload-sub  { font-size: 0.65rem; color: var(--text3); margin-top: 3px; }
+  .upload-icon { font-size: 1.3rem; margin-bottom: 5px; color: var(--text3); }
+  .upload-text { font-size: .76rem; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .upload-sub  { font-size: .62rem; color: var(--text3); margin-top: 3px; }
 
-  .hint-box { background: var(--surface2); border: 1px solid var(--border); padding: 12px 14px; margin-top: 10px; font-family: 'DM Mono', monospace; font-size: 0.66rem; color: var(--text3); line-height: 1.9; }
-  .hint-box code { color: var(--accent); background: rgba(0,229,160,.08); padding: 1px 4px; }
+  .hint { background: var(--surface2); border: 1px solid var(--border); padding: 10px 13px; margin-top: 8px; font-family: 'DM Mono', monospace; font-size: .63rem; color: var(--text3); line-height: 1.9; }
+  .hint code { color: var(--accent); background: rgba(0,229,160,.08); padding: 1px 4px; }
 
-  .summary-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 24px; }
-  @media(max-width:1000px) { .summary-row{grid-template-columns:repeat(3,1fr)} }
-  @media(max-width:600px)  { .summary-row{grid-template-columns:repeat(2,1fr)} }
-  .scard { background: var(--surface); border: 1px solid var(--border); padding: 14px 18px; }
-  .scard-label { font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 5px; }
-  .scard-val   { font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; line-height: 1; letter-spacing: 1px; }
-  .scard-val.g { color: var(--accent); }
-  .scard-val.r { color: var(--red); }
-  .scard-val.a { color: var(--amber); }
-  .scard-val.n { color: var(--text2); }
-  .scard-sub   { font-size: 0.64rem; color: var(--text3); margin-top: 3px; }
+  /* SUMMARY */
+  .sumrow { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 22px; }
+  @media(max-width:900px) { .sumrow{grid-template-columns:repeat(3,1fr)} }
+  @media(max-width:560px) { .sumrow{grid-template-columns:repeat(2,1fr)} }
+  .scard { background: var(--surface); border: 1px solid var(--border); padding: 13px 16px; }
+  .sc-label { font-family: 'DM Mono', monospace; font-size: .56rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); margin-bottom: 5px; }
+  .sc-val   { font-family: 'Bebas Neue', sans-serif; font-size: 1.85rem; line-height: 1; letter-spacing: 1px; }
+  .sc-val.g { color: var(--accent); } .sc-val.r { color: var(--red); } .sc-val.a { color: var(--amber); } .sc-val.n { color: var(--text2); }
+  .sc-sub   { font-size: .62rem; color: var(--text3); margin-top: 3px; }
 
-  .table-header  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-  .table-title   { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 2px; }
-  .table-controls{ display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .filter-group  { display: flex; }
-  .fbtn { background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); padding: 6px 12px; font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 1px; cursor: pointer; transition: all .2s; margin-left: -1px; }
+  /* TABLE */
+  .thead-row  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .ttitle     { font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; letter-spacing: 2px; }
+  .tcontrols  { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .fgrp       { display: flex; }
+  .fbtn { background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); padding: 5px 11px; font-family: 'DM Mono', monospace; font-size: .63rem; letter-spacing: 1px; cursor: pointer; transition: all .2s; margin-left: -1px; }
   .fbtn:first-child { margin-left: 0; }
   .fbtn:hover { color: var(--text); }
   .fbtn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); z-index: 1; }
-  .search-inp { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 6px 12px; font-family: 'DM Mono', monospace; font-size: 0.72rem; width: 190px; outline: none; transition: border-color .2s; }
-  .search-inp:focus { border-color: var(--accent); }
+  .sinp { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 5px 11px; font-family: 'DM Mono', monospace; font-size: .7rem; width: 180px; outline: none; transition: border-color .2s; }
+  .sinp:focus { border-color: var(--accent); }
 
-  .table-wrap { overflow-x: auto; border: 1px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .twrap { overflow-x: auto; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: .79rem; }
   thead { background: var(--surface); border-bottom: 1px solid var(--border2); }
-  th { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); padding: 11px 14px; text-align: left; white-space: nowrap; cursor: pointer; user-select: none; transition: color .2s; }
-  th:hover { color: var(--text); }
-  th.sorted { color: var(--accent); }
-  tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+  th { font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); padding: 10px 13px; text-align: left; white-space: nowrap; cursor: pointer; user-select: none; transition: color .2s; }
+  th:hover { color: var(--text); } th.sorted { color: var(--accent); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
   tbody tr:hover { background: var(--surface2); }
   tbody tr.mine-row { background: rgba(0,229,160,.025); }
   tbody tr.mine-row td:first-child { border-left: 2px solid var(--accent); }
-  td { padding: 10px 14px; white-space: nowrap; }
+  td { padding: 9px 13px; white-space: nowrap; }
 
-  .pname { font-weight: 600; }
-  .pname.mine { color: var(--accent); }
-  .mine-star { font-size: .5rem; color: var(--accent); font-family: 'DM Mono', monospace; letter-spacing: 1px; margin-left: 6px; vertical-align: middle; }
-
-  .pos-badge { font-family: 'DM Mono', monospace; font-size: .65rem; padding: 2px 5px; background: var(--surface2); color: var(--text3); margin-left: 4px; }
-  .pos-QB  { color: #ff8c42; border-left: 2px solid #ff8c42; }
-  .pos-RB  { color: #4ecdc4; border-left: 2px solid #4ecdc4; }
-  .pos-WR  { color: #45b7d1; border-left: 2px solid #45b7d1; }
-  .pos-TE  { color: #a78bfa; border-left: 2px solid #a78bfa; }
-  .pos-K   { color: var(--text3); }
-  .pos-PICK{ color: #ffb830; border-left: 2px solid #ffb830; }
-
-  .mono { font-family: 'DM Mono', monospace; font-size: .78rem; color: var(--text2); }
+  .pname { font-weight: 600; } .pname.mine { color: var(--accent); }
+  .mine-star { font-size: .48rem; color: var(--accent); font-family: 'DM Mono', monospace; letter-spacing: 1px; margin-left: 5px; vertical-align: middle; }
+  .pos-badge { font-family: 'DM Mono', monospace; font-size: .63rem; padding: 2px 5px; background: var(--surface2); color: var(--text3); margin-left: 4px; }
+  .pos-QB { color: #ff8c42; border-left: 2px solid #ff8c42; }
+  .pos-RB { color: #4ecdc4; border-left: 2px solid #4ecdc4; }
+  .pos-WR { color: #45b7d1; border-left: 2px solid #45b7d1; }
+  .pos-TE { color: #a78bfa; border-left: 2px solid #a78bfa; }
+  .pos-PICK { color: #ffb830; border-left: 2px solid #ffb830; }
+  .mono { font-family: 'DM Mono', monospace; font-size: .76rem; color: var(--text2); }
   .dim  { color: var(--text3); }
+  .tier-badge { font-family: 'DM Mono', monospace; font-size: .58rem; padding: 2px 7px; border: 1px solid var(--border2); color: var(--text3); }
 
-  .tier-badge { font-family: 'DM Mono', monospace; font-size: .6rem; padding: 2px 7px; border: 1px solid var(--border2); color: var(--text3); white-space: nowrap; }
+  .rdelta { font-family: 'DM Mono', monospace; font-size: .74rem; min-width: 46px; text-align: right; }
+  .rdelta.up { color: var(--accent); } .rdelta.down { color: var(--red); } .rdelta.flat { color: var(--text3); }
+  .bwrap { display: flex; align-items: center; gap: 8px; }
+  .btrack { flex: 1; height: 4px; background: var(--border); position: relative; overflow: hidden; min-width: 70px; }
+  .bfill  { position: absolute; top: 0; height: 100%; }
+  .bfill.up   { left: 50%; background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+  .bfill.down { right: 50%; background: var(--red);   box-shadow: 0 0 5px var(--red); }
+  .bmid { position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: var(--border2); }
 
-  .rdelta { font-family: 'DM Mono', monospace; font-size: .76rem; min-width: 48px; text-align: right; }
-  .rdelta.up   { color: var(--accent); }
-  .rdelta.down { color: var(--red); }
-  .rdelta.flat { color: var(--text3); }
+  .sig { font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: 1px; padding: 3px 7px; text-transform: uppercase; border: 1px solid; white-space: nowrap; }
+  .sig-sb { color: var(--bg); background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .sig-b  { color: var(--accent); border-color: var(--accent); background: rgba(0,229,160,.06); }
+  .sig-h  { color: var(--text3); border-color: var(--text3); }
+  .sig-s  { color: var(--red); border-color: var(--red); background: rgba(255,77,109,.06); }
+  .sig-ss { color: var(--bg); background: var(--red); border-color: var(--red); font-weight: 700; }
 
-  .bar-wrap { display: flex; align-items: center; gap: 8px; }
-  .bar-track { flex: 1; height: 4px; background: var(--border); position: relative; overflow: hidden; min-width: 80px; }
-  .bar-fill  { position: absolute; top: 0; height: 100%; }
-  .bar-fill.up   { left: 50%; background: var(--accent); box-shadow: 0 0 5px var(--accent); }
-  .bar-fill.down { right: 50%; background: var(--red); box-shadow: 0 0 5px var(--red); }
-  .bar-mid { position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: var(--border2); }
+  tr.tier-row td { background: var(--surface); font-family: 'DM Mono', monospace; font-size: .56rem; letter-spacing: 3px; text-transform: uppercase; padding: 5px 13px; border-bottom: 1px solid var(--border2); }
+  tr.tier-row td span { border-left: 2px solid var(--amber); padding-left: 8px; color: var(--amber); opacity: .65; }
 
-  .sig { font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: 1px; padding: 3px 7px; text-transform: uppercase; border: 1px solid; white-space: nowrap; }
-  .sig-sb  { color: var(--bg); background: var(--accent);   border-color: var(--accent);   font-weight: 700; }
-  .sig-b   { color: var(--accent); border-color: var(--accent); background: rgba(0,229,160,.06); }
-  .sig-h   { color: var(--text3); border-color: var(--text3); }
-  .sig-s   { color: var(--red);   border-color: var(--red);   background: rgba(255,77,109,.06); }
-  .sig-ss  { color: var(--bg); background: var(--red);     border-color: var(--red);   font-weight: 700; }
+  .spinner { width: 11px; height: 11px; border: 2px solid var(--amber); border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; vertical-align: middle; margin-right: 5px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  tr.tier-row td { background: var(--surface); font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text3); padding: 6px 14px; border-bottom: 1px solid var(--border2); }
-  tr.tier-row td span { border-left: 2px solid var(--amber); padding-left: 8px; color: var(--amber); opacity: .7; }
+  .empty-state { padding: 60px 20px; text-align: center; border: 1px dashed var(--border); margin-top: 14px; }
+  .empty-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.35rem; letter-spacing: 2px; color: var(--text3); margin-bottom: 6px; }
+  .empty-sub { font-family: 'DM Mono', monospace; font-size: .68rem; color: var(--text3); }
+  .tfoot { font-family: 'DM Mono', monospace; font-size: .6rem; color: var(--text3); padding: 9px 0; text-align: right; }
 
-  .spinner { width: 12px; height: 12px; border: 2px solid var(--amber); border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; vertical-align: middle; margin-right: 5px; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-
-  .empty-state { padding: 70px 20px; text-align: center; border: 1px dashed var(--border); margin-top: 16px; }
-  .empty-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--text3); margin-bottom: 6px; }
-  .empty-sub { font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--text3); }
-
-  .table-foot { font-family: 'DM Mono', monospace; font-size: .62rem; color: var(--text3); padding: 10px 0; text-align: right; }
-
-  footer { border-top: 1px solid var(--border); padding: 18px 0; margin-top: 50px; font-family: 'DM Mono', monospace; font-size: .62rem; color: var(--text3); text-align: center; letter-spacing: 1px; }
-
+  footer { border-top: 1px solid var(--border); padding: 16px 0; margin-top: 44px; font-family: 'DM Mono', monospace; font-size: .6rem; color: var(--text3); text-align: center; letter-spacing: 1px; }
   ::-webkit-scrollbar { width:5px; height:5px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border2); }
@@ -169,496 +159,588 @@
 <body>
 
 <header>
-  <div class="container">
-    <div class="header-inner">
+  <div class="wrap">
+    <div class="hinner">
       <div class="logo">
         <h1>Dynasty Trade Analyzer</h1>
-        <span class="tag">TAT × FC</span>
+        <span class="tag">TAT × FC × Sleeper</span>
       </div>
-      <div class="header-status">
-        <span id="fc-status"><span class="dot"></span>FC NOT LOADED</span>
-        <span id="tat-status"><span class="dot"></span>TAT NOT LOADED</span>
+      <div class="hstatus">
+        <span id="h-fc"><span class="dot"></span>FC NOT LOADED</span>
+        <span id="h-tat"><span class="dot"></span>TAT NOT LOADED</span>
+        <span id="h-sleeper"><span class="dot"></span>SLEEPER NOT CONNECTED</span>
       </div>
     </div>
   </div>
 </header>
 
-<div class="container">
+<div class="wrap">
 
   <div class="setup-grid">
 
+    <!-- PANEL 1: FantasyCalc -->
     <div class="panel">
-      <div class="panel-title">// FantasyCalc — Market Values</div>
-      <div class="settings-row">
-        <div class="setting-group">
+      <div class="ptitle">// FantasyCalc — Market Values</div>
+      <div class="row">
+        <div class="grp">
           <label>QB Format</label>
-          <select id="sel-qbs">
-            <option value="1">1QB</option>
-            <option value="2">Superflex / 2QB</option>
-          </select>
+          <select id="sel-qbs"><option value="1">1QB</option><option value="2">Superflex / 2QB</option></select>
         </div>
-        <div class="setting-group">
+        <div class="grp">
           <label>PPR</label>
-          <select id="sel-ppr">
-            <option value="1">Full PPR</option>
-            <option value="0.5">Half PPR</option>
-            <option value="0">Standard</option>
-          </select>
+          <select id="sel-ppr"><option value="1">Full PPR</option><option value="0.5">Half PPR</option><option value="0">Standard</option></select>
         </div>
-        <div class="setting-group">
+        <div class="grp">
           <label>TEP</label>
-          <select id="sel-tep">
-            <option value="false">No TEP</option>
-            <option value="true">TEP</option>
+          <select id="sel-tep"><option value="false">No TEP</option><option value="true">TEP</option></select>
+        </div>
+      </div>
+      <button class="btn" id="btn-fc" onclick="fetchFC()">Fetch Rankings</button>
+      <div class="sbar" id="fc-bar"><span class="dim">Configure and fetch FantasyCalc market values.</span></div>
+    </div>
+
+    <!-- PANEL 2: Sleeper -->
+    <div class="panel">
+      <div class="ptitle">// Sleeper — Auto-Load Roster</div>
+      <div class="row">
+        <div class="grp">
+          <label>Username</label>
+          <input type="text" id="sleeper-user" value="boximax" placeholder="sleeper username">
+        </div>
+        <div class="grp">
+          <label>Season</label>
+          <select id="sleeper-season">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
           </select>
         </div>
       </div>
-      <button class="btn" id="btn-fetch" onclick="fetchFC()">Fetch Rankings</button>
-      <div class="status-bar" id="fc-status-bar"><span class="dim">Configure and fetch FantasyCalc market values.</span></div>
+      <button class="btn" id="btn-sleeper" onclick="fetchSleeper()">Load Leagues</button>
+      <div class="sbar" id="sleeper-bar"><span class="dim">Enter username and load your Sleeper leagues.</span></div>
+      <div id="league-list" style="display:none">
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:2px;color:var(--text3);margin:10px 0 6px;">SELECT DYNASTY LEAGUE</div>
+        <div class="league-list" id="league-items"></div>
+      </div>
     </div>
 
+    <!-- PANEL 3: TAT CSV -->
     <div class="panel">
-      <div class="panel-title">// TAT Rankings — Upload CSV</div>
+      <div class="ptitle">// TAT Rankings — Upload CSV</div>
       <div class="upload-zone" id="upload-zone">
         <input type="file" id="csv-input" accept=".csv" onchange="handleCSV(event)">
         <div class="upload-icon">↑</div>
         <div class="upload-text">Upload TAT Rankings CSV</div>
         <div class="upload-sub">drag &amp; drop or click · standard TAT export format</div>
       </div>
-      <div class="hint-box">
-        Reads the standard TAT export: <code>Rank</code>, <code>Player</code>, <code>Position</code>, <code>Team</code> columns.<br>
-        Tier rows (<code>VALUE = …</code> / <code>HALF-TIER</code>) are parsed automatically.<br>
-        To flag your roster: add a <code>Mine</code> column with <code>1</code> for players you own.
+      <div class="hint">
+        Standard TAT export: <code>Rank</code>, <code>Player</code>, <code>Position</code>, <code>Team</code>.<br>
+        Tier rows parsed automatically. Roster loaded from Sleeper automatically.<br>
+        Or: add a <code>Mine</code> column with <code>1</code> to manually flag your players.
       </div>
-      <div class="status-bar" id="tat-status-bar"><span class="dim">No file loaded.</span></div>
+      <div class="sbar" id="tat-bar"><span class="dim">No file loaded.</span></div>
     </div>
 
   </div>
 
-  <div class="summary-row" id="summary-row" style="display:none">
-    <div class="scard"><div class="scard-label">Players Matched</div><div class="scard-val n" id="s-matched">—</div><div class="scard-sub">FC &times; TAT overlap</div></div>
-    <div class="scard"><div class="scard-label">Avg Rank Diff</div><div class="scard-val n" id="s-avg">—</div><div class="scard-sub">TAT vs FC rank</div></div>
-    <div class="scard"><div class="scard-label">Strong Buys</div><div class="scard-val g" id="s-buys">—</div><div class="scard-sub">TAT &gt;&gt; FC market</div></div>
-    <div class="scard"><div class="scard-label">Strong Sells</div><div class="scard-val r" id="s-sells">—</div><div class="scard-sub">FC market &gt;&gt; TAT</div></div>
-    <div class="scard"><div class="scard-label">My Roster</div><div class="scard-val a" id="s-roster">—</div><div class="scard-sub">flagged in CSV</div></div>
+  <!-- SUMMARY -->
+  <div class="sumrow" id="sumrow" style="display:none">
+    <div class="scard"><div class="sc-label">Players Matched</div><div class="sc-val n" id="s-matched">—</div><div class="sc-sub">FC × TAT overlap</div></div>
+    <div class="scard"><div class="sc-label">Avg Rank Diff</div><div class="sc-val n" id="s-avg">—</div><div class="sc-sub">TAT vs FC rank</div></div>
+    <div class="scard"><div class="sc-label">Strong Buys</div><div class="sc-val g" id="s-buys">—</div><div class="sc-sub">TAT ranks higher than FC</div></div>
+    <div class="scard"><div class="sc-label">Strong Sells</div><div class="sc-val r" id="s-sells">—</div><div class="sc-sub">FC ranks higher than TAT</div></div>
+    <div class="scard"><div class="sc-label">My Roster</div><div class="sc-val a" id="s-roster">—</div><div class="sc-sub">loaded from Sleeper</div></div>
   </div>
 
+  <!-- TABLE -->
   <div id="table-section">
     <div class="empty-state" id="empty-state">
       <div class="empty-title">Awaiting Data</div>
-      <div class="empty-sub">Fetch FantasyCalc rankings + upload your TAT CSV to see trade signals.</div>
+      <div class="empty-sub">Fetch FantasyCalc · connect Sleeper · upload TAT CSV to see trade signals.</div>
     </div>
   </div>
 
 </div>
 
 <footer>
-  <div class="container">
-    Dynasty Trade Analyzer &nbsp;·&nbsp; Market data: FantasyCalc API &nbsp;·&nbsp; Rankings: TAT &nbsp;·&nbsp; Sleeper integration coming soon
+  <div class="wrap">
+    Dynasty Trade Analyzer &nbsp;·&nbsp; FantasyCalc API &nbsp;·&nbsp; Sleeper API &nbsp;·&nbsp; TAT Rankings
   </div>
 </footer>
 
 <script>
-// ── STATE ─────────────────────────────────────────────────
-let fcData  = [];
-let tatData = [];
-let merged  = [];
+// ── STATE ──────────────────────────────────────────────────────
+let fcData       = [];   // from fantasycalc
+let tatData      = [];   // from TAT csv
+let myPlayerIds  = new Set(); // sleeper player IDs on your roster
+let sleeperNames = new Set(); // normalised player names from sleeper
+let merged       = [];
+
 let activeFilter = 'ALL';
 let sortCol = 'tatRank';
 let sortDir = 1;
 let searchQ = '';
 
-// ── TIER VALUE MAP ─────────────────────────────────────────
-// Numeric score (higher = better) assigned per TAT tier label
+// Sleeper state
+let sleeperUserId    = null;
+let sleeperLeagues   = [];
+let selectedLeagueId = null;
+let sleeperRosterId  = null;
+
+// ── TIER MAPS ──────────────────────────────────────────────────
 const TIER_SCORES = {
-  '3+':     100, '2.5-3': 88,  '2-2.5': 76,
-  'half1':   71, '1.5-2': 64,  'half2':  58,
-  '1.25':    52, '1':     46,  'half3':  42,
-  'late1':   37, 'half4': 33,  'early2': 28,
-  'base2':   22, 'late2': 16,  'early3': 10,
-  'base3':    6,
+  '3+':100,'2.5-3':88,'2-2.5':76,'half1':71,'1.5-2':64,'half2':58,
+  '1.25':52,'1':46,'half3':42,'late1':37,'half4':33,'early2':28,
+  'base2':22,'late2':16,'early3':10,'base3':6,
 };
-
 const TIER_LABELS = {
-  '3+':     '3+ Base 1s',      '2.5-3':  '2.5–3 Base 1s',
-  '2-2.5':  '2–2.5 Base 1s',   'half1':  'Half-Tier',
-  '1.5-2':  '1.5–2 Base 1s',   'half2':  'Half-Tier',
-  '1.25':   '1.25 Base 1s',    '1':      '1 Base 1',
-  'half3':  'Half-Tier',        'late1':  'Late 1 (~0.75)',
-  'half4':  'Half-Tier',        'early2': 'Early 2 (~0.5)',
-  'base2':  'Base 2 (~0.33)',   'late2':  'Late 2',
-  'early3': 'Early 3',          'base3':  'Base 3',
+  '3+':'3+ Base 1s','2.5-3':'2.5–3 Base 1s','2-2.5':'2–2.5 Base 1s','half1':'Half-Tier',
+  '1.5-2':'1.5–2 Base 1s','half2':'Half-Tier','1.25':'1.25 Base 1s','1':'1 Base 1',
+  'half3':'Half-Tier','late1':'Late 1 (~0.75)','half4':'Half-Tier','early2':'Early 2 (~0.5)',
+  'base2':'Base 2 (~0.33)','late2':'Late 2','early3':'Early 3','base3':'Base 3',
 };
 
-// ── FANTASYCALC ───────────────────────────────────────────
-async function fetchFC() {
-  const btn = document.getElementById('btn-fetch');
-  const bar = document.getElementById('fc-status-bar');
-  const numQbs = document.getElementById('sel-qbs').value;
-  const ppr    = document.getElementById('sel-ppr').value;
-  const tep    = document.getElementById('sel-tep').value;
+// ── HELPERS ────────────────────────────────────────────────────
+function norm(n) { return n.toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim(); }
+function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// ── FANTASYCALC ────────────────────────────────────────────────
+async function fetchFC() {
+  const btn = document.getElementById('btn-fc');
+  const bar = document.getElementById('fc-bar');
   btn.disabled = true;
-  bar.className = 'status-bar loading';
+  bar.className = 'sbar loading';
   bar.innerHTML = '<span class="spinner"></span>Connecting to FantasyCalc…';
 
-  const url = `https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=${numQbs}&ppr=${ppr}&tep=${tep}&includeAdp=false`;
+  const qbs = document.getElementById('sel-qbs').value;
+  const ppr = document.getElementById('sel-ppr').value;
+  const tep = document.getElementById('sel-tep').value;
+  const url = `https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=${qbs}&ppr=${ppr}&tep=${tep}&includeAdp=false`;
 
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw = await res.json();
-
-    fcData = raw
-      .filter(r => r.value > 0)
-      .map((r, i) => ({
-        name:    r.player?.name    || 'Unknown',
-        pos:     r.player?.position || '?',
-        team:    r.player?.maybeTeam || '—',
-        age:     r.player?.age    || null,
-        fcValue: r.value,
-        fcRank:  i + 1,
-      }));
-
-    bar.className = 'status-bar ok';
-    bar.textContent = `✓ ${fcData.length} players loaded · live market values`;
-    document.getElementById('fc-status').innerHTML = '<span class="dot live"></span>FC LIVE';
+    fcData = raw.filter(r => r.value > 0).map((r,i) => ({
+      name: r.player?.name || 'Unknown',
+      pos:  r.player?.position || '?',
+      team: r.player?.maybeTeam || '—',
+      age:  r.player?.age || null,
+      fcValue: r.value,
+      fcRank: i + 1,
+    }));
+    bar.className = 'sbar ok';
+    bar.textContent = `✓ ${fcData.length} players · live values`;
+    document.getElementById('h-fc').innerHTML = '<span class="dot live"></span>FC LIVE';
     mergeAndRender();
   } catch(e) {
-    bar.className = 'status-bar err';
+    bar.className = 'sbar err';
     bar.textContent = `✗ ${e.message}`;
   }
-
   btn.disabled = false;
-  btn.textContent = 'Fetch Rankings';
 }
 
-// ── TAT CSV PARSER ────────────────────────────────────────
+// ── SLEEPER ────────────────────────────────────────────────────
+const SLEEPER = 'https://api.sleeper.app/v1';
+
+async function fetchSleeper() {
+  const btn  = document.getElementById('btn-sleeper');
+  const bar  = document.getElementById('sleeper-bar');
+  const user = document.getElementById('sleeper-user').value.trim();
+  const season = document.getElementById('sleeper-season').value;
+  if (!user) { bar.className='sbar err'; bar.textContent='✗ Enter a username.'; return; }
+
+  btn.disabled = true;
+  bar.className = 'sbar loading';
+  bar.innerHTML = '<span class="spinner"></span>Looking up user…';
+
+  try {
+    // 1) Get user
+    const uRes = await fetch(`${SLEEPER}/user/${user}`);
+    if (!uRes.ok) throw new Error(`User "${user}" not found`);
+    const uData = await uRes.json();
+    sleeperUserId = uData.user_id;
+
+    bar.innerHTML = '<span class="spinner"></span>Loading leagues…';
+
+    // 2) Get leagues
+    const lRes = await fetch(`${SLEEPER}/user/${sleeperUserId}/leagues/nfl/${season}`);
+    if (!lRes.ok) throw new Error(`Could not load leagues for season ${season}`);
+    const lData = await lRes.json();
+
+    // Filter dynasty leagues
+    sleeperLeagues = lData.filter(l =>
+      l.settings?.type === 2 ||                         // type 2 = dynasty
+      (l.name || '').toLowerCase().includes('dynasty') ||
+      (l.name || '').toLowerCase().includes('keeper')
+    );
+
+    if (!sleeperLeagues.length) {
+      // Fallback: show all leagues if none flagged as dynasty
+      sleeperLeagues = lData;
+    }
+
+    bar.className = 'sbar ok';
+    bar.textContent = `✓ ${sleeperLeagues.length} league(s) found for ${uData.display_name}`;
+
+    renderLeagueList();
+  } catch(e) {
+    bar.className = 'sbar err';
+    bar.textContent = `✗ ${e.message}`;
+  }
+  btn.disabled = false;
+}
+
+function renderLeagueList() {
+  const container = document.getElementById('league-list');
+  const items     = document.getElementById('league-items');
+  container.style.display = 'block';
+  items.innerHTML = sleeperLeagues.map(l => `
+    <div class="league-item ${selectedLeagueId === l.league_id ? 'selected' : ''}"
+         onclick="selectLeague('${l.league_id}', '${esc(l.name||'Unnamed')}')">
+      <span>${esc(l.name || 'Unnamed League')}</span>
+      <span class="league-meta">${l.total_rosters || '?'} teams · ${l.season || ''}</span>
+    </div>
+  `).join('');
+}
+
+async function selectLeague(leagueId, leagueName) {
+  selectedLeagueId = leagueId;
+  renderLeagueList(); // update selected state
+
+  const bar = document.getElementById('sleeper-bar');
+  bar.className = 'sbar loading';
+  bar.innerHTML = `<span class="spinner"></span>Loading roster from "${leagueName}"…`;
+
+  try {
+    // Get rosters to find your roster_id
+    const rRes = await fetch(`${SLEEPER}/league/${leagueId}/rosters`);
+    if (!rRes.ok) throw new Error('Could not load rosters');
+    const rosters = await rRes.json();
+
+    // Get users to match your user_id to a roster
+    const uRes = await fetch(`${SLEEPER}/league/${leagueId}/users`);
+    const users = await uRes.json();
+    const me    = users.find(u => u.user_id === sleeperUserId);
+    if (!me) throw new Error('Could not find you in this league');
+
+    const myRoster = rosters.find(r => r.owner_id === sleeperUserId);
+    if (!myRoster) throw new Error('No roster found for your user');
+
+    sleeperRosterId  = myRoster.roster_id;
+    const playerIds  = myRoster.players || [];
+
+    bar.innerHTML = `<span class="spinner"></span>Resolving ${playerIds.length} player names…`;
+
+    // Resolve player IDs → names using Sleeper's players endpoint
+    // This is a large file (~4MB), cache it in sessionStorage
+    let playersMap = null;
+    const cacheKey = 'sleeper_players_nfl';
+    const cached   = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      playersMap = JSON.parse(cached);
+    } else {
+      const pRes = await fetch(`${SLEEPER}/players/nfl`);
+      if (!pRes.ok) throw new Error('Could not fetch Sleeper player database');
+      playersMap = await pRes.json();
+      try { sessionStorage.setItem(cacheKey, JSON.stringify(playersMap)); } catch(e) { /* quota */ }
+    }
+
+    // Build name set from your player IDs
+    myPlayerIds  = new Set(playerIds);
+    sleeperNames = new Set();
+    for (const pid of playerIds) {
+      const p = playersMap[pid];
+      if (p) {
+        const fullName = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+        if (fullName) sleeperNames.add(norm(fullName));
+      }
+    }
+
+    bar.className = 'sbar ok';
+    bar.textContent = `✓ ${sleeperNames.size} players on your roster · ${leagueName}`;
+    document.getElementById('h-sleeper').innerHTML = `<span class="dot live"></span>${sleeperNames.size} ON ROSTER`;
+
+    mergeAndRender();
+  } catch(e) {
+    bar.className = 'sbar err';
+    bar.textContent = `✗ ${e.message}`;
+  }
+}
+
+// ── TAT CSV ────────────────────────────────────────────────────
 function parseTierKey(cell) {
-  const s = cell.toLowerCase().replace(/[""]/g, '"');
-
+  const s = cell.toLowerCase().replace(/[""]/g,'"');
   if (/half.?tier|half\s*tier/i.test(cell)) return '__HALF__';
-
-  // Full tier detection — order matters (more specific first)
-  if (s.includes('3+'))                                    return '3+';
-  if (s.includes('2.5') || s.includes('2.5-3'))           return '2.5-3';
-  if (s.includes('2-2.5') || s.includes('2 - 2.5'))       return '2-2.5';
-  if (s.includes('1.5') || s.includes('1.5-2'))           return '1.5-2';
-  if (s.includes('1.25'))                                  return '1.25';
-  // Late/early 2 and 3 before plain "1" to avoid false matches
-  if ((s.includes('early') || s.includes('"early"')) && s.includes('3')) return 'early3';
-  if ((s.includes('base')  || s.includes('"base"'))  && s.includes('3')) return 'base3';
-  if ((s.includes('late')  || s.includes('"late"'))  && s.includes('2') && !s.includes('3')) return 'late2';
-  if ((s.includes('early') || s.includes('"early"')) && s.includes('2') && !s.includes('3')) return 'early2';
-  if ((s.includes('base')  || s.includes('"base"'))  && s.includes('2') && !s.includes('3')) return 'base2';
-  if ((s.includes('late')  || s.includes('"late"'))  && (s.includes('0.75') || (s.includes('1') && !s.includes('2') && !s.includes('3')))) return 'late1';
-  if (s.includes('= 1 ') || s.match(/value\s*=\s*1\b/) || s.includes('1 (+/-)')) return '1';
-
+  if (s.includes('3+'))                         return '3+';
+  if (s.includes('2.5')||s.includes('2.5-3'))   return '2.5-3';
+  if (s.includes('2-2.5'))                      return '2-2.5';
+  if (s.includes('1.5')||s.includes('1.5-2'))   return '1.5-2';
+  if (s.includes('1.25'))                       return '1.25';
+  if ((s.includes('early')||s.includes('"early"'))&&s.includes('3'))  return 'early3';
+  if ((s.includes('base') ||s.includes('"base"')) &&s.includes('3'))  return 'base3';
+  if ((s.includes('late') ||s.includes('"late"')) &&s.includes('2')&&!s.includes('3')) return 'late2';
+  if ((s.includes('early')||s.includes('"early"'))&&s.includes('2')&&!s.includes('3')) return 'early2';
+  if ((s.includes('base') ||s.includes('"base"')) &&s.includes('2')&&!s.includes('3')) return 'base2';
+  if ((s.includes('late') ||s.includes('"late"')) &&(s.includes('0.75')||(s.includes('1')&&!s.includes('2')&&!s.includes('3')))) return 'late1';
+  if (s.includes('= 1 ')||s.match(/value\s*=\s*1\b/)||s.includes('1 (+/-)')) return '1';
   return null;
 }
 
 function splitCSV(line) {
-  const r = []; let cur = ''; let inQ = false;
+  const r=[]; let cur=''; let inQ=false;
   for (const c of line) {
-    if (c === '"') { inQ = !inQ; }
-    else if (c === ',' && !inQ) { r.push(cur.trim()); cur = ''; }
-    else { cur += c; }
+    if (c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){r.push(cur.trim());cur='';}
+    else{cur+=c;}
   }
-  r.push(cur.trim());
-  return r;
-}
-
-function normName(n) {
-  return n.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+  r.push(cur.trim()); return r;
 }
 
 function parseTATcsv(text, filename) {
-  const bar = document.getElementById('tat-status-bar');
-  const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim());
-
-  // Find header row
-  let headerIdx = -1, headers = [];
-  for (let i = 0; i < Math.min(10, lines.length); i++) {
-    const cols = splitCSV(lines[i]);
-    if (cols[0].toLowerCase() === 'rank' && cols.some(c => c.toLowerCase() === 'player')) {
-      headerIdx = i; headers = cols.map(c => c.toLowerCase().trim()); break;
+  const bar   = document.getElementById('tat-bar');
+  const lines = text.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+  let headerIdx=-1, headers=[];
+  for (let i=0;i<Math.min(10,lines.length);i++) {
+    const cols=splitCSV(lines[i]);
+    if (cols[0].toLowerCase()==='rank'&&cols.some(c=>c.toLowerCase()==='player')) {
+      headerIdx=i; headers=cols.map(c=>c.toLowerCase().trim()); break;
     }
   }
-  if (headerIdx === -1) {
-    bar.className = 'status-bar err';
-    bar.textContent = '✗ Could not find header row (expected "Rank" and "Player" columns).';
+  if (headerIdx===-1) {
+    bar.className='sbar err';
+    bar.textContent='✗ Could not find header row (needs "Rank" and "Player" columns).';
     return false;
   }
+  const nameIdx=headers.findIndex(h=>h==='player');
+  const posIdx =headers.findIndex(h=>h==='position');
+  const teamIdx=headers.findIndex(h=>h==='team');
+  const mineIdx=headers.findIndex(h=>['mine','my','roster','myplayer','owned'].includes(h));
 
-  const nameIdx = headers.findIndex(h => h === 'player');
-  const posIdx  = headers.findIndex(h => h === 'position');
-  const teamIdx = headers.findIndex(h => h === 'team');
-  const mineIdx = headers.findIndex(h => ['mine','my','roster','myplayer','owned'].includes(h));
-
-  tatData = [];
-  let curTierKey = null;
-  let halfCount  = 0;
-  let players = 0, mineCount = 0;
-
-  for (let i = headerIdx + 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    const cols  = splitCSV(line);
-    const first = cols[0].trim();
-
-    // --- Tier row? ---
-    if (/^value\s*=/i.test(first) || /half.?tier/i.test(first)) {
-      const key = parseTierKey(first);
-      if (key === '__HALF__') {
-        halfCount++;
-        curTierKey = `half${halfCount}`;
-      } else if (key) {
-        curTierKey = key;
-      }
+  tatData=[]; let curTier=null; let halfCount=0; let players=0; let mineCount=0;
+  for (let i=headerIdx+1;i<lines.length;i++) {
+    const line=lines[i].trim(); if(!line) continue;
+    const cols=splitCSV(line); const first=cols[0].trim();
+    if (/^value\s*=/i.test(first)||/half.?tier/i.test(first)) {
+      const k=parseTierKey(first);
+      if (k==='__HALF__'){halfCount++;curTier=`half${halfCount}`;}
+      else if(k){curTier=k;}
       continue;
     }
-
-    // --- Player row: first cell must be a number ---
     if (!/^\d+$/.test(first)) continue;
-
-    const rank = parseInt(first);
-    const name = cols[nameIdx]?.trim() || '';
-    if (!name) continue;
-
-    const pos  = cols[posIdx]?.trim()  || '?';
-    const team = cols[teamIdx]?.trim() || '—';
-    const mine = mineIdx >= 0
-      ? (cols[mineIdx]?.trim() === '1' || cols[mineIdx]?.trim().toLowerCase() === 'true')
-      : false;
-
-    const isPick = /\d{4}\s+rookie/i.test(name) || (/rookie/i.test(name) && /\d/.test(name));
-    const effectivePos = isPick ? 'PICK' : pos;
-
+    const rank=parseInt(first);
+    const name=cols[nameIdx]?.trim()||''; if(!name) continue;
+    const pos =cols[posIdx]?.trim()||'?';
+    const team=cols[teamIdx]?.trim()||'—';
+    const mine=mineIdx>=0?(cols[mineIdx]?.trim()==='1'||cols[mineIdx]?.trim().toLowerCase()==='true'):false;
+    const isPick=/\d{4}\s+rookie/i.test(name)||(/rookie/i.test(name)&&/\d/.test(name));
     tatData.push({
-      tatRank:    rank,
-      name,
-      pos:        effectivePos,
-      team,
-      tierKey:    curTierKey,
-      tierVal:    curTierKey ? (TIER_SCORES[curTierKey] ?? 0) : 0,
-      tierLabel:  curTierKey ? (TIER_LABELS[curTierKey] || curTierKey) : '—',
+      tatRank:rank,name,pos:isPick?'PICK':pos,team,
+      tierKey:curTier,tierVal:curTier?(TIER_SCORES[curTier]??0):0,
+      tierLabel:curTier?(TIER_LABELS[curTier]||curTier):'—',
       mine,
     });
-
-    players++;
-    if (mine) mineCount++;
+    players++; if(mine) mineCount++;
   }
-
-  if (players === 0) {
-    bar.className = 'status-bar err';
-    bar.textContent = '✗ No player rows found — is this a TAT-format CSV?';
-    return false;
-  }
-
-  bar.className = 'status-bar ok';
-  bar.textContent = `✓ ${players} players · ${mineCount} on roster · ${filename}`;
-  document.getElementById('tat-status').innerHTML = mineCount > 0
-    ? `<span class="dot live"></span>${mineCount} ON ROSTER`
-    : `<span class="dot warn"></span>${players} TAT LOADED`;
+  if (!players){bar.className='sbar err';bar.textContent='✗ No player rows found.';return false;}
+  bar.className='sbar ok';
+  bar.textContent=`✓ ${players} players · ${filename}`;
+  document.getElementById('h-tat').innerHTML='<span class="dot live"></span>TAT LOADED';
   return true;
 }
 
-// ── MERGE ─────────────────────────────────────────────────
+function handleCSV(e) { if(e.target.files[0]) processFile(e.target.files[0]); }
+function processFile(f) {
+  const r=new FileReader();
+  r.onload=e=>{if(parseTATcsv(e.target.result,f.name))mergeAndRender();};
+  r.readAsText(f);
+}
+const zone=document.getElementById('upload-zone');
+zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});
+zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
+zone.addEventListener('drop',e=>{
+  e.preventDefault();zone.classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];
+  if(f?.name.endsWith('.csv'))processFile(f);
+});
+
+// ── MERGE ──────────────────────────────────────────────────────
 function mergeAndRender() {
   if (!fcData.length && !tatData.length) return;
 
-  if (!fcData.length || !tatData.length) {
-    // Only one source — just show what we have
-    merged = (tatData.length ? tatData : fcData.map((p,i) => ({
-      tatRank: null, name: p.name, pos: p.pos, team: p.team,
-      tierKey: null, tierVal: 0, tierLabel: '—', mine: false,
-      fcRank: i+1, fcValue: p.fcValue, rankDelta: null,
-    })));
-    renderTable();
-    return;
+  // Determine if a player is on my roster
+  // Priority: Sleeper names (set) > CSV "mine" flag
+  function isMine(p) {
+    if (sleeperNames.size > 0) return sleeperNames.has(norm(p.name));
+    return p.mine || false;
   }
 
-  const fcMap = {};
-  fcData.forEach((p, i) => { fcMap[normName(p.name)] = { ...p, fcRank: i + 1 }; });
+  if (!fcData.length || !tatData.length) {
+    merged = (tatData.length ? tatData : fcData.map((p,i)=>({
+      tatRank:null,name:p.name,pos:p.pos,team:p.team,
+      tierKey:null,tierVal:0,tierLabel:'—',mine:false,
+      fcRank:i+1,fcValue:p.fcValue,rankDelta:null,
+    }))).map(p=>({...p,mine:isMine(p)}));
+    renderTable(); return;
+  }
+
+  const fcMap={};
+  fcData.forEach((p,i)=>{fcMap[norm(p.name)]={...p,fcRank:i+1};});
 
   merged = tatData.map(p => {
-    const fc = fcMap[normName(p.name)] || null;
-    // rankDelta > 0 means TAT ranks the player HIGHER (lower number) than FC
-    // i.e. you should buy because the market undervalues them relative to TAT
-    const rankDelta = fc ? (fc.fcRank - p.tatRank) : null;
-    return { ...p, fc, fcRank: fc?.fcRank ?? null, fcValue: fc?.fcValue ?? null, rankDelta };
+    const fc = fcMap[norm(p.name)] || null;
+    return {
+      ...p,
+      mine: isMine(p),
+      fc,
+      fcRank:  fc?.fcRank  ?? null,
+      fcValue: fc?.fcValue ?? null,
+      rankDelta: fc ? (fc.fcRank - p.tatRank) : null,
+    };
   });
 
   renderTable();
   updateSummary();
 }
 
-// ── SUMMARY ───────────────────────────────────────────────
+// ── SUMMARY ────────────────────────────────────────────────────
 function updateSummary() {
-  document.getElementById('summary-row').style.display = 'grid';
-  const emptyEl = document.getElementById('empty-state');
-  if (emptyEl) emptyEl.style.display = 'none';
-
-  const wd = merged.filter(p => p.rankDelta !== null);
-  const maxAbs = wd.length ? Math.max(...wd.map(p => Math.abs(p.rankDelta))) : 1;
-  const thresh = Math.max(maxAbs * 0.25, 10);
-
+  document.getElementById('sumrow').style.display = 'grid';
+  const el = document.getElementById('empty-state');
+  if (el) el.style.display = 'none';
+  const wd = merged.filter(p=>p.rankDelta!==null);
+  const maxAbs = wd.length ? Math.max(...wd.map(p=>Math.abs(p.rankDelta))) : 1;
+  const thresh = Math.max(maxAbs*0.25, 10);
   document.getElementById('s-matched').textContent = wd.length;
   document.getElementById('s-avg').textContent = wd.length
-    ? (s => s > 0 ? '+'+s : String(s))((wd.reduce((a,p)=>a+p.rankDelta,0)/wd.length).toFixed(1))
+    ? (v=>v>0?'+'+v:String(v))((wd.reduce((a,p)=>a+p.rankDelta,0)/wd.length).toFixed(1))
     : '—';
-  document.getElementById('s-buys').textContent  = wd.filter(p => p.rankDelta >  thresh).length;
-  document.getElementById('s-sells').textContent = wd.filter(p => p.rankDelta < -thresh).length;
-  document.getElementById('s-roster').textContent = merged.filter(p => p.mine).length || '—';
+  document.getElementById('s-buys').textContent  = wd.filter(p=>p.rankDelta> thresh).length;
+  document.getElementById('s-sells').textContent = wd.filter(p=>p.rankDelta<-thresh).length;
+  document.getElementById('s-roster').textContent = merged.filter(p=>p.mine).length || '—';
 }
 
-// ── SIGNAL ────────────────────────────────────────────────
-function getSignal(delta, maxAbs) {
-  if (delta === null || maxAbs === 0) return { label: '—', cls: 'sig-h' };
-  const t = Math.max(maxAbs * 0.1, 5);
-  if (delta >  maxAbs * 0.35) return { label: '⬆ Strong Buy',  cls: 'sig-sb' };
-  if (delta >  t)              return { label: '↑ Buy',          cls: 'sig-b'  };
-  if (delta < -maxAbs * 0.35) return { label: '⬇ Strong Sell', cls: 'sig-ss' };
-  if (delta < -t)              return { label: '↓ Sell',         cls: 'sig-s'  };
-  return { label: '— Hold', cls: 'sig-h' };
+// ── SIGNAL ─────────────────────────────────────────────────────
+function getSignal(d, mx) {
+  if (d===null||mx===0) return {label:'—',cls:'sig-h'};
+  const t=Math.max(mx*0.1,5);
+  if (d> mx*0.35) return {label:'⬆ Strong Buy', cls:'sig-sb'};
+  if (d> t)       return {label:'↑ Buy',         cls:'sig-b'};
+  if (d<-mx*0.35) return {label:'⬇ Strong Sell',cls:'sig-ss'};
+  if (d<-t)       return {label:'↓ Sell',        cls:'sig-s'};
+  return {label:'— Hold',cls:'sig-h'};
 }
 
-// ── RENDER ────────────────────────────────────────────────
+// ── RENDER ─────────────────────────────────────────────────────
 function renderTable() {
-  const emptyEl = document.getElementById('empty-state');
-  if (emptyEl) emptyEl.style.display = 'none';
+  const el = document.getElementById('empty-state');
+  if (el) el.style.display = 'none';
 
   let rows = merged.slice();
-  const hasTAT  = tatData.length  > 0;
-  const hasFC   = fcData.length   > 0;
-  const hasBoth = hasTAT && hasFC;
+  const hasTAT  = tatData.length>0;
+  const hasFC   = fcData.length>0;
+  const hasBoth = hasTAT&&hasFC;
 
-  if (activeFilter === 'MINE') rows = rows.filter(p => p.mine);
-  else if (activeFilter !== 'ALL') rows = rows.filter(p => p.pos === activeFilter);
-
+  if (activeFilter==='MINE') rows=rows.filter(p=>p.mine);
+  else if (activeFilter!=='ALL') rows=rows.filter(p=>p.pos===activeFilter);
   if (searchQ) {
-    const q = searchQ.toLowerCase();
-    rows = rows.filter(p => p.name.toLowerCase().includes(q) || (p.team||'').toLowerCase().includes(q));
+    const q=searchQ.toLowerCase();
+    rows=rows.filter(p=>p.name.toLowerCase().includes(q)||(p.team||'').toLowerCase().includes(q));
   }
-
-  rows.sort((a, b) => {
-    let av = a[sortCol], bv = b[sortCol];
-    const nil = sortDir > 0 ? Infinity : -Infinity;
-    if (av == null) av = nil;
-    if (bv == null) bv = nil;
-    return av < bv ? -sortDir : av > bv ? sortDir : 0;
+  rows.sort((a,b)=>{
+    let av=a[sortCol],bv=b[sortCol];
+    const nil=sortDir>0?Infinity:-Infinity;
+    if(av==null)av=nil; if(bv==null)bv=nil;
+    return av<bv?-sortDir:av>bv?sortDir:0;
   });
 
-  const wd = rows.filter(p => p.rankDelta !== null);
-  const maxAbs = wd.length ? Math.max(...wd.map(p => Math.abs(p.rankDelta))) : 1;
-  const showTierDividers = sortCol === 'tatRank' && sortDir === 1 && hasTAT && !searchQ && activeFilter !== 'MINE';
-  let lastTier = Symbol();
+  const wd=rows.filter(p=>p.rankDelta!==null);
+  const maxAbs=wd.length?Math.max(...wd.map(p=>Math.abs(p.rankDelta))):1;
+  const showTiers=sortCol==='tatRank'&&sortDir===1&&hasTAT&&!searchQ&&activeFilter!=='MINE';
+  let lastTier=Symbol();
 
-  const th = (col, label) =>
+  const th=(col,label)=>
     `<th onclick="setSort('${col}')" class="${sortCol===col?'sorted':''}">${label} <span style="opacity:.4">${sortCol===col?(sortDir>0?'↑':'↓'):'↕'}</span></th>`;
 
-  let colCount = 4 + (hasTAT?1:0) + (hasFC?2:0) + (hasBoth?2:0);
+  const cols = 4+(hasTAT?1:0)+(hasFC?2:0)+(hasBoth?2:0);
 
-  let html = `
-  <div class="table-header">
-    <div class="table-title">Rankings Comparison</div>
-    <div class="table-controls">
-      <input class="search-inp" type="text" placeholder="Search player / team…" value="${esc(searchQ)}" oninput="setSearch(this.value)">
-      <div class="filter-group">
-        ${['ALL','QB','RB','WR','TE','MINE'].map(f =>
+  let html=`
+  <div class="thead-row">
+    <div class="ttitle">Rankings Comparison</div>
+    <div class="tcontrols">
+      <input class="sinp" type="text" placeholder="Search player / team…" value="${esc(searchQ)}" oninput="setSearch(this.value)">
+      <div class="fgrp">
+        ${['ALL','QB','RB','WR','TE','MINE'].map(f=>
           `<button class="fbtn ${activeFilter===f?'active':''}" onclick="setFilter('${f}')">${f}</button>`
         ).join('')}
       </div>
     </div>
   </div>
-  <div class="table-wrap"><table>
+  <div class="twrap"><table>
     <thead><tr>
-      ${th('tatRank','TAT Rank')}
-      <th>Player</th><th>Pos</th><th>Team</th>
-      ${hasTAT  ? th('tierVal','TAT Tier') : ''}
-      ${hasFC   ? th('fcRank', 'FC Rank')  : ''}
-      ${hasFC   ? th('fcValue','FC Value') : ''}
-      ${hasBoth ? th('rankDelta','Rank &Delta;') : ''}
-      ${hasBoth ? '<th>Signal</th>' : ''}
+      ${th('tatRank','TAT Rank')}<th>Player</th><th>Pos</th><th>Team</th>
+      ${hasTAT?th('tierVal','TAT Tier'):''}
+      ${hasFC?th('fcRank','FC Rank'):''}
+      ${hasFC?th('fcValue','FC Value'):''}
+      ${hasBoth?th('rankDelta','Rank &Delta;'):''}
+      ${hasBoth?'<th>Signal</th>':''}
     </tr></thead>
     <tbody>`;
 
   if (!rows.length) {
-    html += `<tr><td colspan="${colCount}" style="text-align:center;padding:36px;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text3)">No players match filter.</td></tr>`;
+    html+=`<tr><td colspan="${cols}" style="text-align:center;padding:36px;font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3)">No players match filter.</td></tr>`;
   }
 
   for (const p of rows) {
-    const sig  = getSignal(p.rankDelta, maxAbs);
-    const pct  = p.rankDelta !== null ? Math.min(Math.abs(p.rankDelta) / maxAbs * 50, 50) : 0;
-    const dir  = p.rankDelta === null ? '' : p.rankDelta >= 0 ? 'up' : 'down';
-    const dStr = p.rankDelta === null ? '—' : (p.rankDelta > 0 ? '+' : '') + p.rankDelta;
+    const sig=getSignal(p.rankDelta,maxAbs);
+    const pct=p.rankDelta!==null?Math.min(Math.abs(p.rankDelta)/maxAbs*50,50):0;
+    const dir=p.rankDelta===null?'':p.rankDelta>=0?'up':'down';
+    const dStr=p.rankDelta===null?'—':(p.rankDelta>0?'+':'')+p.rankDelta;
 
-    if (showTierDividers && p.tierLabel !== lastTier) {
-      lastTier = p.tierLabel;
-      if (p.tierLabel && p.tierLabel !== '—') {
-        html += `<tr class="tier-row"><td colspan="${colCount}"><span>${p.tierLabel}</span></td></tr>`;
+    if (showTiers&&p.tierLabel!==lastTier) {
+      lastTier=p.tierLabel;
+      if (p.tierLabel&&p.tierLabel!=='—') {
+        html+=`<tr class="tier-row"><td colspan="${cols}"><span>${p.tierLabel}</span></td></tr>`;
       }
     }
 
-    html += `<tr class="${p.mine?'mine-row':''}">
-      <td class="mono dim">${p.tatRank != null ? '#'+p.tatRank : '—'}</td>
+    html+=`<tr class="${p.mine?'mine-row':''}">
+      <td class="mono dim">${p.tatRank!=null?'#'+p.tatRank:'—'}</td>
       <td>
         <span class="pname ${p.mine?'mine':''}">${esc(p.name)}</span>
-        ${p.mine ? '<span class="mine-star">★ MINE</span>' : ''}
+        ${p.mine?'<span class="mine-star">★ MINE</span>':''}
       </td>
       <td><span class="pos-badge pos-${p.pos}">${p.pos}</span></td>
       <td class="mono dim">${esc(p.team||'—')}</td>
-      ${hasTAT  ? `<td><span class="tier-badge">${esc(p.tierLabel||'—')}</span></td>` : ''}
-      ${hasFC   ? `<td class="mono">${p.fcRank  != null ? '#'+p.fcRank  : '<span class="dim">—</span>'}</td>` : ''}
-      ${hasFC   ? `<td class="mono">${p.fcValue != null ? p.fcValue.toLocaleString() : '<span class="dim">—</span>'}</td>` : ''}
-      ${hasBoth ? `
+      ${hasTAT?`<td><span class="tier-badge">${esc(p.tierLabel||'—')}</span></td>`:''}
+      ${hasFC?`<td class="mono">${p.fcRank!=null?'#'+p.fcRank:'<span class="dim">—</span>'}</td>`:''}
+      ${hasFC?`<td class="mono">${p.fcValue!=null?p.fcValue.toLocaleString():'<span class="dim">—</span>'}</td>`:''}
+      ${hasBoth?`
         <td>
-          <div class="bar-wrap">
+          <div class="bwrap">
             <span class="rdelta ${dir}">${dStr}</span>
-            <div class="bar-track">
-              <div class="bar-mid"></div>
-              <div class="bar-fill ${dir}" style="width:${pct}%"></div>
-            </div>
+            <div class="btrack"><div class="bmid"></div><div class="bfill ${dir}" style="width:${pct}%"></div></div>
           </div>
         </td>
-        <td><span class="sig ${sig.cls}">${sig.label}</span></td>
-      ` : ''}
+        <td><span class="sig ${sig.cls}">${sig.label}</span></td>`:''}
     </tr>`;
   }
 
-  html += `</tbody></table></div>
-  <div class="table-foot">
-    ${rows.length} players shown &nbsp;·&nbsp; Rank &Delta; = FC rank &minus; TAT rank &nbsp;·&nbsp; Positive = TAT values higher than FC market (consider buying)
+  html+=`</tbody></table></div>
+  <div class="tfoot">
+    ${rows.length} players &nbsp;·&nbsp; Rank &Delta; = FC rank &minus; TAT rank &nbsp;·&nbsp; Positive = TAT values higher than market (consider buying)
   </div>`;
 
-  document.getElementById('table-section').innerHTML = html;
+  document.getElementById('table-section').innerHTML=html;
 }
 
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function setFilter(f) { activeFilter = f; renderTable(); }
-function setSearch(v) { searchQ = v; renderTable(); }
-function setSort(col) {
-  if (sortCol === col) sortDir *= -1;
-  else { sortCol = col; sortDir = col === 'tatRank' ? 1 : -1; }
+function setFilter(f){activeFilter=f;renderTable();}
+function setSearch(v){searchQ=v;renderTable();}
+function setSort(col){
+  if(sortCol===col)sortDir*=-1;
+  else{sortCol=col;sortDir=col==='tatRank'?1:-1;}
   renderTable();
 }
-
-// ── FILE HANDLING ─────────────────────────────────────────
-function handleCSV(e) { if (e.target.files[0]) processFile(e.target.files[0]); }
-function processFile(f) {
-  const r = new FileReader();
-  r.onload = e => { if (parseTATcsv(e.target.result, f.name)) mergeAndRender(); };
-  r.readAsText(f);
-}
-
-const zone = document.getElementById('upload-zone');
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-zone.addEventListener('drop', e => {
-  e.preventDefault(); zone.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f?.name.endsWith('.csv')) processFile(f);
-});
 </script>
 </body>
 </html>
