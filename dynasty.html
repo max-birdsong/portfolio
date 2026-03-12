@@ -218,6 +218,41 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--border2);}
+
+/* ── TRADE CARDS ── */
+.trade-section-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.trade-section-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;}
+.trade-section-sub{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);}
+.trade-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:28px;}
+
+.tcard{background:var(--surface);border:1px solid var(--border);padding:18px 20px;display:grid;
+  grid-template-columns:1fr auto 1fr auto;gap:0;align-items:center;position:relative;overflow:hidden;}
+.tcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--red));opacity:.5;}
+.tcard.strong::before{opacity:1;}
+
+.tcard-player{display:flex;flex-direction:column;gap:4px;}
+.tcard-player.send{align-items:flex-start;}
+.tcard-player.recv{align-items:flex-end;text-align:right;}
+.tcard-pname{font-weight:600;font-size:.9rem;line-height:1.2;}
+.tcard-owner{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--accent);margin-top:1px;}
+.tcard-pmeta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.tcard-player.recv .tcard-pmeta{justify-content:flex-end;}
+.tcard-pickval{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;line-height:1;}
+.tcard-pickval.send{color:var(--red);}
+.tcard-pickval.recv{color:var(--accent);}
+.tcard-pickval-label{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);}
+
+.tcard-arrow{padding:0 20px;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.tcard-net{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;line-height:1;}
+.tcard-net.up{color:var(--accent);}.tcard-net.dn{color:var(--red);}
+.tcard-net-label{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--text3);text-align:center;white-space:nowrap;}
+.tcard-swap{font-size:1rem;color:var(--text3);}
+
+.tcard-sig{position:absolute;top:10px;right:14px;font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:1px;padding:2px 7px;border:1px solid;}
+
+.owner-pill{font-family:'DM Mono',monospace;font-size:.58rem;padding:2px 7px;background:var(--surface2);border:1px solid var(--border2);color:var(--text3);white-space:nowrap;}
+.owner-pill.you{border-color:var(--amber);color:var(--amber);}
 </style>
 </head>
 <body>
@@ -312,6 +347,9 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
   </div>
   <div class="tab" data-tab="sell" onclick="switchTab('sell')">
     Sell <span class="badge badge-sell" id="badge-sell">—</span>
+  </div>
+  <div class="tab" data-tab="trades" onclick="switchTab('trades')">
+    Trade Finder <span class="badge badge-buy" id="badge-trades">—</span>
   </div>
   <div class="tab" data-tab="table" onclick="switchTab('table')">
     Full Rankings <span class="badge badge-n" id="badge-table">—</span>
@@ -423,6 +461,20 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
     </div>
   </div>
 
+  <!-- TRADES -->
+  <div class="tab-content" id="tab-trades">
+    <div class="empty" id="trades-empty">
+      <div class="empty-title">No League Selected</div>
+      <div class="empty-sub">Connect Sleeper and select a dynasty league to generate trade recommendations.<br>You'll also need FC + TAT loaded for valuations.</div>
+    </div>
+    <div id="trades-content" style="display:none">
+      <div id="trades-loading" style="display:none;padding:40px 0;text-align:center;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--amber)">
+        <span class="spinner"></span> Loading all rosters…
+      </div>
+      <div id="trades-inner"></div>
+    </div>
+  </div>
+
   <!-- FULL TABLE -->
   <div class="tab-content" id="tab-table">
     <div class="empty" id="table-empty">
@@ -463,6 +515,10 @@ let sellPosFilter = 'ALL';
 let sleeperUserId    = null;
 let sleeperLeagues   = [];
 let selectedLeagueId = null;
+// League roster data
+let leagueRosters    = [];   // [{ownerId, ownerName, playerNames: Set<normName>}]
+let ownerByPlayer    = {};   // normName -> {ownerName, ownerId}
+let leagueLoaded     = false;
 
 // ── TIER MAPS ─────────────────────────────────────────────────
 // TAT tier -> pick equivalent (× a 2027 round 1 base pick)
@@ -636,8 +692,55 @@ async function selectLeague(leagueId, leagueName) {
     bar.textContent=`✓ ${sleeperNames.size} players on roster · ${leagueName}`;
     document.getElementById('h-sleeper').innerHTML=`<span class="dot live"></span>${sleeperNames.size} ON ROSTER`;
     mergeAndRender();
+    // Also load full league rosters for trade finder
+    loadLeagueRosters(leagueId, playersMap);
   } catch(e) {
     bar.className='sbar err'; bar.textContent=`✗ ${e.message}`;
+  }
+}
+
+async function loadLeagueRosters(leagueId, playersMap) {
+  try {
+    const rRes = await fetch(`${SLEEPER}/league/${leagueId}/rosters`);
+    if (!rRes.ok) return;
+    const rosters = await rRes.json();
+
+    // Fetch owner display names in parallel
+    const ownerIds = [...new Set(rosters.map(r=>r.owner_id).filter(Boolean))];
+    const userFetches = await Promise.all(
+      ownerIds.map(id => fetch(`${SLEEPER}/user/${id}`).then(r=>r.json()).catch(()=>null))
+    );
+    const ownerNames = {};
+    userFetches.forEach(u => { if (u) ownerNames[u.user_id] = u.display_name || u.username || u.user_id; });
+
+    leagueRosters = rosters.map(r => {
+      const playerNames = new Set();
+      for (const pid of (r.players||[])) {
+        const p = playersMap[pid];
+        if (p) {
+          const name = `${p.first_name||''} ${p.last_name||''}`.trim();
+          if (name) playerNames.add(norm(name));
+        }
+      }
+      return {
+        ownerId:   r.owner_id,
+        ownerName: ownerNames[r.owner_id] || r.owner_id || 'Unknown',
+        playerNames,
+        isMe: r.owner_id === sleeperUserId,
+      };
+    });
+
+    // Build reverse lookup: normName -> {ownerName, isMe}
+    ownerByPlayer = {};
+    for (const roster of leagueRosters) {
+      for (const name of roster.playerNames) {
+        ownerByPlayer[name] = {ownerName: roster.ownerName, isMe: roster.isMe};
+      }
+    }
+    leagueLoaded = true;
+    renderAll();
+  } catch(e) {
+    console.warn('Trade finder: could not load league rosters', e);
   }
 }
 
@@ -756,9 +859,13 @@ function mergeAndRender() {
     // pickDelta: positive = TAT values higher than FC market (in pick units)
     const pickDelta = (p.pickVal != null && fcPickVal != null)
       ? +(p.pickVal - fcPickVal).toFixed(2) : null;
+    const ownerInfo = ownerByPlayer[norm(p.name)] || null;
     return {...p, mine:isMine(p), fc,
       fcRank:fc?.fcRank??null, fcValue:fc?.fcValue??null, fcPickVal,
-      rankDelta:fc?(fc.fcRank-p.tatRank):null, pickDelta};
+      rankDelta:fc?(fc.fcRank-p.tatRank):null, pickDelta,
+      ownerName: ownerInfo?.ownerName || null,
+      ownerIsMe: ownerInfo?.isMe || false,
+    };
   });
 
   // If we only have FC (no TAT yet), show FC alone
@@ -794,6 +901,7 @@ function renderAll() {
   document.getElementById('badge-buy').textContent    = buys.length||'—';
   document.getElementById('badge-sell').textContent   = sells.length||'—';
   document.getElementById('badge-table').textContent  = merged.length||'—';
+  renderTradesTab(maxAbs, pdThresh);
 
   // Render each section
   renderRosterTab(myPlayers, mySells, myHolds, myKeeps, maxAbs);
@@ -1036,6 +1144,188 @@ function setTblSort(col){
   else{tblSortCol=col;tblSortDir=col==='tatRank'?1:-1;}
   renderAll();
 }
+
+// ── TRADE FINDER ──────────────────────────────────────────────
+function renderTradesTab(maxAbs, pdThresh) {
+  const hasData  = merged.length > 0;
+  const hasOwners = leagueLoaded;
+  const empty   = document.getElementById('trades-empty');
+  const inner   = document.getElementById('trades-content');
+
+  if (!hasData || !leagueLoaded) {
+    empty.style.display  = 'block';
+    inner.style.display  = 'none';
+    empty.querySelector('.empty-title').textContent = !hasData
+      ? 'No Value Data' : 'No League Selected';
+    empty.querySelector('.empty-sub').textContent = !hasData
+      ? 'Load FC + TAT CSV first, then select a Sleeper league.'
+      : 'Select a dynasty league in the config above to generate trade recommendations.';
+    document.getElementById('badge-trades').textContent = '—';
+    return;
+  }
+
+  empty.style.display  = 'none';
+  inner.style.display  = 'block';
+
+  // ── Build trade candidates ──────────────────────────────────
+  // My strong sells: players I own that the market overvalues vs TAT
+  // Use pickDelta < -pdThresh (market prices them higher than TAT)
+  const mySells = merged.filter(p =>
+    p.mine && p.pickDelta !== null && p.pickDelta < -pdThresh
+  ).sort((a,b) => a.pickDelta - b.pickDelta); // most overvalued first
+
+  // Strong buys available in league: TAT values higher than market, not on my roster
+  const leagueBuys = merged.filter(p =>
+    !p.mine && p.pickDelta !== null && p.pickDelta > pdThresh && p.ownerName
+  ).sort((a,b) => b.pickDelta - a.pickDelta); // most undervalued first
+
+  // ── Generate trade pairs ────────────────────────────────────
+  // For each of my sell candidates, find the best 2 targets from different owners
+  const trades = [];
+  const seen = new Set(); // dedupe sell+recv combos
+
+  for (const sell of mySells) {
+    // Find best buys from each owner (not me) that owns a buy candidate
+    const ownerBuys = {};
+    for (const buy of leagueBuys) {
+      if (!buy.ownerName || buy.ownerIsMe) continue;
+      if (!ownerBuys[buy.ownerName]) ownerBuys[buy.ownerName] = [];
+      ownerBuys[buy.ownerName].push(buy);
+    }
+
+    for (const [ownerName, candidates] of Object.entries(ownerBuys)) {
+      const recv = candidates[0]; // best buy candidate from this owner
+      if (!recv) continue;
+      const key = `${norm(sell.name)}|${norm(recv.name)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      // Net TAT pick value gain: what I receive (TAT) - what I give up (TAT)
+      // Framing: I sell at FC price, buy at TAT price
+      // Net pick gain = recv.pickVal - sell.pickVal
+      // But also weight by how much "market discount" I capture on the buy side
+      const sendTAT  = sell.pickVal  ?? 0;
+      const recvTAT  = recv.pickVal  ?? 0;
+      const sendFC   = sell.fcPickVal ?? sendTAT;
+      const recvFC   = recv.fcPickVal ?? recvTAT;
+
+      // Value I'm giving up at market price vs TAT: sendFC (what they pay) - sendTAT (what I lose long term)
+      // Value I'm gaining at TAT vs market: recvTAT (what I gain long term) - recvFC (what I pay)
+      const netPickGain = +(
+        (recvTAT - sendTAT) +            // straight TAT swap
+        (sendFC - sendTAT) * 0.5 +       // bonus: I sold above my TAT value
+        (recvTAT - recvFC) * 0.5         // bonus: I bought below market
+      ).toFixed(2);
+
+      trades.push({
+        sell, recv, ownerName, netPickGain, sendTAT, recvTAT, sendFC, recvFC,
+        strong: Math.abs(sell.pickDelta) > pdThresh * 2 || recv.pickDelta > pdThresh * 2,
+      });
+    }
+  }
+
+  // Sort by expected net gain descending
+  trades.sort((a,b) => b.netPickGain - a.netPickGain);
+
+  // ── Render ──────────────────────────────────────────────────
+  const strong = trades.filter(t => t.strong && t.netPickGain > 0);
+  const regular = trades.filter(t => !t.strong && t.netPickGain > 0);
+  const longshots = trades.filter(t => t.netPickGain <= 0).slice(0, 5);
+
+  document.getElementById('badge-trades').textContent = trades.filter(t=>t.netPickGain>0).length || '—';
+
+  let html = '';
+
+  if (!trades.length) {
+    html = `<div class="empty"><div class="empty-title">No Trade Opportunities Found</div>
+      <div class="empty-sub">No strong buy/sell mismatches detected across league rosters.</div></div>`;
+  } else {
+    if (strong.length) {
+      html += `<div class="trade-section-head">
+        <div class="trade-section-title" style="color:var(--accent)">⚡ Priority Trades</div>
+        <div class="trade-section-sub">Both sides have strong signals — act now</div>
+      </div><div class="trade-cards">${strong.map(t=>tradeCard(t)).join('')}</div>`;
+    }
+    if (regular.length) {
+      html += `<div class="trade-section-head">
+        <div class="trade-section-title" style="color:var(--text2)">Recommended Trades</div>
+        <div class="trade-section-sub">One strong signal — worth exploring at the right terms</div>
+      </div><div class="trade-cards">${regular.map(t=>tradeCard(t)).join('')}</div>`;
+    }
+    if (longshots.length) {
+      html += `<div class="trade-section-head" style="margin-top:8px">
+        <div class="trade-section-title" style="color:var(--text3)">Speculative</div>
+        <div class="trade-section-sub">Negative net expected — only if you believe the TAT ranking is wrong</div>
+      </div><div class="trade-cards">${longshots.map(t=>tradeCard(t)).join('')}</div>`;
+    }
+    html += `<div class="tfoot" style="margin-top:12px">
+      Net gain in 2027 R1 equivalents · TAT pick value − FC market value used as basis
+    </div>`;
+  }
+
+  document.getElementById('trades-inner').innerHTML = html;
+}
+
+function tradeCard(t) {
+  const netCls  = t.netPickGain >= 0 ? 'up' : 'dn';
+  const netStr  = (t.netPickGain >= 0 ? '+' : '') + t.netPickGain.toFixed(2) + '×';
+  const sendStr = (t.sendTAT || 0).toFixed(2) + '×';
+  const recvStr = (t.recvTAT || 0).toFixed(2) + '×';
+
+  return `<div class="tcard ${t.strong?'strong':''}">
+    <span class="tcard-sig sig-pill ${t.netPickGain>=0?'sig-b':'sig-h'}" style="right:14px;top:10px">${netStr} net</span>
+
+    <!-- SEND -->
+    <div class="tcard-player send">
+      <div class="tcard-pname">${esc(t.sell.name)}</div>
+      <div class="tcard-pmeta">
+        <span class="pos-pip pos-${t.sell.pos}">${t.sell.pos}</span>
+        <span class="team-pip">${esc(t.sell.team||'—')}</span>
+        <span class="owner-pill you">★ yours</span>
+      </div>
+      <div style="margin-top:6px">
+        <div class="tcard-pickval send">${sendStr}</div>
+        <div class="tcard-pickval-label">TAT value</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--red);margin-top:3px">
+        FC market: ${(t.sendFC||0).toFixed(2)}× &nbsp;⬇ overvalued by market
+      </div>
+    </div>
+
+    <!-- ARROW / NET -->
+    <div class="tcard-arrow">
+      <div class="tcard-swap">⇄</div>
+      <div class="tcard-net ${netCls}">${netStr}</div>
+      <div class="tcard-net-label">net R1 gain</div>
+    </div>
+
+    <!-- RECEIVE -->
+    <div class="tcard-player recv">
+      <div class="tcard-pname">${esc(t.recv.name)}</div>
+      <div class="tcard-pmeta">
+        <span class="pos-pip pos-${t.recv.pos}">${t.recv.pos}</span>
+        <span class="team-pip">${esc(t.recv.team||'—')}</span>
+        <span class="owner-pill">${esc(t.ownerName)}</span>
+      </div>
+      <div style="margin-top:6px;text-align:right">
+        <div class="tcard-pickval recv">${recvStr}</div>
+        <div class="tcard-pickval-label">TAT value</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--accent);margin-top:3px">
+        FC market: ${(t.recvFC||0).toFixed(2)}× &nbsp;⬆ undervalued by market
+      </div>
+    </div>
+
+    <!-- CONTEXT -->
+    <div style="grid-column:1/-1;border-top:1px solid var(--border);margin-top:12px;padding-top:10px;
+      display:flex;gap:20px;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3)">
+      <span>You send TAT ${sendStr} · market prices at ${(t.sendFC||0).toFixed(2)}×</span>
+      <span>You receive TAT ${recvStr} · market prices at ${(t.recvFC||0).toFixed(2)}×</span>
+      <span style="color:${t.netPickGain>=0?'var(--accent)':'var(--red)'}">Net long-term gain: ${netStr} 2027 R1s</span>
+    </div>
+  </div>`;
+}
+
 </script>
 </body>
 </html>
