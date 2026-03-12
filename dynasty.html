@@ -881,20 +881,17 @@ function mergeAndRender() {
 function renderAll() {
   const wd = merged.filter(p=>p.rankDelta!==null);
   const maxAbs = wd.length ? Math.max(...wd.map(p=>Math.abs(p.rankDelta))) : 1;
+  // Threshold: top 10% of rank gap spread, min 5 spots
+  const thresh = Math.max(maxAbs * 0.1, 5);
+  // pdThresh alias for trade finder (same concept, rank-based)
+  const pdThresh = thresh;
 
-  // Use pickDelta (in pick units) as primary signal; fall back to rankDelta
-  const pickWd   = merged.filter(p=>p.pickDelta!==null);
-  const pdMax    = pickWd.length ? Math.max(...pickWd.map(p=>Math.abs(p.pickDelta))) : 1;
-  const pdThresh = Math.max(pdMax*0.05, 0.05); // ~0.05× a round 1
-
-  const buys  = pickWd.filter(p=>!p.mine&&p.pickDelta>pdThresh)
-                  .sort((a,b)=>b.pickDelta-a.pickDelta);
-  const sells = pickWd.filter(p=>!p.mine&&p.pickDelta<-pdThresh)
-                  .sort((a,b)=>a.pickDelta-b.pickDelta);
+  const buys  = wd.filter(p=>!p.mine && p.rankDelta >  thresh).sort((a,b)=>b.rankDelta-a.rankDelta);
+  const sells = wd.filter(p=>!p.mine && p.rankDelta < -thresh).sort((a,b)=>a.rankDelta-b.rankDelta);
   const myPlayers = merged.filter(p=>p.mine);
-  const mySells = myPlayers.filter(p=>p.pickDelta!==null&&p.pickDelta<-pdThresh).sort((a,b)=>a.pickDelta-b.pickDelta);
-  const myHolds = myPlayers.filter(p=>p.pickDelta===null||Math.abs(p.pickDelta)<=pdThresh).sort((a,b)=>(a.tatRank||999)-(b.tatRank||999));
-  const myKeeps = myPlayers.filter(p=>p.pickDelta!==null&&p.pickDelta>pdThresh).sort((a,b)=>b.pickDelta-a.pickDelta);
+  const mySells = myPlayers.filter(p=>p.rankDelta!==null&&p.rankDelta<-thresh).sort((a,b)=>a.rankDelta-b.rankDelta);
+  const myHolds = myPlayers.filter(p=>p.rankDelta===null||Math.abs(p.rankDelta)<=thresh).sort((a,b)=>(a.tatRank||999)-(b.tatRank||999));
+  const myKeeps = myPlayers.filter(p=>p.rankDelta!==null&&p.rankDelta> thresh).sort((a,b)=>b.rankDelta-a.rankDelta);
 
   // Update badges
   document.getElementById('badge-roster').textContent = myPlayers.length||'—';
@@ -912,21 +909,12 @@ function renderAll() {
 
 // ── PLAYER CARD HTML ─────────────────────────────────────────
 function playerCard(p, maxAbs, context) {
-  // Use pickDelta as the primary signal; fall back to rankDelta
-  const pdMax2  = maxAbs; // passed in from renderAll (already in pick units for card tabs)
-  const sig     = getSignal(p.rankDelta, maxAbs); // still rank-based for consistent thresholds
-  const dir     = p.rankDelta===null?'':p.rankDelta>=0?'up':'dn';
-  const pct     = p.rankDelta!==null?Math.min(Math.abs(p.rankDelta)/maxAbs*50,50):0;
-  const dStr    = p.rankDelta===null?'—':(p.rankDelta>0?'+':'')+p.rankDelta;
-  const dCls    = p.rankDelta===null?'flat':p.rankDelta>0?'up':'dn';
+  const sig    = getSignal(p.rankDelta, maxAbs);
+  const dir    = p.rankDelta===null?'':p.rankDelta>=0?'up':'dn';
+  const pct    = p.rankDelta!==null?Math.min(Math.abs(p.rankDelta)/maxAbs*50,50):0;
+  const dStr   = p.rankDelta===null?'—':(p.rankDelta>0?'+':'')+p.rankDelta;
+  const dCls   = p.rankDelta===null?'flat':p.rankDelta>0?'up':'dn';
   const cardCls = sig.card;
-
-  // Pick value display
-  const tatPick  = p.pickVal  != null ? p.pickVal.toFixed(2)+'×'  : '—';
-  const fcPick   = p.fcPickVal!= null ? p.fcPickVal.toFixed(2)+'×' : '—';
-  const pdVal    = p.pickDelta;
-  const pdStr    = pdVal != null ? (pdVal >= 0 ? '+' : '') + pdVal.toFixed(2)+'×' : '—';
-  const pdCls2   = pdVal == null ? 'flat' : pdVal > 0 ? 'up' : 'dn';
 
   return `<div class="pcard ${cardCls}">
     <div class="pcard-top">
@@ -936,44 +924,33 @@ function playerCard(p, maxAbs, context) {
           <span class="pos-pip pos-${p.pos}">${p.pos}</span>
           <span class="team-pip">${esc(p.team||'—')}</span>
           ${p.age?`<span class="age-pip">age ${p.age.toFixed(0)}</span>`:''}
+          ${p.ownerName&&!p.mine?`<span class="owner-pill" style="margin-left:2px">${esc(p.ownerName)}</span>`:''}
         </div>
       </div>
       <span class="sig-pill ${sig.cls}">${sig.label}</span>
     </div>
 
-    <!-- Pick value comparison — the core signal -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
       <div class="rank-cell">
-        <div class="rank-label">TAT Value</div>
-        <div class="rank-val ${p.pickVal!=null?(pdVal!=null&&pdVal>0?'g':'n'):'n'}" style="font-size:1.3rem">${tatPick}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);margin-top:1px">2027 R1s</div>
+        <div class="rank-label">TAT Rank</div>
+        <div class="rank-val n" style="font-size:1.4rem">${p.tatRank!=null?'#'+p.tatRank:'—'}</div>
       </div>
       <div class="rank-cell">
-        <div class="rank-label">Mkt Value</div>
-        <div class="rank-val ${p.fcPickVal!=null?(pdVal!=null&&pdVal<0?'r':'n'):'n'}" style="font-size:1.3rem">${fcPick}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);margin-top:1px">2027 R1s</div>
+        <div class="rank-label">FC Rank</div>
+        <div class="rank-val n" style="font-size:1.4rem">${p.fcRank!=null?'#'+p.fcRank:'—'}</div>
       </div>
-      <div class="rank-cell" style="border-left:1px solid var(--border2);">
+      <div class="rank-cell" style="border-left:1px solid var(--border2)">
         <div class="rank-label">Gap</div>
-        <div class="rank-val ${pdCls2}" style="font-size:1.3rem">${pdStr}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);margin-top:1px">TAT − mkt</div>
+        <div class="rank-val ${dCls}" style="font-size:1.4rem">${dStr}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--text3);margin-top:1px">FC − TAT</div>
       </div>
-    </div>
-
-    <!-- Rank context (secondary) -->
-    <div style="display:flex;gap:10px;margin-bottom:8px;">
-      <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3)">TAT <span style="color:var(--text2)">${p.tatRank!=null?'#'+p.tatRank:'—'}</span></span>
-      <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3)">FC <span style="color:var(--text2)">${p.fcRank!=null?'#'+p.fcRank:'—'}</span></span>
-      <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3)">FC val <span style="color:var(--text2)">${p.fcValue!=null?p.fcValue.toLocaleString():'—'}</span></span>
     </div>
 
     ${p.rankDelta!==null?`
     <div class="delta-row">
-      <span class="delta-label">Rank gap</span>
       <div class="delta-bar"><div class="delta-mid"></div><div class="delta-fill ${dir}" style="width:${pct}%"></div></div>
-      <span class="delta-num ${dCls}">${dStr}</span>
     </div>`:''}
-    ${p.tierLabel&&p.tierLabel!=='—'?`<div class="tier-chip">${esc(p.tierLabel)}</div>`:''}
+    ${p.tierLabel&&p.tierLabel!=='—'?`<div class="tier-chip" style="margin-top:8px">${esc(p.tierLabel)}</div>`:''}
   </div>`;
 }
 
@@ -1014,10 +991,10 @@ function renderBuyTab(buys, maxAbs) {
   ).join('');
 
   const filtered = buyPosFilter==='ALL'?buys:buys.filter(p=>p.pos===buyPosFilter);
-  const pdMax = filtered.length ? Math.max(...filtered.map(p=>Math.abs(p.pickDelta??0))) : 1;
-  const strongThresh = pdMax * 0.35;
-  const strong  = filtered.filter(p=>(p.pickDelta??0) >= strongThresh);
-  const regular = filtered.filter(p=>(p.pickDelta??0) <  strongThresh);
+  const rdMax = filtered.length ? Math.max(...filtered.map(p=>Math.abs(p.rankDelta??0))) : 1;
+  const strongThresh = rdMax * 0.35;
+  const strong  = filtered.filter(p=>(p.rankDelta??0) >= strongThresh);
+  const regular = filtered.filter(p=>(p.rankDelta??0) <  strongThresh);
 
   const strongSec  = document.getElementById('buy-strong-section');
   const regularSec = document.getElementById('buy-regular-section');
@@ -1041,10 +1018,10 @@ function renderSellTab(sells, maxAbs) {
   ).join('');
 
   const filtered = sellPosFilter==='ALL'?sells:sells.filter(p=>p.pos===sellPosFilter);
-  const pdMax = filtered.length ? Math.max(...filtered.map(p=>Math.abs(p.pickDelta??0))) : 1;
-  const strongThresh = pdMax * 0.35;
-  const strong  = filtered.filter(p=>(p.pickDelta??0) <= -strongThresh);
-  const regular = filtered.filter(p=>(p.pickDelta??0) >  -strongThresh);
+  const rdMax = filtered.length ? Math.max(...filtered.map(p=>Math.abs(p.rankDelta??0))) : 1;
+  const strongThresh = rdMax * 0.35;
+  const strong  = filtered.filter(p=>(p.rankDelta??0) <= -strongThresh);
+  const regular = filtered.filter(p=>(p.rankDelta??0) >  -strongThresh);
 
   const strongSec  = document.getElementById('sell-strong-section');
   const regularSec = document.getElementById('sell-regular-section');
@@ -1146,182 +1123,149 @@ function setTblSort(col){
 }
 
 // ── TRADE FINDER ──────────────────────────────────────────────
-function renderTradesTab(maxAbs, pdThresh) {
-  const hasData  = merged.length > 0;
-  const hasOwners = leagueLoaded;
-  const empty   = document.getElementById('trades-empty');
-  const inner   = document.getElementById('trades-content');
+function renderTradesTab(maxAbs, thresh) {
+  const empty = document.getElementById('trades-empty');
+  const inner = document.getElementById('trades-content');
 
-  if (!hasData || !leagueLoaded) {
-    empty.style.display  = 'block';
-    inner.style.display  = 'none';
-    empty.querySelector('.empty-title').textContent = !hasData
-      ? 'No Value Data' : 'No League Selected';
-    empty.querySelector('.empty-sub').textContent = !hasData
+  if (!merged.length || !leagueLoaded) {
+    empty.style.display = 'block'; inner.style.display = 'none';
+    empty.querySelector('.empty-title').textContent = !merged.length ? 'No Value Data' : 'No League Selected';
+    empty.querySelector('.empty-sub').textContent   = !merged.length
       ? 'Load FC + TAT CSV first, then select a Sleeper league.'
-      : 'Select a dynasty league in the config above to generate trade recommendations.';
+      : 'Select a dynasty league above to generate trade recommendations.';
     document.getElementById('badge-trades').textContent = '—';
     return;
   }
+  empty.style.display = 'none'; inner.style.display = 'block';
 
-  empty.style.display  = 'none';
-  inner.style.display  = 'block';
+  // My sell candidates: I own them, market values higher than TAT (rankDelta negative = FC rank better than TAT)
+  const mySells = merged.filter(p => p.mine && p.rankDelta !== null && p.rankDelta < -thresh)
+    .sort((a,b) => a.rankDelta - b.rankDelta); // most overvalued first (most negative delta)
 
-  // ── Build trade candidates ──────────────────────────────────
-  // My strong sells: players I own that the market overvalues vs TAT
-  // Use pickDelta < -pdThresh (market prices them higher than TAT)
-  const mySells = merged.filter(p =>
-    p.mine && p.pickDelta !== null && p.pickDelta < -pdThresh
-  ).sort((a,b) => a.pickDelta - b.pickDelta); // most overvalued first
+  // Buy targets available in league (not mine, TAT ranks higher than FC, someone owns them)
+  const leagueBuys = merged.filter(p => !p.mine && p.rankDelta !== null && p.rankDelta > thresh && p.ownerName)
+    .sort((a,b) => b.rankDelta - a.rankDelta);
 
-  // Strong buys available in league: TAT values higher than market, not on my roster
-  const leagueBuys = merged.filter(p =>
-    !p.mine && p.pickDelta !== null && p.pickDelta > pdThresh && p.ownerName
-  ).sort((a,b) => b.pickDelta - a.pickDelta); // most undervalued first
-
-  // ── Generate trade pairs ────────────────────────────────────
-  // For each of my sell candidates, find the best 2 targets from different owners
+  // For each of my sells, find best available buy targets from each owner
   const trades = [];
-  const seen = new Set(); // dedupe sell+recv combos
+  const seen = new Set();
 
   for (const sell of mySells) {
-    // Find best buys from each owner (not me) that owns a buy candidate
-    const ownerBuys = {};
+    // Group buy candidates by owner
+    const byOwner = {};
     for (const buy of leagueBuys) {
       if (!buy.ownerName || buy.ownerIsMe) continue;
-      if (!ownerBuys[buy.ownerName]) ownerBuys[buy.ownerName] = [];
-      ownerBuys[buy.ownerName].push(buy);
+      if (!byOwner[buy.ownerName]) byOwner[buy.ownerName] = [];
+      byOwner[buy.ownerName].push(buy);
     }
 
-    for (const [ownerName, candidates] of Object.entries(ownerBuys)) {
-      const recv = candidates[0]; // best buy candidate from this owner
+    for (const [ownerName, candidates] of Object.entries(byOwner)) {
+      // Best candidate from this owner = highest rankDelta (TAT most undervalued)
+      const recv = candidates[0];
       if (!recv) continue;
       const key = `${norm(sell.name)}|${norm(recv.name)}`;
       if (seen.has(key)) continue;
       seen.add(key);
 
-      // Net TAT pick value gain: what I receive (TAT) - what I give up (TAT)
-      // Framing: I sell at FC price, buy at TAT price
-      // Net pick gain = recv.pickVal - sell.pickVal
-      // But also weight by how much "market discount" I capture on the buy side
-      const sendTAT  = sell.pickVal  ?? 0;
-      const recvTAT  = recv.pickVal  ?? 0;
-      const sendFC   = sell.fcPickVal ?? sendTAT;
-      const recvFC   = recv.fcPickVal ?? recvTAT;
+      // Net rank gain: positive = good for me
+      // sell.rankDelta is negative (market overvalues sell) → I'm selling high
+      // recv.rankDelta is positive (TAT undervalues recv) → I'm buying low
+      // Net = recv.rankDelta - Math.abs(sell.rankDelta) ... but simpler:
+      // Just show the two deltas and let user judge; rank the trade by combined signal strength
+      const combinedSignal = recv.rankDelta + Math.abs(sell.rankDelta);
+      const tatGain = (recv.tatRank||999) - (sell.tatRank||999); // negative = I get a better TAT rank
+      const strong = Math.abs(sell.rankDelta) > thresh*2 || recv.rankDelta > thresh*2;
 
-      // Value I'm giving up at market price vs TAT: sendFC (what they pay) - sendTAT (what I lose long term)
-      // Value I'm gaining at TAT vs market: recvTAT (what I gain long term) - recvFC (what I pay)
-      const netPickGain = +(
-        (recvTAT - sendTAT) +            // straight TAT swap
-        (sendFC - sendTAT) * 0.5 +       // bonus: I sold above my TAT value
-        (recvTAT - recvFC) * 0.5         // bonus: I bought below market
-      ).toFixed(2);
-
-      trades.push({
-        sell, recv, ownerName, netPickGain, sendTAT, recvTAT, sendFC, recvFC,
-        strong: Math.abs(sell.pickDelta) > pdThresh * 2 || recv.pickDelta > pdThresh * 2,
-      });
+      trades.push({ sell, recv, ownerName, combinedSignal, tatGain, strong });
     }
   }
 
-  // Sort by expected net gain descending
-  trades.sort((a,b) => b.netPickGain - a.netPickGain);
+  trades.sort((a,b) => b.combinedSignal - a.combinedSignal);
 
-  // ── Render ──────────────────────────────────────────────────
-  const strong = trades.filter(t => t.strong && t.netPickGain > 0);
-  const regular = trades.filter(t => !t.strong && t.netPickGain > 0);
-  const longshots = trades.filter(t => t.netPickGain <= 0).slice(0, 5);
-
-  document.getElementById('badge-trades').textContent = trades.filter(t=>t.netPickGain>0).length || '—';
-
-  let html = '';
+  document.getElementById('badge-trades').textContent = trades.length || '—';
 
   if (!trades.length) {
-    html = `<div class="empty"><div class="empty-title">No Trade Opportunities Found</div>
-      <div class="empty-sub">No strong buy/sell mismatches detected across league rosters.</div></div>`;
-  } else {
-    if (strong.length) {
-      html += `<div class="trade-section-head">
-        <div class="trade-section-title" style="color:var(--accent)">⚡ Priority Trades</div>
-        <div class="trade-section-sub">Both sides have strong signals — act now</div>
-      </div><div class="trade-cards">${strong.map(t=>tradeCard(t)).join('')}</div>`;
-    }
-    if (regular.length) {
-      html += `<div class="trade-section-head">
-        <div class="trade-section-title" style="color:var(--text2)">Recommended Trades</div>
-        <div class="trade-section-sub">One strong signal — worth exploring at the right terms</div>
-      </div><div class="trade-cards">${regular.map(t=>tradeCard(t)).join('')}</div>`;
-    }
-    if (longshots.length) {
-      html += `<div class="trade-section-head" style="margin-top:8px">
-        <div class="trade-section-title" style="color:var(--text3)">Speculative</div>
-        <div class="trade-section-sub">Negative net expected — only if you believe the TAT ranking is wrong</div>
-      </div><div class="trade-cards">${longshots.map(t=>tradeCard(t)).join('')}</div>`;
-    }
-    html += `<div class="tfoot" style="margin-top:12px">
-      Net gain in 2027 R1 equivalents · TAT pick value − FC market value used as basis
-    </div>`;
+    document.getElementById('trades-inner').innerHTML = `<div class="empty">
+      <div class="empty-title">No Trade Opportunities</div>
+      <div class="empty-sub">No strong buy/sell mismatches found across league rosters right now.</div></div>`;
+    return;
   }
 
+  const strong  = trades.filter(t => t.strong);
+  const regular = trades.filter(t => !t.strong);
+
+  let html = '';
+  if (strong.length)  html += tradeSection('⚡ Act Now', 'var(--accent)', 'Strong signals on both sides', strong);
+  if (regular.length) html += tradeSection('Recommended', 'var(--text2)', 'Worth exploring at the right terms', regular);
+  html += `<div class="tfoot" style="margin-top:12px">Rank gap = FC rank − TAT rank · Positive = TAT values higher · Combined signal = sum of both gaps</div>`;
   document.getElementById('trades-inner').innerHTML = html;
 }
 
+function tradeSection(title, color, sub, trades) {
+  return `<div class="trade-section-head">
+    <div class="trade-section-title" style="color:${color}">${title}</div>
+    <div class="trade-section-sub">${sub}</div>
+  </div><div class="trade-cards">${trades.map(t=>tradeCard(t)).join('')}</div>`;
+}
+
 function tradeCard(t) {
-  const netCls  = t.netPickGain >= 0 ? 'up' : 'dn';
-  const netStr  = (t.netPickGain >= 0 ? '+' : '') + t.netPickGain.toFixed(2) + '×';
-  const sendStr = (t.sendTAT || 0).toFixed(2) + '×';
-  const recvStr = (t.recvTAT || 0).toFixed(2) + '×';
+  const sellDelta = t.sell.rankDelta; // negative: market overvalues
+  const recvDelta = t.recv.rankDelta; // positive: TAT undervalues
 
   return `<div class="tcard ${t.strong?'strong':''}">
-    <span class="tcard-sig sig-pill ${t.netPickGain>=0?'sig-b':'sig-h'}" style="right:14px;top:10px">${netStr} net</span>
 
     <!-- SEND -->
     <div class="tcard-player send">
+      <div style="font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:2px;color:var(--red);margin-bottom:4px">SEND</div>
       <div class="tcard-pname">${esc(t.sell.name)}</div>
-      <div class="tcard-pmeta">
+      <div class="tcard-pmeta" style="margin-top:3px">
         <span class="pos-pip pos-${t.sell.pos}">${t.sell.pos}</span>
         <span class="team-pip">${esc(t.sell.team||'—')}</span>
         <span class="owner-pill you">★ yours</span>
       </div>
-      <div style="margin-top:6px">
-        <div class="tcard-pickval send">${sendStr}</div>
-        <div class="tcard-pickval-label">TAT value</div>
+      <div style="margin-top:10px;display:flex;gap:12px;font-family:'DM Mono',monospace;font-size:.68rem;">
+        <span>TAT <span style="color:var(--text2)">#${t.sell.tatRank||'—'}</span></span>
+        <span>FC <span style="color:var(--text2)">#${t.sell.fcRank||'—'}</span></span>
       </div>
-      <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--red);margin-top:3px">
-        FC market: ${(t.sendFC||0).toFixed(2)}× &nbsp;⬇ overvalued by market
+      <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red);margin-top:4px">
+        FC ranks ${Math.abs(sellDelta)} spots higher than TAT → sell high
       </div>
     </div>
 
-    <!-- ARROW / NET -->
+    <!-- ARROW -->
     <div class="tcard-arrow">
       <div class="tcard-swap">⇄</div>
-      <div class="tcard-net ${netCls}">${netStr}</div>
-      <div class="tcard-net-label">net R1 gain</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">combined<br>signal</div>
+      <div class="tcard-net up">+${t.combinedSignal}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);text-align:center">rank pts</div>
     </div>
 
     <!-- RECEIVE -->
     <div class="tcard-player recv">
+      <div style="font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:2px;color:var(--accent);margin-bottom:4px;text-align:right">GET</div>
       <div class="tcard-pname">${esc(t.recv.name)}</div>
-      <div class="tcard-pmeta">
-        <span class="pos-pip pos-${t.recv.pos}">${t.recv.pos}</span>
-        <span class="team-pip">${esc(t.recv.team||'—')}</span>
+      <div class="tcard-pmeta" style="margin-top:3px;justify-content:flex-end">
         <span class="owner-pill">${esc(t.ownerName)}</span>
+        <span class="team-pip">${esc(t.recv.team||'—')}</span>
+        <span class="pos-pip pos-${t.recv.pos}">${t.recv.pos}</span>
       </div>
-      <div style="margin-top:6px;text-align:right">
-        <div class="tcard-pickval recv">${recvStr}</div>
-        <div class="tcard-pickval-label">TAT value</div>
+      <div style="margin-top:10px;display:flex;gap:12px;font-family:'DM Mono',monospace;font-size:.68rem;justify-content:flex-end">
+        <span>TAT <span style="color:var(--text2)">#${t.recv.tatRank||'—'}</span></span>
+        <span>FC <span style="color:var(--text2)">#${t.recv.fcRank||'—'}</span></span>
       </div>
-      <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--accent);margin-top:3px">
-        FC market: ${(t.recvFC||0).toFixed(2)}× &nbsp;⬆ undervalued by market
+      <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--accent);margin-top:4px;text-align:right">
+        TAT ranks ${recvDelta} spots higher than FC → buy low
       </div>
     </div>
 
-    <!-- CONTEXT -->
-    <div style="grid-column:1/-1;border-top:1px solid var(--border);margin-top:12px;padding-top:10px;
-      display:flex;gap:20px;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3)">
-      <span>You send TAT ${sendStr} · market prices at ${(t.sendFC||0).toFixed(2)}×</span>
-      <span>You receive TAT ${recvStr} · market prices at ${(t.recvFC||0).toFixed(2)}×</span>
-      <span style="color:${t.netPickGain>=0?'var(--accent)':'var(--red)'}">Net long-term gain: ${netStr} 2027 R1s</span>
+    <!-- FOOTER -->
+    <div style="grid-column:1/-1;border-top:1px solid var(--border);margin-top:12px;padding-top:8px;
+      font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <span>Message <span style="color:var(--accent)">${esc(t.ownerName)}</span> about ${esc(t.recv.name)}</span>
+      <span style="color:var(--border2)">·</span>
+      <span>Offer your ${esc(t.sell.name)} (FC #${t.sell.fcRank||'—'}, TAT #${t.sell.tatRank||'—'})</span>
+      <span style="color:var(--border2)">·</span>
+      <span>Ask for ${esc(t.recv.name)} (FC #${t.recv.fcRank||'—'}, TAT #${t.recv.tatRank||'—'})</span>
     </div>
   </div>`;
 }
