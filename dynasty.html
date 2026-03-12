@@ -1460,58 +1460,83 @@ function renderTradesTab(maxAbs, thresh) {
     return (a.fcRank||999) - (b.fcRank||999);
   });
 
-  // For each of my sells, find best available buy targets from each owner
+  // ── Trade generation ──────────────────────────────────────────
   const trades = [];
-  const seen = new Set();
+  const seen   = new Set();
+  const STRONG_TAT_MIN = thresh * 2.5; // buy-motivated trades need a bigger TAT upgrade
 
+  function addTrade(sell, recv, ownerName, motivation) {
+    const key = norm(sell.name) + '|' + norm(recv.name);
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    const sellRankProxy  = sell.tatRank ?? sell.fcRank ?? 999;
+    const recvRankProxy  = recv.tatRank ?? recv.fcRank ?? 999;
+    const tatImprovement = sellRankProxy - recvRankProxy;
+    if (tatImprovement <= 0) return;
+
+    const fcEdgeForThem = (recv.fcRank||999) - (sell.fcRank||999);
+    const activityBonus = (recv.totalTrades||0) >= 6 ? 15 : (recv.totalTrades||0) >= 3 ? 5 : 0;
+    const strong = motivation === 'sell'
+      ? tatImprovement > 20 && Math.abs(sell.rankDelta||0) > thresh * 1.5
+      : tatImprovement > STRONG_TAT_MIN; // buy-motivated: only strong if huge upgrade
+
+    trades.push({ sell, recv, ownerName, motivation,
+      tradeCount:      recv.tradeCount,
+      priorTradeCount: recv.priorTradeCount,
+      totalTrades:     recv.totalTrades,
+      leagueCount:     recv.leagueCount,
+      tatImprovement, fcEdgeForThem, strong });
+  }
+
+  // ── Sell-motivated: I have FC-overvalued asset, swap for TAT-undervalued ──
   for (const sell of mySells) {
     const byOwner = {};
     for (const buy of leagueBuys) {
       if (!buy.ownerName || buy.ownerIsMe) continue;
-      // 1. I must be upgrading in TAT rank (lower = better)
-      // For picks without TAT rank, use FC rank as proxy
       const buyRank  = buy.tatRank  ?? buy.fcRank  ?? 999;
       const sellRank = sell.tatRank ?? sell.fcRank ?? 999;
       if (buyRank >= sellRank) continue;
-      // 2. They must be getting equal or better FC rank (lower FC rank number = better for them)
-      //    i.e. the player they receive (sell) must have FC rank <= the player they give up (buy)
-      //    sell.fcRank <= buy.fcRank → they get a player FC rates at least as highly
-      if ((sell.fcRank||999) > (buy.fcRank||999)) continue;
+      if ((sell.fcRank||999) > (buy.fcRank||999)) continue; // they must win on FC
       if (!byOwner[buy.ownerName]) byOwner[buy.ownerName] = [];
       byOwner[buy.ownerName].push(buy);
     }
-
     for (const [ownerName, candidates] of Object.entries(byOwner)) {
-      // Sort by best TAT upgrade first, tiebreak by how much FC overpays them (easier sell)
       candidates.sort((a,b) => {
-        const tatDiff = (a.tatRank||999) - (b.tatRank||999); // lower = better
-        if (tatDiff !== 0) return tatDiff;
-        return (b.rankDelta||0) - (a.rankDelta||0); // higher FC discount = easier for them to accept
+        const tatDiff = (a.tatRank||999) - (b.tatRank||999);
+        return tatDiff !== 0 ? tatDiff : (b.rankDelta||0) - (a.rankDelta||0);
       });
-      const recv = candidates[0];
-      if (!recv) continue;
-      const key = `${norm(sell.name)}|${norm(recv.name)}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-
-      const sellRankProxy = sell.tatRank ?? sell.fcRank ?? 999;
-      const recvRankProxy = recv.tatRank ?? recv.fcRank ?? 999;
-      const tatImprovement = sellRankProxy - recvRankProxy; // spots I gain
-      const fcEdgeForThem  = (recv.fcRank||999) - (sell.fcRank||999);   // how much better FC looks for them (positive = they win on FC)
-      const activityBonus = (recv.totalTrades||0) >= 6 ? 15 : (recv.totalTrades||0) >= 3 ? 5 : 0;
-      const score = tatImprovement * 2 + fcEdgeForThem + recv.rankDelta + activityBonus;
-      const strong = tatImprovement > 20 && Math.abs(sell.rankDelta) > thresh * 1.5;
-
-      trades.push({ sell, recv, ownerName,
-        tradeCount:      recv.tradeCount,
-        priorTradeCount: recv.priorTradeCount,
-        totalTrades:     recv.totalTrades,
-        leagueCount:     recv.leagueCount,
-        tatImprovement, fcEdgeForThem, score, strong });
+      addTrade(sell, candidates[0], ownerName, 'sell');
     }
   }
 
-  trades.sort((a,b) => b.score - a.score);
+  // ── Buy-motivated: I want a TAT-undervalued player, offer FC-overvalued asset ──
+  // For each strong TAT buy target, find the best asset I can offer that makes FC sense for them
+  const strongBuys = leagueBuys.filter(p => (p.rankDelta||0) > thresh * 1.5);
+  for (const target of strongBuys) {
+    // Find my assets that: FC rates higher than target (they win FC), but TAT rates target higher
+    const myOffers = universe.filter(p => {
+      if (!p.mine) return false;
+      const myTatRank     = p.tatRank    ?? p.fcRank    ?? 999;
+      const targetTatRank = target.tatRank ?? target.fcRank ?? 999;
+      if (targetTatRank >= myTatRank) return false;           // must be TAT upgrade for me
+      if ((p.fcRank||999) > (target.fcRank||999)) return false; // they must win on FC
+      const tatUpgrade = myTatRank - targetTatRank;
+      return tatUpgrade >= STRONG_TAT_MIN;                    // require a meaningful upgrade
+    }).sort((a,b) => {
+      // Best offer: gives them most FC value while costing me least TAT
+      const aFcEdge  = (target.fcRank||999) - (a.fcRank||999);
+      const bFcEdge  = (target.fcRank||999) - (b.fcRank||999);
+      return bFcEdge - aFcEdge;
+    });
+
+    if (myOffers.length) {
+      addTrade(myOffers[0], target, target.ownerName, 'buy');
+    }
+  }
+
+  // Sort by TAT improvement descending
+  trades.sort((a,b) => b.tatImprovement - a.tatImprovement);
 
   document.getElementById('badge-trades').textContent = trades.length || '—';
 
@@ -1664,9 +1689,13 @@ function tradeCard(t) {
         <span style="color:var(--accent)">+${t.tatImprovement} spots</span>
       </div>
       <div style="color:var(--text3);text-align:right">
-        <span style="color:var(--amber);letter-spacing:1px;font-size:.55rem">THEY WIN ON FC</span><br>
+        ${t.motivation === 'buy'
+          ? `<span style="color:var(--amber);letter-spacing:1px;font-size:.55rem">&#9733; BUY TARGET</span><br>
+        TAT ranks ${esc(t.recv.name)} <span style="color:var(--amber)">+${t.recv.rankDelta||0} vs FC</span> — undervalued by market`
+          : `<span style="color:var(--amber);letter-spacing:1px;font-size:.55rem">THEY WIN ON FC</span><br>
         They get FC #${t.sell.fcRank || '—'}, give up FC #${t.recv.fcRank || '—'} —
-        <span style="color:var(--amber)">${t.fcEdgeForThem >= 0 ? '+' + t.fcEdgeForThem + ' FC spots for them' : 'FC even'}</span>
+        <span style="color:var(--amber)">${t.fcEdgeForThem >= 0 ? '+' + t.fcEdgeForThem + ' FC spots for them' : 'FC even'}</span>`
+        }
       </div>
       <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:8px;
         display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
