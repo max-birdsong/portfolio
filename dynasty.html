@@ -500,6 +500,7 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
 // ── STATE ──────────────────────────────────────────────────────
 let fcData       = [];
 let tatData      = [];
+let fcMap        = {};
 let myPlayerIds  = new Set();
 let sleeperNames = new Set();
 let merged       = [];
@@ -1030,32 +1031,64 @@ function buildPickPool() {
   for (const roster of leagueRosters) {
     const picks = window._pickAssets[roster.ownerId] || [];
     for (const pick of picks) {
-      const seasonStr  = String(pick.season);
+      const seasonStr   = String(pick.season);
       const displayName = pick.displayName;
 
-      // TAT lookup: exact name match first, then median for the round
+      // TAT lookup — try three approaches:
+      // 1. Exact name match (works when slot is known, e.g. "2026 Pick 1.05")
       let repTat = tatData.find(t => norm(t.name) === norm(displayName) && t.pos === 'PICK') || null;
+
+      // 2. Median of all TAT picks for this season + round (works for current season without slot)
       if (!repTat) {
         const tatMatches = tatData
-          .filter(t => t.pos === 'PICK' && t.name.startsWith(seasonStr) && t.name.includes(` ${pick.round}.`))
+          .filter(t => {
+            if (t.pos !== 'PICK') return false;
+            if (!t.name.startsWith(seasonStr)) return false;
+            // match round number: "2026 Pick 1." or "2026 Pick 1 " or ends with "Pick 1"
+            const m = t.name.match(/pick\s+(\d+)/i);
+            return m && parseInt(m[1]) === pick.round;
+          })
           .sort((a, b) => a.tatRank - b.tatRank);
-        repTat = tatMatches.length ? tatMatches[Math.floor(tatMatches.length / 2)] : null;
+        if (tatMatches.length) repTat = tatMatches[Math.floor(tatMatches.length / 2)];
       }
 
-      const tatRank   = repTat?.tatRank ?? null;
-      const fcEntry   = repTat ? (fcMap[norm(repTat.name)] || null) : null;
-      const fcRank    = fcEntry?.fcRank ?? null;
-      const rankDelta = (fcRank != null && tatRank != null) ? fcRank - tatRank : null;
+      // 3. No TAT data for this season (future years) — use FC lookup directly
+      //    Search FC for any pick matching season + round
+      let tatRank, fcRank, fcValue, rankDelta, tierLabel;
+
+      if (repTat) {
+        tatRank   = repTat.tatRank;
+        const fc  = fcMap[norm(repTat.name)] || null;
+        fcRank    = fc?.fcRank ?? null;
+        fcValue   = fc?.fcValue ?? null;
+        rankDelta = (fcRank != null && tatRank != null) ? fcRank - tatRank : null;
+        tierLabel = repTat.tierLabel ?? `R${pick.round}`;
+      } else {
+        // No TAT entry — find best FC match for this season+round
+        const fcPickKey = Object.keys(fcMap).find(k => {
+          const m = k.match(/(\d{4})\s+pick\s+(\d+)/i);
+          return m && parseInt(m[1]) === pick.season && parseInt(m[2]) === pick.round;
+        });
+        const fcEntry = fcPickKey ? fcMap[fcPickKey] : null;
+        tatRank   = null;
+        fcRank    = fcEntry?.fcRank ?? null;
+        fcValue   = fcEntry?.fcValue ?? null;
+        rankDelta = null; // can't compute without TAT rank
+        tierLabel = `${pick.season} R${pick.round}`;
+      }
+
+      // Only include in trade universe if we have at least FC rank
+      if (fcRank == null && tatRank == null) continue;
 
       pickPool.push({
         name: displayName, pos: 'PICK', team: '',
-        tatRank, fcRank, fcValue: fcEntry?.fcValue ?? null, rankDelta,
+        tatRank, fcRank, fcValue, rankDelta,
         mine: roster.isMe, ownerName: roster.ownerName, ownerIsMe: roster.isMe,
         tradeCount: roster.tradeCount, totalTrades: roster.totalTrades,
         leagueCount: roster.leagueCount,
         isPick: true, pickSeason: pick.season, pickRound: pick.round,
         pickSlot: pick.slot, isOwnPick: pick.isOwnPick,
-        tierLabel: repTat?.tierLabel ?? `R${pick.round}`,
+        tierLabel,
       });
     }
   }
@@ -1064,7 +1097,7 @@ function buildPickPool() {
 // Also rebuild pickPool when TAT/FC data refreshes (so roster tab shows picks immediately)
 function mergeAndRender() {
   if (!fcData.length&&!tatData.length) return;
-  const fcMap={};
+  fcMap={};
   fcData.forEach((p,i)=>{fcMap[norm(p.name)]={...p,fcRank:i+1};});
 
   // FC_MAX: top value in current FC dataset (used to anchor pick conversion)
@@ -1364,13 +1397,30 @@ function renderTradesTab(maxAbs, thresh) {
   // ── Build trade universe: merged players + picks ──────────
   const universe   = [...merged, ...pickPool];
 
-  // My sell candidates: I own them, market values higher than TAT
+  // My sell candidates: players where market overvalues vs TAT
+  // For picks without TAT data, exclude from sells (can't know if overvalued)
   const mySells = universe.filter(p => p.mine && p.rankDelta !== null && p.rankDelta < -thresh)
     .sort((a,b) => a.rankDelta - b.rankDelta);
 
-  // Buy targets: not mine, TAT ranks higher than FC, someone owns them
-  const leagueBuys = universe.filter(p => !p.mine && p.rankDelta !== null && p.rankDelta > thresh && p.ownerName)
-    .sort((a,b) => b.rankDelta - a.rankDelta);
+  // Buy targets: TAT ranks higher than FC (undervalued by market)
+  // Include picks that have both TAT and FC data with a positive rankDelta
+  // Also include picks with only FC data as neutral assets (rankDelta null) — they can be
+  // received as part of a trade even if we can't signal direction
+  const leagueBuys = universe.filter(p => {
+    if (!p.ownerName || p.ownerIsMe) return false;
+    if (p.isPick) {
+      // Include picks that have FC rank (they're real assets)
+      // Only show as "buy signal" if TAT also ranks them higher than FC
+      return p.fcRank != null && (p.rankDelta === null || p.rankDelta > thresh);
+    }
+    return p.rankDelta !== null && p.rankDelta > thresh;
+  }).sort((a,b) => {
+    // Picks with rankDelta float to top, null-rankDelta picks sort by fcRank
+    if (a.rankDelta != null && b.rankDelta == null) return -1;
+    if (a.rankDelta == null && b.rankDelta != null) return 1;
+    if (a.rankDelta != null && b.rankDelta != null) return b.rankDelta - a.rankDelta;
+    return (a.fcRank||999) - (b.fcRank||999);
+  });
 
   // For each of my sells, find best available buy targets from each owner
   const trades = [];
@@ -1380,8 +1430,11 @@ function renderTradesTab(maxAbs, thresh) {
     const byOwner = {};
     for (const buy of leagueBuys) {
       if (!buy.ownerName || buy.ownerIsMe) continue;
-      // 1. I must be upgrading in TAT rank (lower number = better)
-      if ((buy.tatRank||999) >= (sell.tatRank||999)) continue;
+      // 1. I must be upgrading in TAT rank (lower = better)
+      // For picks without TAT rank, use FC rank as proxy
+      const buyRank  = buy.tatRank  ?? buy.fcRank  ?? 999;
+      const sellRank = sell.tatRank ?? sell.fcRank ?? 999;
+      if (buyRank >= sellRank) continue;
       // 2. They must be getting equal or better FC rank (lower FC rank number = better for them)
       //    i.e. the player they receive (sell) must have FC rank <= the player they give up (buy)
       //    sell.fcRank <= buy.fcRank → they get a player FC rates at least as highly
@@ -1403,7 +1456,9 @@ function renderTradesTab(maxAbs, thresh) {
       if (seen.has(key)) continue;
       seen.add(key);
 
-      const tatImprovement = (sell.tatRank||999) - (recv.tatRank||999); // spots I gain in TAT
+      const sellRankProxy = sell.tatRank ?? sell.fcRank ?? 999;
+      const recvRankProxy = recv.tatRank ?? recv.fcRank ?? 999;
+      const tatImprovement = sellRankProxy - recvRankProxy; // spots I gain
       const fcEdgeForThem  = (recv.fcRank||999) - (sell.fcRank||999);   // how much better FC looks for them (positive = they win on FC)
       const activityBonus = (recv.totalTrades||0) >= 6 ? 15 : (recv.totalTrades||0) >= 3 ? 5 : 0;
       const score = tatImprovement * 2 + fcEdgeForThem + recv.rankDelta + activityBonus;
