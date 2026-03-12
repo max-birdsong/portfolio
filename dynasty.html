@@ -1584,7 +1584,7 @@ async function checkPlayerOwnership(trades) {
     ownershipCache[cacheKey] = { color, text };
 
     // Also update the live DOM element if it's still there
-    const elemId = `ownership-${t.sell.name.replace(/\s+/g,'_')}_${t.ownerName.replace(/\s+/g,'_')}`;
+    const elemId = 'own_' + (t.sell.name + '_' + t.ownerName).replace(/[^a-z0-9]/gi, '_');
     const elem   = document.getElementById(elemId);
     if (elem) { elem.style.color = color; elem.textContent = text; }
   }
@@ -1598,10 +1598,18 @@ function tradeSection(title, color, sub, trades) {
 }
 
 function tradeCard(t) {
-  const sellDelta = t.sell.rankDelta; // negative: market overvalues
-  const recvDelta = t.recv.rankDelta; // positive: TAT undervalues
+  const sellDelta = t.sell.rankDelta;
+  const recvDelta = t.recv.rankDelta;
 
-  return `<div class="tcard ${t.strong?'strong':''}">
+  // Ownership line — use cache if available, otherwise placeholder
+  const ownerKey = 'ownership|' + t.sell.name + '|' + t.ownerName;
+  const cached   = ownershipCache[ownerKey];
+  const ownId    = 'own_' + (t.sell.name + '_' + t.ownerName).replace(/[^a-z0-9]/gi, '_');
+  const ownSpan  = cached
+    ? `<span id="${ownId}" style="color:${cached.color}">${esc(cached.text)}</span>`
+    : `<span id="${ownId}" style="color:var(--text3)">checking ownership…</span>`;
+
+  return `<div class="tcard ${t.strong ? 'strong' : ''}">
 
     <!-- SEND -->
     <div class="tcard-player send">
@@ -1613,15 +1621,15 @@ function tradeCard(t) {
         <span class="owner-pill you">★ yours</span>
       </div>
       <div style="margin-top:10px;display:flex;gap:12px;font-family:'DM Mono',monospace;font-size:.68rem;">
-        <span>TAT <span style="color:var(--text2)">${t.sell.tatRank ? '#'+t.sell.tatRank : '—'}</span></span>
-        <span>FC <span style="color:var(--text2)">${t.sell.fcRank ? '#'+t.sell.fcRank : '—'}</span></span>
+        <span>TAT <span style="color:var(--text2)">${t.sell.tatRank ? '#' + t.sell.tatRank : '—'}</span></span>
+        <span>FC <span style="color:var(--text2)">${t.sell.fcRank ? '#' + t.sell.fcRank : '—'}</span></span>
       </div>
       <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red);margin-top:4px">
         FC ranks ${Math.abs(sellDelta)} spots higher than TAT → sell high
       </div>
     </div>
 
-    <!-- ARROW / UPGRADE -->
+    <!-- ARROW -->
     <div class="tcard-arrow">
       <div class="tcard-swap">⇄</div>
       <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">TAT upgrade</div>
@@ -1639,8 +1647,8 @@ function tradeCard(t) {
         <span class="pos-pip pos-${t.recv.pos}">${t.recv.pos}</span>
       </div>
       <div style="margin-top:10px;display:flex;gap:12px;font-family:'DM Mono',monospace;font-size:.68rem;justify-content:flex-end">
-        <span>TAT <span style="color:var(--text2)">${t.recv.tatRank ? '#'+t.recv.tatRank : '—'}</span></span>
-        <span>FC <span style="color:var(--text2)">${t.recv.fcRank ? '#'+t.recv.fcRank : '—'}</span></span>
+        <span>TAT <span style="color:var(--text2)">${t.recv.tatRank ? '#' + t.recv.tatRank : '—'}</span></span>
+        <span>FC <span style="color:var(--text2)">${t.recv.fcRank ? '#' + t.recv.fcRank : '—'}</span></span>
       </div>
       <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--accent);margin-top:4px;text-align:right">
         TAT ranks ${recvDelta} spots higher than FC → owner may sell cheap
@@ -1652,31 +1660,35 @@ function tradeCard(t) {
       font-family:'DM Mono',monospace;font-size:.62rem;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <div style="color:var(--text3)">
         <span style="color:var(--accent);letter-spacing:1px;font-size:.55rem">YOU WIN ON TAT</span><br>
-        ${esc(t.recv.name)} is TAT #${t.recv.tatRank||'—'} vs your TAT #${t.sell.tatRank||'—'} — <span style="color:var(--accent)">+${t.tatImprovement} spots</span>
+        ${esc(t.recv.name)} is TAT #${t.recv.tatRank || '—'} vs your TAT #${t.sell.tatRank || '—'} —
+        <span style="color:var(--accent)">+${t.tatImprovement} spots</span>
       </div>
       <div style="color:var(--text3);text-align:right">
         <span style="color:var(--amber);letter-spacing:1px;font-size:.55rem">THEY WIN ON FC</span><br>
-        They get FC #${t.sell.fcRank||'—'}, give up FC #${t.recv.fcRank||'—'} —
-        <span style="color:var(--amber)">${t.fcEdgeForThem >= 0 ? '+'+t.fcEdgeForThem+' FC spots for them' : 'FC even'}</span>
+        They get FC #${t.sell.fcRank || '—'}, give up FC #${t.recv.fcRank || '—'} —
+        <span style="color:var(--amber)">${t.fcEdgeForThem >= 0 ? '+' + t.fcEdgeForThem + ' FC spots for them' : 'FC even'}</span>
       </div>
       <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:8px;
-        display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;">
-        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3)">
-          Message <span style="color:var(--accent)">${esc(t.ownerName)}</span> · offer ${esc(t.sell.name)} for ${esc(t.recv.name)}
+        display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+        <div style="color:var(--text3)">
+          Message <span style="color:var(--accent)">${esc(t.ownerName)}</span>
+          · offer ${esc(t.sell.name)} for ${esc(t.recv.name)}
         </div>
-        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);text-align:right;display:flex;flex-direction:column;gap:3px;">
-          ${t.leagueCount!=null?`<span>${t.leagueCount} league${t.leagueCount!==1?'s':''} · ${t.totalTrades||0} pick trade${t.totalTrades!==1?'s':''} this season</span>`:''}
-          \${(() => {
-            const _k = ${"`"}ownership|\${t.sell.name}|\${t.ownerName}${"`"};
-            const _c = ownershipCache[_k];
-            const _id = ${"`"}ownership-\${t.sell.name.replace(/\s+/g,'_')}_\${t.ownerName.replace(/\s+/g,'_')}${"`"};
-            if (_c) return ${"`"}<span id="\${_id}" style="color:\${_c.color}">\${_c.text}</span>${"`"};
-            return ${"`"}<span id="\${_id}" style="color:var(--text3)">checking ownership…</span>${"`"};
-          })()}
+        <div style="text-align:right;display:flex;flex-direction:column;gap:3px;">
+          ${t.leagueCount != null ? `<span style="color:var(--text3)">${t.leagueCount} league${t.leagueCount !== 1 ? 's' : ''} · ${t.totalTrades || 0} pick trade${t.totalTrades !== 1 ? 's' : ''} this season</span>` : ''}
+          ${ownSpan}
         </div>
       </div>
     </div>
   </div>`;
+}
+
+
+function tradeSection(title, color, sub, trades) {
+  return `<div class="trade-section-head">
+    <div class="trade-section-title" style="color:${color}">${title}</div>
+    <div class="trade-section-sub">${sub}</div>
+  </div><div class="trade-cards">${trades.map(t=>tradeCard(t)).join('')}</div>`;
 }
 
 </script>
