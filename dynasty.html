@@ -740,19 +740,26 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     userFetches.forEach(u => { if (u) ownerNames[u.user_id] = u.display_name || u.username || u.user_id; });
 
     // Build roster_id -> owner_id map and reverse
-    const rosterOwner  = {};  // roster_id -> owner_id
-    const ownerRoster  = {};  // owner_id  -> roster_id
+    const rosterOwner = {};  // roster_id -> owner_id
+    const ownerRoster = {};  // owner_id  -> roster_id
     rosters.forEach(r => {
       if (r.owner_id) { rosterOwner[r.roster_id] = r.owner_id; ownerRoster[r.owner_id] = r.roster_id; }
     });
 
     // ── Reconstruct pick ownership ──────────────────────────────
-    // Future seasons to consider: current season + next 2
+    // Sleeper traded_picks field semantics (confusing but confirmed):
+    //   owner_id          = the ORIGINAL team whose draft slot this is
+    //   roster_id         = who CURRENTLY holds the pick
+    //   previous_owner_id = who held it before the last trade
+    //
+    // Pick key format: "season_round_origRosterId"
+    // where origRosterId = the roster whose draft position slot this represents
+
     const curSeason  = parseInt(document.getElementById('sleeper-season').value);
     const pickSeasons = [curSeason, curSeason+1, curSeason+2];
 
-    // Start: every roster owns their own picks for future seasons
-    // picksByRoster: roster_id -> Set of pick keys "season_round_originalRosterId"
+    // Start: every roster owns their own picks (origRosterId === currentRosterId)
+    // picksByRoster: currentRosterId -> Set<"season_round_origRosterId">
     const picksByRoster = {};
     rosters.forEach(r => {
       picksByRoster[r.roster_id] = new Set();
@@ -763,59 +770,57 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
       }
     });
 
-    // Apply traded picks: move picks from original owner to current owner
+    // Apply traded picks: for each traded pick, remove from original owner, add to current owner
     for (const pick of tradedPicks) {
       const season = parseInt(pick.season);
       if (!pickSeasons.includes(season)) continue;
-      const key = `${season}_${pick.round}_${pick.roster_id}`; // roster_id here = original team
-      // Remove from original owner
-      const origRosterId = pick.roster_id; // whose slot it is
-      // Find who originally had it (the original roster)
+      // owner_id = original team (whose slot), roster_id = current holder
+      const origRosterId = pick.owner_id;   // original team
+      const curRosterId  = pick.roster_id;  // current holder
+      const key = `${season}_${pick.round}_${origRosterId}`;
+      // Remove from original owner's set (they traded it away)
       if (picksByRoster[origRosterId]) picksByRoster[origRosterId].delete(key);
-      // Add to current owner
-      const curRosterId = pick.owner_id; // owner_id in traded_picks = current holder... 
-      // NOTE: Sleeper traded_picks field names are confusing:
-      //   roster_id = the team whose draft SLOT this is (original team)  
-      //   owner_id  = who CURRENTLY owns the pick
-      //   previous_owner_id = who had it before the last trade
+      // Add to current holder's set
       if (picksByRoster[curRosterId]) picksByRoster[curRosterId].add(key);
     }
 
-    // Build pick label: "2027 R1 (via [ownerName])" or "2026 Pick 1.XX" if slot known
-    // Store as pseudo-players in a picksByOwner map: owner_id -> [{name, pos, tatRank, ...}]
-    const pickAssets = {}; // owner_id -> array of pick objects
+    // Build pickAssets: ownerId -> array of pick objects
+    const pickAssets = {};
     rosters.forEach(r => { pickAssets[r.owner_id] = []; });
 
-    for (const [rId, pickSet] of Object.entries(picksByRoster)) {
-      const ownerId = rosterOwner[rId];
-      if (!ownerId || !pickAssets[ownerId]) continue;
+    for (const [currentRosterId, pickSet] of Object.entries(picksByRoster)) {
+      const currentOwnerId = rosterOwner[parseInt(currentRosterId)];
+      if (!currentOwnerId || !pickAssets[currentOwnerId]) continue;
       for (const key of pickSet) {
         const [season, round, origRosterId] = key.split('_');
-        const origOwner = rosterOwner[parseInt(origRosterId)];
-        const origName  = origOwner ? (ownerNames[origOwner]||'?') : '?';
-        // Pick label — try to match TAT naming
-        // TAT format: "2026 ROOKIE 1.01" for specific slot, or we use "2026 Pick 1" for unknown
-        const pickLabel = origRosterId === rId
-          ? `${season} Pick ${round}` // own pick
-          : `${season} Pick ${round} (via ${origName})`; // traded pick
-        const normLabel = `${season} pick ${round}`; // for TAT matching (slot unknown = partial match)
-        pickAssets[ownerId].push({
-          name:    pickLabel,
-          normKey: normLabel,
-          pos:     'PICK',
-          season:  parseInt(season),
-          round:   parseInt(round),
+        const isOwnPick = origRosterId === currentRosterId;
+        pickAssets[currentOwnerId].push({
+          pos:          'PICK',
+          season:       parseInt(season),
+          round:        parseInt(round),
           origRosterId: parseInt(origRosterId),
-          isOwnPick: origRosterId === rId,
+          isOwnPick,
         });
       }
     }
-    // Sort each owner's picks by season then round
     for (const picks of Object.values(pickAssets)) {
-      picks.sort((a,b)=> a.season!==b.season ? a.season-b.season : a.round-b.round);
+      picks.sort((a,b) => a.season !== b.season ? a.season - b.season : a.round - b.round);
     }
-    window._pickAssets          = pickAssets;
+    window._pickAssets           = pickAssets;
     window._slotByRosterBySeason = slotByRosterBySeason;
+
+    // Debug: log pick summary to console
+    const totalPicks = Object.values(pickAssets).reduce((s,a)=>s+a.length,0);
+    const slotSeasons = Object.keys(slotByRosterBySeason);
+    console.log(`[Picks] ${totalPicks} picks across ${Object.keys(pickAssets).length} rosters`);
+    console.log(`[Picks] Draft order known for seasons: ${slotSeasons.join(', ') || 'none'}`);
+    console.log(`[Picks] tradedPicks from API: ${tradedPicks.length}`);
+    if (tradedPicks.length) console.log('[Picks] Sample traded pick:', tradedPicks[0]);
+    const myOwnerId = Object.keys(pickAssets).find(id => {
+      const r = leagueRosters.find(lr => lr.ownerId === id && lr.isMe);
+      return !!r;
+    });
+    if (myOwnerId) console.log(`[Picks] My picks:`, pickAssets[myOwnerId]);
 
     // Fetch trade history across current + 2 prior seasons for a reliable read
     const season = document.getElementById('sleeper-season').value;
@@ -1072,47 +1077,55 @@ function isMine(p) {
 function buildPickPool() {
   pickPool = [];
   if (!window._pickAssets || !leagueRosters.length) return;
-  const slotMap = window._slotByRosterBySeason || {};
+
+  // slotMap: season(str) -> origRosterId -> slot number
+  // Built from draft.slot_to_roster_id which is slot -> rosterId, so we invert it
+  const slotMap = {};
+  for (const [season, rosterToSlot] of Object.entries(window._slotByRosterBySeason || {})) {
+    slotMap[season] = rosterToSlot; // already origRosterId -> slot from our earlier build
+  }
+
+  // Build origRosterId -> ownerName map for labeling traded picks
+  const origRosterOwnerName = {};
+  for (const roster of leagueRosters) {
+    // find the roster_id for this owner by scanning _pickAssets
+    // leagueRosters has ownerId, we need to find their origRosterId
+    // The pickAssets are keyed by ownerId so we can look up their own picks
+    const theirOwnPick = (window._pickAssets[roster.ownerId] || []).find(p => p.isOwnPick);
+    if (theirOwnPick) origRosterOwnerName[theirOwnPick.origRosterId] = roster.ownerName;
+  }
 
   for (const roster of leagueRosters) {
     const picks = window._pickAssets[roster.ownerId] || [];
     for (const pick of picks) {
       const seasonStr = String(pick.season);
 
-      // Resolve pick slot if draft order is known for this season
-      const slot = slotMap[seasonStr]?.[pick.origRosterId] ?? null;
-      const slotStr = slot ? String(slot).padStart(2,'0') : null;
+      // Slot lookup: slotMap[season][origRosterId] = slot position
+      const slot    = slotMap[seasonStr]?.[pick.origRosterId] ?? null;
+      const slotStr = slot ? String(slot).padStart(2, '0') : null;
 
-      // Build display name: "2026 Pick 1.03" if slot known, else "2026 Pick 1 (via Owner)"
+      // Display name and TAT match name
       let displayName, tatMatchName;
       if (slot) {
         displayName  = `${seasonStr} Pick ${pick.round}.${slotStr}`;
-        tatMatchName = displayName; // exact TAT match possible
+        tatMatchName = displayName;
       } else {
-        const origOwnerName = leagueRosters.find(r => {
-          const rOwnerId = r.ownerId;
-          // find roster with this origRosterId — match by checking _pickAssets keys
-          return window._pickAssets[rOwnerId]?.some(p => p.origRosterId === pick.origRosterId);
-        })?.ownerName;
+        const origName = origRosterOwnerName[pick.origRosterId] || '?';
         displayName  = pick.isOwnPick
           ? `${seasonStr} Pick ${pick.round}`
-          : `${seasonStr} Pick ${pick.round} (via ${origOwnerName || '?'})`;
-        tatMatchName = null; // can't do exact match, will use round-level median
+          : `${seasonStr} Pick ${pick.round} (via ${origName})`;
+        tatMatchName = null;
       }
 
-      // TAT lookup: try exact match first, then round median
+      // TAT lookup — exact first, then round median
       let repTat = null;
       if (tatMatchName) {
-        // Try exact name match (e.g. "2026 Pick 1.03")
         repTat = tatData.find(t => norm(t.name) === norm(tatMatchName) && t.pos === 'PICK') || null;
       }
       if (!repTat) {
-        // Fall back: all TAT picks for this season + round, use median
-        const tatMatches = tatData.filter(t =>
-          t.pos === 'PICK' &&
-          t.name.startsWith(seasonStr) &&
-          (() => { const m = t.name.match(/pick\s+(\d)/i); return m && parseInt(m[1]) === pick.round; })()
-        ).sort((a,b) => a.tatRank - b.tatRank);
+        const tatMatches = tatData
+          .filter(t => t.pos === 'PICK' && t.name.startsWith(seasonStr) && t.name.includes(` ${pick.round}.`))
+          .sort((a,b) => a.tatRank - b.tatRank);
         repTat = tatMatches.length ? tatMatches[Math.floor(tatMatches.length / 2)] : null;
       }
 
