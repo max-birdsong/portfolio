@@ -136,7 +136,22 @@ select:hover,select:focus,input:hover,input:focus{border-color:var(--accent);}
 .team-pip{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);}
 .age-pip{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);}
 
-.sig-pill{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:1px;padding:3px 8px;text-transform:uppercase;border:1px solid;white-space:nowrap;flex-shrink:0;}
+
+  .buy-trade-btn {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: .6rem;
+    cursor: pointer;
+    margin-left: 5px;
+    font-family: 'DM Mono', monospace;
+    opacity: .7;
+    transition: opacity .15s;
+  }
+  .buy-trade-btn:hover { opacity: 1; background: rgba(0,229,160,.1); }
+  .sig-pill{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:1px;padding:3px 8px;text-transform:uppercase;border:1px solid;white-space:nowrap;flex-shrink:0;}
 .sig-sb{color:var(--bg);background:var(--accent);border-color:var(--accent);font-weight:700;}
 .sig-b{color:var(--accent);border-color:var(--accent);background:var(--accent-dim);}
 .sig-h{color:var(--text3);border-color:var(--text3);}
@@ -497,6 +512,7 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
 <footer><div class="wrap">Dynasty Analyzer &nbsp;·&nbsp; FantasyCalc API &nbsp;·&nbsp; Sleeper API &nbsp;·&nbsp; TAT Rankings</div></footer>
 
 <script>
+
 // ── STATE ──────────────────────────────────────────────────────
 let fcData       = [];
 let tatData      = [];
@@ -1408,7 +1424,12 @@ function renderTableInner(maxAbsOverride) {
       ${hasFC?`<td class="mono">${p.fcValue!=null?p.fcValue.toLocaleString():'<span class="dim">—</span>'}</td>`:''}
       ${hasBoth?`<td class="mono" style="font-family:'DM Mono',monospace;font-size:.72rem">${p.pickDelta!=null?(p.pickDelta>=0?'<span style="color:var(--accent)">+'+p.pickDelta.toFixed(2)+'×</span>':'<span style="color:var(--red)">'+p.pickDelta.toFixed(2)+'×</span>'):'<span class="dim">—</span>'}</td>`:''}
       ${hasBoth?`<td><div class="bwrap"><span class="rdelta ${dir}">${dStr}</span><div class="btrack"><div class="bmid"></div><div class="bfill ${dir}" style="width:${pct}%"></div></div></div></td>`:''}
-      ${hasBoth?`<td><span class="sig-pill ${sig.cls}">${sig.label}</span></td>`:''}
+      ${hasBoth?`<td style="white-space:nowrap">
+        <span class="sig-pill ${sig.cls}">${sig.label}</span>
+        ${(sig.cls==='buy'||sig.cls==='strong-buy')&&!p.mine&&leagueLoaded?
+          `<button class="buy-trade-btn" onclick="showBuyTrades(${JSON.stringify(esc(p.name))})" title="Show trade options">&#8594;</button>`
+          :''}
+      </td>`:''}
     </tr>`;
   }
   html+=`</tbody></table></div><div class="tfoot">${rows.length} players · Pick Gap = TAT pick equiv − FC pick equiv (× 2027 R1) · Positive = TAT values higher than market</div>`;
@@ -1448,25 +1469,7 @@ function renderTradesTab(maxAbs, thresh) {
     p.mine && p.rankDelta !== null && p.rankDelta < -thresh && !(p.isPick && p.tatRank == null)
   ).sort((a,b) => a.rankDelta - b.rankDelta);
 
-  // Buy targets: TAT ranks higher than FC (undervalued by market)
-  // Include picks that have both TAT and FC data with a positive rankDelta
-  // Also include picks with only FC data as neutral assets (rankDelta null) — they can be
-  // received as part of a trade even if we can't signal direction
-  const leagueBuys = universe.filter(p => {
-    if (!p.ownerName || p.ownerIsMe) return false;
-    if (p.isPick) {
-      // Include picks that have FC rank (they're real assets)
-      // Only show as "buy signal" if TAT also ranks them higher than FC
-      return p.fcRank != null && (p.rankDelta === null || p.rankDelta > thresh);
-    }
-    return p.rankDelta !== null && p.rankDelta > thresh;
-  }).sort((a,b) => {
-    // Picks with rankDelta float to top, null-rankDelta picks sort by fcRank
-    if (a.rankDelta != null && b.rankDelta == null) return -1;
-    if (a.rankDelta == null && b.rankDelta != null) return 1;
-    if (a.rankDelta != null && b.rankDelta != null) return b.rankDelta - a.rankDelta;
-    return (a.fcRank||999) - (b.fcRank||999);
-  });
+  // leagueBuys removed — unified loop handles both sell and buy
 
   // ── Trade generation ──────────────────────────────────────────
   const trades = [];
@@ -1511,48 +1514,47 @@ function renderTradesTab(maxAbs, thresh) {
       tierGain, tatImprovement, fcEdgeForThem, strong });
   }
 
-  // ── Sell-motivated: I have FC-overvalued asset, swap for TAT-undervalued ──
-  for (const sell of mySells) {
-    const byOwner = {};
-    for (const buy of leagueBuys) {
-      if (!buy.ownerName || buy.ownerIsMe) continue;
-      const buyRank  = buy.tatRank  ?? buy.fcRank  ?? 999;
-      const sellRank = sell.tatRank ?? sell.fcRank ?? 999;
-      if (buyRank >= sellRank) continue;
-      if ((sell.fcRank||999) > (buy.fcRank||999)) continue; // they must win on FC
-      if (!byOwner[buy.ownerName]) byOwner[buy.ownerName] = [];
-      byOwner[buy.ownerName].push(buy);
-    }
-    for (const [ownerName, candidates] of Object.entries(byOwner)) {
-      candidates.sort((a,b) => {
-        const tatDiff = (a.tatRank||999) - (b.tatRank||999);
-        return tatDiff !== 0 ? tatDiff : (b.rankDelta||0) - (a.rankDelta||0);
-      });
-      addTrade(sell, candidates[0], ownerName, 'sell');
-    }
+  // ── Unified trade search ──────────────────────────────────────
+  // For every asset I own × every asset someone else owns:
+  //   - I must gain in TAT rank (real improvement, not FC proxy)
+  //   - They must gain in FC rank (they win on the market metric)
+  //   - Minimum TAT rank improvement of thresh to surface at all
+  //
+  // One best trade per (my asset, their owner) pair — highest TAT upgrade wins.
+  // No separate sell/buy loops — just maximize TAT improvement across all pairings.
+
+  const myAssets    = universe.filter(p => p.mine && p.tatRank != null);
+  const theirAssets = universe.filter(p => !p.ownerIsMe && p.ownerName && p.tatRank != null);
+
+  // Group their assets by owner for efficiency
+  const theirByOwner = {};
+  for (const p of theirAssets) {
+    if (!theirByOwner[p.ownerName]) theirByOwner[p.ownerName] = [];
+    theirByOwner[p.ownerName].push(p);
   }
 
-  // ── Buy-motivated: I want a TAT-undervalued player, offer FC-overvalued asset ──
-  // For each strong TAT buy target, find the best asset I can offer that makes FC sense for them
-  const strongBuys = leagueBuys.filter(p => (p.rankDelta||0) > thresh * 1.5);
-  for (const target of strongBuys) {
-    // Find my assets that: FC rates higher than target (they win FC), but TAT rates target higher
-    const myOffers = universe.filter(p => {
-      if (!p.mine) return false;
-      const myTierVal     = p.tierVal     ?? 0;
-      const targetTierVal = target.tierVal ?? 0;
-      if (targetTierVal <= myTierVal) return false;           // must be tier upgrade for me
-      if ((p.fcRank||999) > (target.fcRank||999)) return false; // they must win on FC
-      return (targetTierVal - myTierVal) >= 0.33;             // at least ~1 2nd pick equivalent
-    }).sort((a,b) => {
-      // Best offer: gives them most FC value while costing me least TAT
-      const aFcEdge  = (target.fcRank||999) - (a.fcRank||999);
-      const bFcEdge  = (target.fcRank||999) - (b.fcRank||999);
-      return bFcEdge - aFcEdge;
-    });
+  for (const mine of myAssets) {
+    const myTatRank = mine.tatRank;
+    const myFcRank  = mine.fcRank ?? 999;
 
-    if (myOffers.length) {
-      addTrade(myOffers[0], target, target.ownerName, 'buy');
+    for (const [ownerName, theirList] of Object.entries(theirByOwner)) {
+      // Find best TAT upgrade I can get from this owner where they win on FC
+      let best = null;
+      let bestTatImprovement = thresh; // minimum to surface — must beat this
+
+      for (const theirs of theirList) {
+        const tatImprovement = myTatRank - theirs.tatRank; // positive = I upgrade
+        if (tatImprovement <= bestTatImprovement) continue; // must beat current best
+        if (myFcRank > (theirs.fcRank ?? 999)) continue;    // they must win on FC
+        best = theirs;
+        bestTatImprovement = tatImprovement;
+      }
+
+      if (best) {
+        // motivation: 'sell' if I'm dumping an FC-overvalued asset, 'buy' if I'm targeting TAT value
+        const motivation = (mine.rankDelta != null && mine.rankDelta < -thresh) ? 'sell' : 'buy';
+        addTrade(mine, best, ownerName, motivation);
+      }
     }
   }
 
@@ -1734,13 +1736,106 @@ function tradeCard(t) {
 }
 
 
-function tradeSection(title, color, sub, trades) {
-  return `<div class="trade-section-head">
-    <div class="trade-section-title" style="color:${color}">${title}</div>
-    <div class="trade-section-sub">${sub}</div>
-  </div><div class="trade-cards">${trades.map(t=>tradeCard(t)).join('')}</div>`;
+function showBuyTrades(playerName) {
+  const target = [...merged, ...pickPool].find(p => esc(p.name) === playerName);
+  if (!target) return;
+
+  // Find who owns this player in the loaded league
+  const ownerInfo = ownerByPlayer[norm(target.name)];
+  const ownerName = ownerInfo?.ownerName || null;
+
+  // My assets that could work: they must win on FC, I must gain on TAT
+  const myAssets = [...merged, ...pickPool].filter(p => {
+    if (!p.mine) return false;
+    if (p.isPick && p.tatRank == null) return false;
+    if (p.tatRank == null) return false;
+    if ((p.fcRank||999) > (target.fcRank||999)) return false; // they win FC
+    const tatGain = (p.tatRank ?? 999) - (target.tatRank ?? 999);
+    return tatGain > 0; // I gain on TAT
+  }).sort((a,b) => {
+    // Sort by TAT gain desc
+    const aTat = (a.tatRank??999) - (target.tatRank??999);
+    const bTat = (b.tatRank??999) - (target.tatRank??999);
+    return bTat - aTat;
+  }).slice(0, 8);
+
+  const modal = document.getElementById('buy-trades-modal');
+  const title = document.getElementById('buy-trades-title');
+  const body  = document.getElementById('buy-trades-body');
+
+  title.textContent = `Trade for ${target.name}`;
+
+  if (!leagueLoaded) {
+    body.innerHTML = `<div style="color:var(--text3);font-family:'DM Mono',monospace;font-size:.75rem;padding:16px">Load a Sleeper league to see trade options.</div>`;
+  } else if (!ownerName) {
+    body.innerHTML = `<div style="color:var(--text3);font-family:'DM Mono',monospace;font-size:.75rem;padding:16px">${esc(target.name)} is not on a roster in this league.</div>`;
+  } else if (!myAssets.length) {
+    body.innerHTML = `<div style="color:var(--text3);font-family:'DM Mono',monospace;font-size:.75rem;padding:16px">No assets found where you gain TAT rank and they win on FC.</div>`;
+  } else {
+    const targetTier = target.tierLabel ? `<span class="tier-chip" style="vertical-align:middle;margin-left:4px">${esc(target.tierLabel)}</span>` : '';
+    let html = `<div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);margin-bottom:16px">
+      Owned by <span style="color:var(--accent)">${esc(ownerName)}</span> ·
+      TAT <span style="color:var(--text2)">#${target.tatRank||'—'}</span> ${targetTier} ·
+      FC <span style="color:var(--text2)">#${target.fcRank||'—'}</span> ·
+      <span style="color:var(--accent)">TAT ranks ${target.rankDelta>0?'+'+target.rankDelta:target.rankDelta||'—'} vs FC</span>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);margin-bottom:12px;letter-spacing:.5px">
+      WHAT YOU COULD OFFER — sorted by your TAT gain
+    </div>`;
+
+    for (const offer of myAssets) {
+      const tatGain    = (offer.tatRank??999) - (target.tatRank??999);
+      const fcEdge     = (offer.fcRank||999) - (target.fcRank||999);
+      const offerTier  = offer.tierLabel ? `<span class="tier-chip" style="vertical-align:middle;margin-left:4px;font-size:.55rem">${esc(offer.tierLabel)}</span>` : '';
+      html += `<div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;
+        padding:10px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600;font-size:.85rem;margin-bottom:3px">
+            ${esc(offer.name)}${offerTier}
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3)">
+            TAT <span style="color:var(--text2)">#${offer.tatRank||'—'}</span> ·
+            FC <span style="color:var(--text2)">#${offer.fcRank||'—'}</span>
+            ${offer.rankDelta!=null?`· <span style="color:var(--red)">FC ranks ${Math.abs(offer.rankDelta)} spots above TAT</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:right;font-family:'DM Mono',monospace">
+          <div style="color:var(--accent);font-size:.9rem;font-weight:700">+${tatGain}</div>
+          <div style="font-size:.55rem;color:var(--text3)">TAT spots</div>
+          <div style="font-size:.6rem;color:var(--amber);margin-top:2px">they +${fcEdge} FC</div>
+        </div>
+      </div>`;
+    }
+
+    html += `<div style="margin-top:16px;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3)">
+      Message <span style="color:var(--accent)">${esc(ownerName)}</span> on Sleeper to propose a deal.
+    </div>`;
+    body.innerHTML = html;
+  }
+
+  modal.style.display = 'flex';
 }
 
+function closeBuyModal() {
+  document.getElementById('buy-trades-modal').style.display = 'none';
+}
 </script>
+
+<!-- y Trades Modal -->
+<div id="buy-trades-modal" style="display:none;position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px"
+  onclick="if(event.target===this)closeBuyModal()">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;
+    width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;
+      padding:16px 20px;border-bottom:1px solid var(--border)">
+      <div id="buy-trades-title" style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;
+        letter-spacing:1px;color:var(--accent)"></div>
+      <button onclick="closeBuyModal()" style="background:none;border:none;color:var(--text3);
+        font-size:1.2rem;cursor:pointer;padding:0 4px">&times;</button>
+    </div>
+    <div id="buy-trades-body" style="overflow-y:auto;padding:16px 20px;flex:1"></div>
+  </div>
+</div>
 </body>
 </html>
