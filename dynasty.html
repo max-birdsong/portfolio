@@ -927,43 +927,25 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
       }
     }
 
-    // Step 9: build leagueRosters with position depth + window read
-    // Starter counts per position used for "thin" detection
-    const STARTER_N = { QB: 1, RB: 4, WR: 4, TE: 1 };
-
+    // Step 9: build leagueRosters
     leagueRosters = rosters.map(r => {
-      const oid = r.owner_id;
       const playerNames = new Set();
-      // Collect full player objects for this roster (with pos + age)
-      const rosterPlayers = [];
       for (const pid of (r.players || [])) {
         const p = playersMap[pid];
-        if (!p) continue;
-        const name = `${p.first_name || ''} ${p.last_name || ''}`.trim();
-        if (!name) continue;
-        playerNames.add(norm(name));
-        rosterPlayers.push({
-          name: norm(name),
-          pos:  (p.position || '?').toUpperCase(),
-          age:  parseFloat(p.age) || null,
-        });
+        if (p) {
+          const name = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+          if (name) playerNames.add(norm(name));
+        }
       }
-
-      // Position depth: top-N starters at each pos by TAT rank
-      // tatData is available here (module scope), but may not be loaded yet —
-      // store raw rosterPlayers and compute depth in mergeAndRender instead
+      const oid = r.owner_id;
       return {
         ownerId: oid,
         ownerName: ownerNames[oid] || oid || 'Unknown',
         playerNames,
-        rosterPlayers,   // raw list, depth computed after TAT loads
         isMe: oid === sleeperUserId,
         tradeCount:  tradesByOwner[oid] || 0,
         totalTrades: tradesByOwner[oid] || 0,
         leagueCount: leagueCounts[oid]  || 0,
-        // posDepth and window computed later
-        posDepth: {},
-        window: null,
       };
     });
 
@@ -972,15 +954,9 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     for (const roster of leagueRosters) {
       for (const name of roster.playerNames) {
         ownerByPlayer[name] = {
-          ownerName:     roster.ownerName,
-          isMe:          roster.isMe,
-          tradeCount:    roster.tradeCount,
-          totalTrades:   roster.totalTrades,
-          leagueCount:   roster.leagueCount,
-          window:        roster.window,
-          windowColor:   roster.windowColor,
-          avgAge:        roster.avgAge,
-          thinPositions: roster.thinPositions,
+          ownerName: roster.ownerName, isMe: roster.isMe,
+          tradeCount: roster.tradeCount, totalTrades: roster.totalTrades,
+          leagueCount: roster.leagueCount,
         };
       }
     }
@@ -1179,92 +1155,11 @@ function buildPickPool() {
   }
 }
 
-
-// ── ROSTER PROFILES (position depth + window read) ────────────
-// Called from mergeAndRender() after tatData is available
-function computeRosterProfiles() {
-  if (!leagueRosters.length || !tatData.length) return;
-
-  const STARTER_N = { QB: 1, RB: 4, WR: 4, TE: 1 };
-
-  // Build tatRank lookup by norm name
-  const tatRankByName = {};
-  tatData.forEach(p => { tatRankByName[norm(p.name)] = p.tatRank; });
-
-  // For each roster, compute top-N starters per position by TAT rank
-  for (const roster of leagueRosters) {
-    const byPos = { QB: [], RB: [], WR: [], TE: [] };
-    for (const rp of (roster.rosterPlayers || [])) {
-      if (byPos[rp.pos]) {
-        const tatRank = tatRankByName[rp.name] ?? 9999;
-        byPos[rp.pos].push({ ...rp, tatRank });
-      }
-    }
-    // Sort each position by TAT rank, keep top-N
-    const posDepth = {};
-    for (const [pos, n] of Object.entries(STARTER_N)) {
-      const starters = byPos[pos].sort((a, b) => a.tatRank - b.tatRank).slice(0, n);
-      posDepth[pos] = starters;
-    }
-    roster.posDepth = posDepth;
-
-    // ── Window read ──────────────────────────────────────────────
-    // Score = average tierVal of top starters across all positions
-    // Age   = average age of those starters (excluding nulls)
-    // Pick strength = sum of tierVal of their picks (from pickPool once built)
-    const allStarters = Object.values(posDepth).flat();
-    const tierVals = allStarters.map(p => {
-      const t = tatData.find(td => norm(td.name) === p.name);
-      return t?.tierVal ?? null;
-    }).filter(v => v != null);
-
-    const ages = allStarters.map(p => p.age).filter(a => a != null);
-    const avgTierVal = tierVals.length ? tierVals.reduce((s, v) => s + v, 0) / tierVals.length : 0;
-    const avgAge     = ages.length     ? ages.reduce((s, a) => s + a, 0) / ages.length         : 0;
-
-    // Classify window:
-    // Contender:  high tier value (avg > 0.5 = ~late-1 quality) AND old (avg age > 26)
-    // Rebuilding: low tier value (avg < 0.3) OR very young (avg age < 24)
-    // Mixed:      everything else
-    let window, windowColor;
-    if (avgTierVal >= 0.5 && avgAge >= 26) {
-      window = 'Contender'; windowColor = 'var(--amber)';
-    } else if (avgTierVal < 0.3 || (avgAge > 0 && avgAge < 24)) {
-      window = 'Rebuilding'; windowColor = 'var(--blue)';
-    } else {
-      window = 'Mixed'; windowColor = 'var(--text3)';
-    }
-    roster.window      = window;
-    roster.windowColor = windowColor;
-    roster.avgAge      = avgAge > 0 ? +avgAge.toFixed(1) : null;
-    roster.avgTierVal  = +avgTierVal.toFixed(2);
-  }
-
-  // ── League-average depth per position (for "thin" detection) ──
-  // Average number of top-N starters each team has (by headcount in posDepth)
-  // A team is "thin" at a pos if they have fewer starters than league avg
-  const leagueAvgDepth = {};
-  for (const pos of Object.keys(STARTER_N)) {
-    const counts = leagueRosters.map(r => (r.posDepth[pos] || []).length);
-    leagueAvgDepth[pos] = counts.reduce((s, c) => s + c, 0) / (counts.length || 1);
-  }
-
-  // Tag each roster with thin positions
-  for (const roster of leagueRosters) {
-    roster.thinPositions = new Set(
-      Object.entries(STARTER_N)
-        .filter(([pos]) => (roster.posDepth[pos] || []).length < leagueAvgDepth[pos])
-        .map(([pos]) => pos)
-    );
-  }
-}
-
 // Also rebuild pickPool when TAT/FC data refreshes (so roster tab shows picks immediately)
 function mergeAndRender() {
   if (!fcData.length&&!tatData.length) return;
   fcMap={};
   fcData.forEach((p,i)=>{fcMap[norm(p.name)]={...p,fcRank:i+1};});
-  computeRosterProfiles(); // recompute depth + window whenever data refreshes
 
   // FC_MAX: top value in current FC dataset (used to anchor pick conversion)
   const FC_MAX = fcData.length ? fcData[0].fcValue : 9500;
@@ -1280,16 +1175,12 @@ function mergeAndRender() {
     return {...p, mine:isMine(p), fc,
       fcRank:fc?.fcRank??null, fcValue:fc?.fcValue??null, fcPickVal,
       rankDelta:fc?(fc.fcRank-p.tatRank):null, pickDelta,
-      ownerName:      ownerInfo?.ownerName      || null,
-      ownerIsMe:      ownerInfo?.isMe           || false,
-      tradeCount:     ownerInfo?.tradeCount     ?? null,
-      priorTradeCount:ownerInfo?.priorTradeCount ?? null,
-      totalTrades:    ownerInfo?.totalTrades    ?? null,
-      leagueCount:    ownerInfo?.leagueCount    ?? null,
-      ownerWindow:    ownerInfo?.window         || null,
-      ownerWindowColor: ownerInfo?.windowColor  || 'var(--text3)',
-      ownerAvgAge:    ownerInfo?.avgAge         || null,
-      ownerThinPos:   ownerInfo?.thinPositions  || new Set(),
+      ownerName:       ownerInfo?.ownerName       || null,
+      ownerIsMe:       ownerInfo?.isMe            || false,
+      tradeCount:      ownerInfo?.tradeCount      ?? null,
+      priorTradeCount: ownerInfo?.priorTradeCount ?? null,
+      totalTrades:     ownerInfo?.totalTrades     ?? null,
+      leagueCount:     ownerInfo?.leagueCount     ?? null,
     };
   });
 
@@ -1611,108 +1502,60 @@ function renderTradesTab(maxAbs, thresh) {
     const fcEdgeForThem = (recv.fcRank||999) - (sell.fcRank||999);
 
     // Strong: tier jump ≥ 0.5 1sts for sell-motivated, ≥ 0.75 for buy-motivated
-    // fillsNeed lowers the bar — a trade that addresses their positional weakness is easier to land
-    const needBoost = fillsNeed ? 0.15 : 0;
     const strong = motivation === 'sell'
-      ? tierGain >= (0.5 - needBoost) && Math.abs(sell.rankDelta||0) > thresh * 1.5
-      : tierGain >= (0.75 - needBoost);
-
-    // Does the sell asset fill a positional need for the other owner?
-    const theirThinPos   = recv.ownerThinPos || new Set();
-    const fillsNeed      = !sell.isPick && theirThinPos.has(sell.pos);
+      ? tierGain >= 0.5 && Math.abs(sell.rankDelta||0) > thresh * 1.5
+      : tierGain >= 0.75;
 
     trades.push({ sell, recv, ownerName, motivation,
       tradeCount:      recv.tradeCount,
       priorTradeCount: recv.priorTradeCount,
       totalTrades:     recv.totalTrades,
       leagueCount:     recv.leagueCount,
-      ownerWindow:     recv.ownerWindow      || null,
-      ownerWindowColor:recv.ownerWindowColor || 'var(--text3)',
-      ownerAvgAge:     recv.ownerAvgAge      || null,
-      fillsNeed,
       tierGain, tatImprovement, fcEdgeForThem, strong });
   }
 
-  // ── Trade search — two passes ────────────────────────────────
+  // ── Unified trade search ──────────────────────────────────────
+  // For every asset I own × every asset someone else owns:
+  //   - I must gain in TAT rank (real improvement, not FC proxy)
+  //   - They must gain in FC rank (they win on the market metric)
+  //   - Minimum TAT rank improvement of thresh to surface at all
   //
-  // Pass 1 (sell-motivated): for each of my FC-overvalued assets,
-  //   find the best TAT-undervalued player I can get where THEY win on FC.
-  //   This is the classic "sell high" trade — easy to pitch, FC validates it for them.
-  //
-  // Pass 2 (buy-motivated): start from the strongest TAT buy targets in the league,
-  //   find the best offer I can make from my roster where FC sees it as roughly fair.
-  //   "Roughly fair" = my offer's FC rank is within a window of what I'm asking for.
-  //   This catches high-value targets that FC also likes (no pure arbitrage angle).
+  // One best trade per (my asset, their owner) pair — highest TAT upgrade wins.
+  // No separate sell/buy loops — just maximize TAT improvement across all pairings.
 
-  const myAssets    = universe.filter(p => p.mine && p.tatRank != null && p.tierVal > 0);
-  const theirAssets = universe.filter(p => !p.ownerIsMe && p.ownerName && p.tatRank != null && p.tierVal > 0);
+  const myAssets    = universe.filter(p => p.mine && p.tatRank != null);
+  const theirAssets = universe.filter(p => !p.ownerIsMe && p.ownerName && p.tatRank != null);
 
+  // Group their assets by owner for efficiency
   const theirByOwner = {};
   for (const p of theirAssets) {
     if (!theirByOwner[p.ownerName]) theirByOwner[p.ownerName] = [];
     theirByOwner[p.ownerName].push(p);
   }
 
-  // ── Pass 1: sell-motivated ──────────────────────────────────
-  // My FC-overvalued assets × their TAT-undervalued assets (they must win on FC)
-  const mySellAssets = myAssets.filter(p => p.rankDelta != null && p.rankDelta < -thresh);
+  for (const mine of myAssets) {
+    const myTatRank = mine.tatRank;
+    const myFcRank  = mine.fcRank ?? 999;
 
-  for (const mine of mySellAssets) {
-    const myFcRank = mine.fcRank ?? 999;
     for (const [ownerName, theirList] of Object.entries(theirByOwner)) {
+      // Find best TAT upgrade I can get from this owner where they win on FC
       let best = null;
-      let bestTierGain = 0;
+      let bestTatImprovement = thresh; // minimum to surface — must beat this
+
       for (const theirs of theirList) {
-        if (myFcRank > (theirs.fcRank ?? 999)) continue; // they must win on FC
-        const tierGain = (theirs.tierVal ?? 0) - (mine.tierVal ?? 0);
-        if (tierGain <= bestTierGain) continue;
+        const tatImprovement = myTatRank - theirs.tatRank; // positive = I upgrade
+        if (tatImprovement <= bestTatImprovement) continue; // must beat current best
+        if (myFcRank > (theirs.fcRank ?? 999)) continue;    // they must win on FC
         best = theirs;
-        bestTierGain = tierGain;
+        bestTatImprovement = tatImprovement;
       }
+
       if (best) {
-        // Window filter: contenders prefer proven players over picks
-        const ownerRoster = leagueRosters.find(r => r.ownerName === ownerName);
-        if (ownerRoster?.window === 'Contender' && best.isPick) {
-          const playerAlt = theirList
-            .filter(p => !p.isPick && (mine.fcRank ?? 999) <= (p.fcRank ?? 999))
-            .sort((a, b) => (b.tierVal ?? 0) - (a.tierVal ?? 0))[0];
-          if (playerAlt) addTrade(mine, playerAlt, ownerName, 'sell');
-          else addTrade(mine, best, ownerName, 'sell'); // fallback to pick if no player found
-        } else {
-          addTrade(mine, best, ownerName, 'sell');
-        }
+        // motivation: 'sell' if I'm dumping an FC-overvalued asset, 'buy' if I'm targeting TAT value
+        const motivation = (mine.rankDelta != null && mine.rankDelta < -thresh) ? 'sell' : 'buy';
+        addTrade(mine, best, ownerName, motivation);
       }
     }
-  }
-
-  // ── Pass 2: buy-motivated ───────────────────────────────────
-  // For each strong TAT buy target in the league, find the best offer I can make.
-  // FC fairness window: my offer FC rank within ±FC_FAIR_WINDOW of target FC rank.
-  // Wider window = more trades surfaced but less realistic; 30 is aggressive but plausible.
-  const FC_FAIR_WINDOW = 30;
-
-  // Strong TAT buy targets: high rankDelta (TAT >> FC), not mine
-  const buyTargets = theirAssets
-    .filter(p => (p.rankDelta ?? 0) > thresh)
-    .sort((a, b) => (b.rankDelta ?? 0) - (a.rankDelta ?? 0));
-
-  for (const target of buyTargets) {
-    const targetFcRank = target.fcRank ?? 999;
-    // Find my best offer: must be a TAT downgrade for me (I'm giving up less TAT than I get)
-    // and FC must see it as within the fairness window for them
-    let bestOffer = null;
-    let bestTierGain = 0;
-    for (const mine of myAssets) {
-      const tierGain = (target.tierVal ?? 0) - (mine.tierVal ?? 0);
-      if (tierGain <= bestTierGain) continue; // must beat current best
-      const myFcRank = mine.fcRank ?? 999;
-      // FC fairness: they get something FC values within the window of what they give up
-      // myFcRank <= targetFcRank + FC_FAIR_WINDOW means they're getting FC-fair value or better
-      if (myFcRank > targetFcRank + FC_FAIR_WINDOW) continue;
-      bestOffer = mine;
-      bestTierGain = tierGain;
-    }
-    if (bestOffer) addTrade(bestOffer, target, target.ownerName, 'buy');
   }
 
   // Sort by TAT tier gain descending (1st-pick units), tiebreak by raw rank improvement
@@ -1832,7 +1675,6 @@ function tradeCard(t) {
       <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red);margin-top:4px">
         FC ranks ${Math.abs(sellDelta)} spots higher than TAT → sell high
       </div>
-      ${t.fillsNeed ? `<div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--accent);margin-top:3px;padding:2px 6px;border:1px solid var(--accent);display:inline-block">✓ fills their ${esc(t.sell.pos)} need</div>` : ''}
     </div>
 
     <!-- ARROW -->
@@ -1848,7 +1690,6 @@ function tradeCard(t) {
       <div style="font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:2px;color:var(--accent);margin-bottom:4px;text-align:right">GET</div>
       <div class="tcard-pname">${esc(t.recv.name)}${t.recv.tierLabel ? ` <span class="tier-chip" style="font-size:.6rem;vertical-align:middle;opacity:.85">${esc(t.recv.tierLabel)}</span>` : ''}</div>
       <div class="tcard-pmeta" style="margin-top:3px;justify-content:flex-end">
-        ${t.ownerWindow ? `<span style="font-family:'DM Mono',monospace;font-size:.55rem;padding:2px 6px;border:1px solid;border-color:${t.ownerWindowColor};color:${t.ownerWindowColor}">${esc(t.ownerWindow)}${t.ownerAvgAge ? ' · avg ' + t.ownerAvgAge : ''}</span>` : ''}
         <span class="owner-pill">${esc(t.ownerName)}</span>
         ${t.recv.team ? `<span class="team-pip">${esc(t.recv.team)}</span>` : ''}
         <span class="pos-pip pos-${t.recv.pos}">${t.recv.pos}</span>
@@ -1869,7 +1710,6 @@ function tradeCard(t) {
         <span style="color:var(--accent);letter-spacing:1px;font-size:.55rem">YOU WIN ON TAT</span><br>
         ${esc(t.recv.name)} [${esc(t.recv.tierLabel||'?')}] vs ${esc(t.sell.tierLabel||'?')} —
         <span style="color:var(--accent)">+${t.tierGain.toFixed(2)} 1sts · +${t.tatImprovement} rank spots</span>
-        ${t.fillsNeed ? ` · <span style="color:var(--accent)">fills their ${esc(t.sell.pos)} need</span>` : ''}
       </div>
       <div style="color:var(--text3);text-align:right">
         ${t.motivation === 'buy'
