@@ -706,16 +706,30 @@ async function selectLeague(leagueId, leagueName) {
 
 async function loadLeagueRosters(leagueId, playersMap, bar) {
   try {
-    const [rRes, picksRes, leagueRes] = await Promise.all([
+    const [rRes, picksRes, leagueRes, draftsRes] = await Promise.all([
       fetch(`${SLEEPER}/league/${leagueId}/rosters`),
       fetch(`${SLEEPER}/league/${leagueId}/traded_picks`),
       fetch(`${SLEEPER}/league/${leagueId}`),
+      fetch(`${SLEEPER}/league/${leagueId}/drafts`),
     ]);
     if (!rRes.ok) return;
     const rosters      = await rRes.json();
     const tradedPicks  = picksRes.ok  ? await picksRes.json()  : [];
     const leagueInfo   = leagueRes.ok ? await leagueRes.json() : {};
     const draftRounds  = leagueInfo?.settings?.draft_rounds || 3;
+    const drafts       = draftsRes.ok ? await draftsRes.json() : [];
+
+    // Build slotByRosterBySeason: season -> roster_id -> pick_slot
+    // slot_to_roster_id maps slot (string) -> roster_id for each draft
+    const slotByRosterBySeason = {};
+    for (const draft of drafts) {
+      const s = draft.season;
+      if (!draft.slot_to_roster_id) continue;
+      slotByRosterBySeason[s] = {};
+      for (const [slot, rid] of Object.entries(draft.slot_to_roster_id)) {
+        slotByRosterBySeason[s][rid] = parseInt(slot);
+      }
+    }
 
     // Fetch owner display names in parallel
     const ownerIds = [...new Set(rosters.map(r=>r.owner_id).filter(Boolean))];
@@ -800,7 +814,8 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     for (const picks of Object.values(pickAssets)) {
       picks.sort((a,b)=> a.season!==b.season ? a.season-b.season : a.round-b.round);
     }
-    window._pickAssets = pickAssets;
+    window._pickAssets          = pickAssets;
+    window._slotByRosterBySeason = slotByRosterBySeason;
 
     // Fetch trade history across current + 2 prior seasons for a reliable read
     const season = document.getElementById('sleeper-season').value;
@@ -1057,28 +1072,64 @@ function isMine(p) {
 function buildPickPool() {
   pickPool = [];
   if (!window._pickAssets || !leagueRosters.length) return;
+  const slotMap = window._slotByRosterBySeason || {};
+
   for (const roster of leagueRosters) {
     const picks = window._pickAssets[roster.ownerId] || [];
     for (const pick of picks) {
-      const tatMatches = tatData.filter(t =>
-        t.pos === 'PICK' &&
-        t.name.startsWith(String(pick.season)) &&
-        (() => { const m = t.name.match(/pick\s+(\d)/i); return m && parseInt(m[1]) === pick.round; })()
-      );
-      tatMatches.sort((a,b) => a.tatRank - b.tatRank);
-      const repTat    = tatMatches.length ? tatMatches[Math.floor(tatMatches.length / 2)] : null;
+      const seasonStr = String(pick.season);
+
+      // Resolve pick slot if draft order is known for this season
+      const slot = slotMap[seasonStr]?.[pick.origRosterId] ?? null;
+      const slotStr = slot ? String(slot).padStart(2,'0') : null;
+
+      // Build display name: "2026 Pick 1.03" if slot known, else "2026 Pick 1 (via Owner)"
+      let displayName, tatMatchName;
+      if (slot) {
+        displayName  = `${seasonStr} Pick ${pick.round}.${slotStr}`;
+        tatMatchName = displayName; // exact TAT match possible
+      } else {
+        const origOwnerName = leagueRosters.find(r => {
+          const rOwnerId = r.ownerId;
+          // find roster with this origRosterId — match by checking _pickAssets keys
+          return window._pickAssets[rOwnerId]?.some(p => p.origRosterId === pick.origRosterId);
+        })?.ownerName;
+        displayName  = pick.isOwnPick
+          ? `${seasonStr} Pick ${pick.round}`
+          : `${seasonStr} Pick ${pick.round} (via ${origOwnerName || '?'})`;
+        tatMatchName = null; // can't do exact match, will use round-level median
+      }
+
+      // TAT lookup: try exact match first, then round median
+      let repTat = null;
+      if (tatMatchName) {
+        // Try exact name match (e.g. "2026 Pick 1.03")
+        repTat = tatData.find(t => norm(t.name) === norm(tatMatchName) && t.pos === 'PICK') || null;
+      }
+      if (!repTat) {
+        // Fall back: all TAT picks for this season + round, use median
+        const tatMatches = tatData.filter(t =>
+          t.pos === 'PICK' &&
+          t.name.startsWith(seasonStr) &&
+          (() => { const m = t.name.match(/pick\s+(\d)/i); return m && parseInt(m[1]) === pick.round; })()
+        ).sort((a,b) => a.tatRank - b.tatRank);
+        repTat = tatMatches.length ? tatMatches[Math.floor(tatMatches.length / 2)] : null;
+      }
+
       const tatRank   = repTat?.tatRank ?? null;
       const fcEntry   = repTat ? (fcMap[norm(repTat.name)] || null) : null;
       const fcRank    = fcEntry?.fcRank ?? null;
       const rankDelta = (fcRank && tatRank) ? fcRank - tatRank : null;
+
       pickPool.push({
-        name: pick.name, pos: 'PICK', team: '',
+        name: displayName, pos: 'PICK', team: '',
         tatRank, fcRank, fcValue: fcEntry?.fcValue ?? null, rankDelta,
         mine: roster.isMe, ownerName: roster.ownerName, ownerIsMe: roster.isMe,
         tradeCount: roster.tradeCount, priorTradeCount: roster.priorTradeCount,
         totalTrades: roster.totalTrades, leagueCount: roster.leagueCount,
         isPick: true, pickSeason: pick.season, pickRound: pick.round,
-        isOwnPick: pick.isOwnPick, tierLabel: repTat?.tierLabel ?? `R${pick.round}`,
+        pickSlot: slot, isOwnPick: pick.isOwnPick,
+        tierLabel: repTat?.tierLabel ?? `R${pick.round}`,
       });
     }
   }
