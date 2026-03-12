@@ -304,7 +304,7 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
 
 <!-- TABS -->
 <div class="tabs-bar" id="tabs-bar">
-  <div class="tab active" data-tab="roster" onclick="switchTab('roster')">
+  <div class="tab active" data-tab="roster" onclick="switchTab('roster')" id="tab-btn-roster">
     My Team <span class="badge badge-mine" id="badge-roster">—</span>
   </div>
   <div class="tab" data-tab="buy" onclick="switchTab('buy')">
@@ -375,7 +375,20 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
         </div>
         <div class="pos-filter" id="buy-pos-filter"></div>
       </div>
-      <div class="cards-grid" id="buy-cards"></div>
+      <div id="buy-strong-section">
+        <div class="section-head" style="margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+          <div class="section-head-title" style="color:var(--accent)">⬆⬆ Strong Buy</div>
+          <div class="section-head-sub">Biggest gaps — TAT values significantly higher than market</div>
+        </div>
+        <div class="cards-grid" id="buy-strong-cards" style="margin-bottom:24px;"></div>
+      </div>
+      <div id="buy-regular-section">
+        <div class="section-head" style="margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+          <div class="section-head-title" style="color:var(--text2)">↑ Buy</div>
+          <div class="section-head-sub">Moderate gap — worth targeting at the right price</div>
+        </div>
+        <div class="cards-grid" id="buy-regular-cards"></div>
+      </div>
     </div>
   </div>
 
@@ -393,7 +406,20 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
         </div>
         <div class="pos-filter" id="sell-pos-filter"></div>
       </div>
-      <div class="cards-grid" id="sell-cards"></div>
+      <div id="sell-strong-section">
+        <div class="section-head" style="margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+          <div class="section-head-title" style="color:var(--red)">⬇⬇ Strong Sell</div>
+          <div class="section-head-sub">Market significantly overvalues — sell before it corrects</div>
+        </div>
+        <div class="cards-grid" id="sell-strong-cards" style="margin-bottom:24px;"></div>
+      </div>
+      <div id="sell-regular-section">
+        <div class="section-head" style="margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+          <div class="section-head-title" style="color:var(--text2)">↓ Sell</div>
+          <div class="section-head-sub">Moderate overvaluation — consider moving if the offer is right</div>
+        </div>
+        <div class="cards-grid" id="sell-regular-cards"></div>
+      </div>
     </div>
   </div>
 
@@ -880,7 +906,17 @@ function renderBuyTab(buys, maxAbs) {
   ).join('');
 
   const filtered = buyPosFilter==='ALL'?buys:buys.filter(p=>p.pos===buyPosFilter);
-  document.getElementById('buy-cards').innerHTML = filtered.map(p=>playerCard(p,maxAbs,'buy')).join('');
+  const pdMax = filtered.length ? Math.max(...filtered.map(p=>Math.abs(p.pickDelta??0))) : 1;
+  const strongThresh = pdMax * 0.35;
+  const strong  = filtered.filter(p=>(p.pickDelta??0) >= strongThresh);
+  const regular = filtered.filter(p=>(p.pickDelta??0) <  strongThresh);
+
+  const strongSec  = document.getElementById('buy-strong-section');
+  const regularSec = document.getElementById('buy-regular-section');
+  strongSec.style.display  = strong.length  ? 'block' : 'none';
+  regularSec.style.display = regular.length ? 'block' : 'none';
+  document.getElementById('buy-strong-cards').innerHTML  = strong.map(p=>playerCard(p,maxAbs,'buy')).join('');
+  document.getElementById('buy-regular-cards').innerHTML = regular.map(p=>playerCard(p,maxAbs,'buy')).join('');
 }
 function setBuyPos(pos) { buyPosFilter=pos; renderAll(); }
 
@@ -897,7 +933,17 @@ function renderSellTab(sells, maxAbs) {
   ).join('');
 
   const filtered = sellPosFilter==='ALL'?sells:sells.filter(p=>p.pos===sellPosFilter);
-  document.getElementById('sell-cards').innerHTML = filtered.map(p=>playerCard(p,maxAbs,'sell')).join('');
+  const pdMax = filtered.length ? Math.max(...filtered.map(p=>Math.abs(p.pickDelta??0))) : 1;
+  const strongThresh = pdMax * 0.35;
+  const strong  = filtered.filter(p=>(p.pickDelta??0) <= -strongThresh);
+  const regular = filtered.filter(p=>(p.pickDelta??0) >  -strongThresh);
+
+  const strongSec  = document.getElementById('sell-strong-section');
+  const regularSec = document.getElementById('sell-regular-section');
+  strongSec.style.display  = strong.length  ? 'block' : 'none';
+  regularSec.style.display = regular.length ? 'block' : 'none';
+  document.getElementById('sell-strong-cards').innerHTML  = strong.map(p=>playerCard(p,maxAbs,'sell')).join('');
+  document.getElementById('sell-regular-cards').innerHTML = regular.map(p=>playerCard(p,maxAbs,'sell')).join('');
 }
 function setSellPos(pos) { sellPosFilter=pos; renderAll(); }
 
