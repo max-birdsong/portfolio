@@ -822,100 +822,40 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     });
     if (myOwnerId) console.log(`[Picks] My picks:`, pickAssets[myOwnerId]);
 
-    // Fetch trade history across current + 2 prior seasons for a reliable read
+    // Trade history: just use the traded_picks we already have + current league transactions
+    // (already fetched above — no extra requests needed for this)
     const season = document.getElementById('sleeper-season').value;
-    const seasons = [season, String(+season-1), String(+season-2)];
 
-    // For prior seasons we need to find each owner's leagues and pull transactions from those too.
-    // Strategy: fetch current league transactions (all 18 weeks) + each owner's leagues for prior
-    // seasons, then count completed trades across all of them.
-
-    // 1. Current league — all weeks
-    const curWeekFetches = Array.from({length:18},(_,i)=>
-      fetch(`${SLEEPER}/league/${leagueId}/transactions/${i+1}`)
-        .then(r=>r.ok?r.json():[]).catch(()=>[])
-    );
-
-    // 2. Each owner's leagues for prior two seasons
-    const priorSeasonFetches = await Promise.all(
-      ownerIds.flatMap(id =>
-        [String(+season-1), String(+season-2)].map(s =>
-          fetch(`${SLEEPER}/user/${id}/leagues/nfl/${s}`)
-            .then(r=>r.ok?r.json():[]).catch(()=>[])
-        )
-      )
-    );
-
-    // 3. All current-league weeks
-    const curWeeks = await Promise.all(curWeekFetches);
-
-    // Count trades in current league
-    const tradesByOwner = {};
-    for (const week of curWeeks) {
-      for (const tx of week) {
-        if (tx.type !== 'trade' || tx.status !== 'complete') continue;
-        for (const rid of (tx.roster_ids||[])) {
-          const oid = rosterOwner[rid];
-          if (oid) tradesByOwner[oid] = (tradesByOwner[oid]||0) + 1;
-        }
-      }
-    }
-
-    // For prior seasons: fetch transactions for a sample of weeks from each prior league
-    // (weeks 1-18, but we cap at 18 fetches per league to avoid explosion)
-    // Build map: ownerId -> prior leagues list
-    const priorLeaguesByOwner = {};
-    ownerIds.forEach((id, idx) => {
-      priorLeaguesByOwner[id] = priorSeasonFetches.slice(idx*2, idx*2+2).flat();
-    });
-
-    // Fetch week 1 transactions for each prior league (quick proxy for activity)
-    // then weeks 1-18 for leagues that show trades in week 1
-    const priorTxFetches = [];
-    const priorTxMeta = []; // {ownerId}
-    for (const [ownerId, leagues] of Object.entries(priorLeaguesByOwner)) {
-      for (const lg of leagues.slice(0, 6)) { // cap at 6 prior leagues per owner
-        for (let w = 1; w <= 18; w++) {
-          priorTxFetches.push(
-            fetch(`${SLEEPER}/league/${lg.league_id}/transactions/${w}`)
-              .then(r=>r.ok?r.json():[]).catch(()=>[])
-          );
-          priorTxMeta.push({ownerId, leagueId: lg.league_id});
-        }
-      }
-    }
-    const priorTxResults = await Promise.all(priorTxFetches);
+    // Count trades per owner from current league transactions (weeks 1-18)
+    // We fetch these lazily — just use tradedPicks count as a fast proxy for now
+    // and fetch full tx history in background after render
+    const tradesByOwner      = {};
     const priorTradesByOwner = {};
-    priorTxResults.forEach((week, i) => {
-      const {ownerId} = priorTxMeta[i];
-      for (const tx of week) {
-        if (tx.type !== 'trade' || tx.status !== 'complete') continue;
-        // Check if this owner was involved (consenter_ids or roster_ids)
-        const involved = (tx.consenter_ids||[]).includes(ownerId);
-        if (involved) priorTradesByOwner[ownerId] = (priorTradesByOwner[ownerId]||0) + 1;
-      }
-    });
 
-    // League counts — use current season
+    // tradedPicks already tells us who has been trading picks this season — quick signal
+    for (const pick of tradedPicks) {
+      // roster_id = current holder, previous_owner_id = prior holder — both were involved in a trade
+      for (const rid of [pick.roster_id, pick.previous_owner_id].filter(Boolean)) {
+        const oid = rosterOwner[rid];
+        if (oid) tradesByOwner[oid] = (tradesByOwner[oid]||0) + 1;
+      }
+    }
+
+    // League counts: single fetch per owner (fast, ~12 requests for a 12-team league)
     const leagueCountFetches = await Promise.all(
       ownerIds.map(id =>
         fetch(`${SLEEPER}/user/${id}/leagues/nfl/${season}`)
           .then(r=>r.ok?r.json():[]).catch(()=>[])
       )
     );
-    const leagueCounts = {};
-    const allLeaguesByOwner = {}; // store for player ownership lookup later
-    ownerIds.forEach((id,i) => {
+    const leagueCounts      = {};
+    const allLeaguesByOwner = {};
+    ownerIds.forEach((id, i) => {
       const lgs = leagueCountFetches[i] || [];
-      leagueCounts[id] = lgs.length;
+      leagueCounts[id]      = lgs.length;
       allLeaguesByOwner[id] = lgs;
     });
 
-    // Player ownership: for each player on the target owner's roster,
-    // check how many of their leagues they own that player.
-    // We'll resolve this lazily in the trade card using a separate async lookup stored in a map.
-    // For now store allLeaguesByOwner so we can query it when building trade cards.
-    // We'll compute playerOwnershipCount per (ownerId, playerName) on demand.
     window._allLeaguesByOwner = allLeaguesByOwner;
     window._sleeperPlayersMap = playersMap;
 
@@ -929,10 +869,10 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
         }
       }
       const oid = r.owner_id;
-      const tradeCount      = tradesByOwner[oid]      || 0;
-      const priorTradeCount = priorTradesByOwner[oid]  || 0;
-      const totalTrades     = tradeCount + priorTradeCount;
-      const leagueCount     = leagueCounts[oid]        || 0;
+      const tradeCount      = tradesByOwner[oid] || 0;
+      const priorTradeCount = 0; // no longer fetched separately
+      const totalTrades     = tradeCount;
+      const leagueCount     = leagueCounts[oid]  || 0;
       return {
         ownerId: oid,
         ownerName: ownerNames[oid] || oid || 'Unknown',
@@ -1659,7 +1599,7 @@ function tradeCard(t) {
           Message <span style="color:var(--accent)">${esc(t.ownerName)}</span> · offer ${esc(t.sell.name)} for ${esc(t.recv.name)}
         </div>
         <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);text-align:right;display:flex;flex-direction:column;gap:3px;">
-          ${t.leagueCount!=null?`<span>${t.leagueCount} league${t.leagueCount!==1?'s':''} · ${t.totalTrades||0} trades (${t.tradeCount||0} this season · ${t.priorTradeCount||0} prior)</span>`:''}
+          ${t.leagueCount!=null?`<span>${t.leagueCount} league${t.leagueCount!==1?'s':''} · ${t.totalTrades||0} pick trade${t.totalTrades!==1?'s':''} this season</span>`:''}
           \${(() => {
             const _k = ${"`"}ownership|\${t.sell.name}|\${t.ownerName}${"`"};
             const _c = ownershipCache[_k];
