@@ -131,6 +131,7 @@ select:hover,select:focus,input:hover,input:focus{border-color:var(--accent);}
 .pos-RB{color:#4ecdc4;border-left:2px solid #4ecdc4;}
 .pos-WR{color:#45b7d1;border-left:2px solid #45b7d1;}
 .pos-TE{color:#a78bfa;border-left:2px solid #a78bfa;}
+.pos-PICK{color:#e5b100;border-left:2px solid #e5b100;}
 .pos-PICK{color:#ffb830;border-left:2px solid #ffb830;}
 .team-pip{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);}
 .age-pip{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);}
@@ -516,9 +517,11 @@ let sleeperUserId    = null;
 let sleeperLeagues   = [];
 let selectedLeagueId = null;
 // League roster data
-let leagueRosters    = [];   // [{ownerId, ownerName, playerNames: Set<normName>}]
-let ownerByPlayer    = {};   // normName -> {ownerName, ownerId}
-let leagueLoaded     = false;
+let leagueRosters      = [];   // [{ownerId, ownerName, playerNames: Set<normName>}]
+let ownerByPlayer      = {};   // normName -> {ownerName, ownerId}
+let leagueLoaded       = false;
+let ownershipCache     = {};   // key: "playerName|ownerName" -> {count, total, text, color}
+let pickPool           = [];   // pick assets shaped like merged entries, rebuilt on league load
 
 // ── TIER MAPS ─────────────────────────────────────────────────
 // TAT tier -> pick equivalent (× a 2027 round 1 base pick)
@@ -703,9 +706,16 @@ async function selectLeague(leagueId, leagueName) {
 
 async function loadLeagueRosters(leagueId, playersMap, bar) {
   try {
-    const rRes = await fetch(`${SLEEPER}/league/${leagueId}/rosters`);
+    const [rRes, picksRes, leagueRes] = await Promise.all([
+      fetch(`${SLEEPER}/league/${leagueId}/rosters`),
+      fetch(`${SLEEPER}/league/${leagueId}/traded_picks`),
+      fetch(`${SLEEPER}/league/${leagueId}`),
+    ]);
     if (!rRes.ok) return;
-    const rosters = await rRes.json();
+    const rosters      = await rRes.json();
+    const tradedPicks  = picksRes.ok  ? await picksRes.json()  : [];
+    const leagueInfo   = leagueRes.ok ? await leagueRes.json() : {};
+    const draftRounds  = leagueInfo?.settings?.draft_rounds || 3;
 
     // Fetch owner display names in parallel
     const ownerIds = [...new Set(rosters.map(r=>r.owner_id).filter(Boolean))];
@@ -715,9 +725,82 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     const ownerNames = {};
     userFetches.forEach(u => { if (u) ownerNames[u.user_id] = u.display_name || u.username || u.user_id; });
 
-    // Build roster_id -> owner_id map
-    const rosterOwner = {};
-    rosters.forEach(r => { if (r.owner_id) rosterOwner[r.roster_id] = r.owner_id; });
+    // Build roster_id -> owner_id map and reverse
+    const rosterOwner  = {};  // roster_id -> owner_id
+    const ownerRoster  = {};  // owner_id  -> roster_id
+    rosters.forEach(r => {
+      if (r.owner_id) { rosterOwner[r.roster_id] = r.owner_id; ownerRoster[r.owner_id] = r.roster_id; }
+    });
+
+    // ── Reconstruct pick ownership ──────────────────────────────
+    // Future seasons to consider: current season + next 2
+    const curSeason  = parseInt(document.getElementById('sleeper-season').value);
+    const pickSeasons = [curSeason, curSeason+1, curSeason+2];
+
+    // Start: every roster owns their own picks for future seasons
+    // picksByRoster: roster_id -> Set of pick keys "season_round_originalRosterId"
+    const picksByRoster = {};
+    rosters.forEach(r => {
+      picksByRoster[r.roster_id] = new Set();
+      for (const s of pickSeasons) {
+        for (let round = 1; round <= draftRounds; round++) {
+          picksByRoster[r.roster_id].add(`${s}_${round}_${r.roster_id}`);
+        }
+      }
+    });
+
+    // Apply traded picks: move picks from original owner to current owner
+    for (const pick of tradedPicks) {
+      const season = parseInt(pick.season);
+      if (!pickSeasons.includes(season)) continue;
+      const key = `${season}_${pick.round}_${pick.roster_id}`; // roster_id here = original team
+      // Remove from original owner
+      const origRosterId = pick.roster_id; // whose slot it is
+      // Find who originally had it (the original roster)
+      if (picksByRoster[origRosterId]) picksByRoster[origRosterId].delete(key);
+      // Add to current owner
+      const curRosterId = pick.owner_id; // owner_id in traded_picks = current holder... 
+      // NOTE: Sleeper traded_picks field names are confusing:
+      //   roster_id = the team whose draft SLOT this is (original team)  
+      //   owner_id  = who CURRENTLY owns the pick
+      //   previous_owner_id = who had it before the last trade
+      if (picksByRoster[curRosterId]) picksByRoster[curRosterId].add(key);
+    }
+
+    // Build pick label: "2027 R1 (via [ownerName])" or "2026 Pick 1.XX" if slot known
+    // Store as pseudo-players in a picksByOwner map: owner_id -> [{name, pos, tatRank, ...}]
+    const pickAssets = {}; // owner_id -> array of pick objects
+    rosters.forEach(r => { pickAssets[r.owner_id] = []; });
+
+    for (const [rId, pickSet] of Object.entries(picksByRoster)) {
+      const ownerId = rosterOwner[rId];
+      if (!ownerId || !pickAssets[ownerId]) continue;
+      for (const key of pickSet) {
+        const [season, round, origRosterId] = key.split('_');
+        const origOwner = rosterOwner[parseInt(origRosterId)];
+        const origName  = origOwner ? (ownerNames[origOwner]||'?') : '?';
+        // Pick label — try to match TAT naming
+        // TAT format: "2026 ROOKIE 1.01" for specific slot, or we use "2026 Pick 1" for unknown
+        const pickLabel = origRosterId === rId
+          ? `${season} Pick ${round}` // own pick
+          : `${season} Pick ${round} (via ${origName})`; // traded pick
+        const normLabel = `${season} pick ${round}`; // for TAT matching (slot unknown = partial match)
+        pickAssets[ownerId].push({
+          name:    pickLabel,
+          normKey: normLabel,
+          pos:     'PICK',
+          season:  parseInt(season),
+          round:   parseInt(round),
+          origRosterId: parseInt(origRosterId),
+          isOwnPick: origRosterId === rId,
+        });
+      }
+    }
+    // Sort each owner's picks by season then round
+    for (const picks of Object.values(pickAssets)) {
+      picks.sort((a,b)=> a.season!==b.season ? a.season-b.season : a.round-b.round);
+    }
+    window._pickAssets = pickAssets;
 
     // Fetch trade history across current + 2 prior seasons for a reliable read
     const season = document.getElementById('sleeper-season').value;
@@ -838,21 +921,32 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
       };
     });
 
-    // Build reverse lookup: normName -> owner info
+    // Build reverse lookup: normName -> owner info (players + picks)
     ownerByPlayer = {};
     for (const roster of leagueRosters) {
       for (const name of roster.playerNames) {
         ownerByPlayer[name] = {
-          ownerName:        roster.ownerName,
-          isMe:             roster.isMe,
-          tradeCount:       roster.tradeCount,
-          priorTradeCount:  roster.priorTradeCount,
-          totalTrades:      roster.totalTrades,
-          leagueCount:      roster.leagueCount,
+          ownerName: roster.ownerName, isMe: roster.isMe,
+          tradeCount: roster.tradeCount, priorTradeCount: roster.priorTradeCount,
+          totalTrades: roster.totalTrades, leagueCount: roster.leagueCount,
+        };
+      }
+      // Add picks as pseudo-entries so they appear in trade suggestions
+      const picks = pickAssets[roster.ownerId] || [];
+      for (const pick of picks) {
+        // Use normKey as the lookup key (e.g. "2027 pick 1")
+        // Also register the full label for display
+        ownerByPlayer[pick.name.toLowerCase()] = {
+          ownerName: roster.ownerName, isMe: roster.isMe,
+          tradeCount: roster.tradeCount, priorTradeCount: roster.priorTradeCount,
+          totalTrades: roster.totalTrades, leagueCount: roster.leagueCount,
+          isPick: true, pickData: pick,
         };
       }
     }
+    ownershipCache = {}; // clear stale cache for new league
     leagueLoaded = true;
+    buildPickPool();
     if (bar) { bar.className='sbar ok'; bar.textContent=`✓ League loaded · trade activity fetched`; }
     renderAll();
   } catch(e) {
@@ -960,6 +1054,37 @@ function isMine(p) {
   if (sleeperNames.size>0) return sleeperNames.has(norm(p.name));
   return p.mine||false;
 }
+function buildPickPool() {
+  pickPool = [];
+  if (!window._pickAssets || !leagueRosters.length) return;
+  for (const roster of leagueRosters) {
+    const picks = window._pickAssets[roster.ownerId] || [];
+    for (const pick of picks) {
+      const tatMatches = tatData.filter(t =>
+        t.pos === 'PICK' &&
+        t.name.startsWith(String(pick.season)) &&
+        (() => { const m = t.name.match(/pick\s+(\d)/i); return m && parseInt(m[1]) === pick.round; })()
+      );
+      tatMatches.sort((a,b) => a.tatRank - b.tatRank);
+      const repTat    = tatMatches.length ? tatMatches[Math.floor(tatMatches.length / 2)] : null;
+      const tatRank   = repTat?.tatRank ?? null;
+      const fcEntry   = repTat ? (fcMap[norm(repTat.name)] || null) : null;
+      const fcRank    = fcEntry?.fcRank ?? null;
+      const rankDelta = (fcRank && tatRank) ? fcRank - tatRank : null;
+      pickPool.push({
+        name: pick.name, pos: 'PICK', team: '',
+        tatRank, fcRank, fcValue: fcEntry?.fcValue ?? null, rankDelta,
+        mine: roster.isMe, ownerName: roster.ownerName, ownerIsMe: roster.isMe,
+        tradeCount: roster.tradeCount, priorTradeCount: roster.priorTradeCount,
+        totalTrades: roster.totalTrades, leagueCount: roster.leagueCount,
+        isPick: true, pickSeason: pick.season, pickRound: pick.round,
+        isOwnPick: pick.isOwnPick, tierLabel: repTat?.tierLabel ?? `R${pick.round}`,
+      });
+    }
+  }
+}
+
+// Also rebuild pickPool when TAT/FC data refreshes (so roster tab shows picks immediately)
 function mergeAndRender() {
   if (!fcData.length&&!tatData.length) return;
   const fcMap={};
@@ -1008,7 +1133,8 @@ function renderAll() {
 
   const buys  = wd.filter(p=>!p.mine && p.rankDelta >  thresh).sort((a,b)=>b.rankDelta-a.rankDelta);
   const sells = wd.filter(p=>!p.mine && p.rankDelta < -thresh).sort((a,b)=>a.rankDelta-b.rankDelta);
-  const myPlayers = merged.filter(p=>p.mine);
+  const myPicks   = pickPool.filter(p=>p.mine);
+  const myPlayers = [...merged.filter(p=>p.mine), ...myPicks];
   const mySells = myPlayers.filter(p=>p.rankDelta!==null&&p.rankDelta<-thresh).sort((a,b)=>a.rankDelta-b.rankDelta);
   const myHolds = myPlayers.filter(p=>p.rankDelta===null||Math.abs(p.rankDelta)<=thresh).sort((a,b)=>(a.tatRank||999)-(b.tatRank||999));
   const myKeeps = myPlayers.filter(p=>p.rankDelta!==null&&p.rankDelta> thresh).sort((a,b)=>b.rankDelta-a.rankDelta);
@@ -1258,12 +1384,15 @@ function renderTradesTab(maxAbs, thresh) {
   }
   empty.style.display = 'none'; inner.style.display = 'block';
 
-  // My sell candidates: I own them, market values higher than TAT (rankDelta negative = FC rank better than TAT)
-  const mySells = merged.filter(p => p.mine && p.rankDelta !== null && p.rankDelta < -thresh)
-    .sort((a,b) => a.rankDelta - b.rankDelta); // most overvalued first (most negative delta)
+  // ── Build trade universe: merged players + picks ──────────
+  const universe   = [...merged, ...pickPool];
 
-  // Buy targets available in league (not mine, TAT ranks higher than FC, someone owns them)
-  const leagueBuys = merged.filter(p => !p.mine && p.rankDelta !== null && p.rankDelta > thresh && p.ownerName)
+  // My sell candidates: I own them, market values higher than TAT
+  const mySells = universe.filter(p => p.mine && p.rankDelta !== null && p.rankDelta < -thresh)
+    .sort((a,b) => a.rankDelta - b.rankDelta);
+
+  // Buy targets: not mine, TAT ranks higher than FC, someone owns them
+  const leagueBuys = universe.filter(p => !p.mine && p.rankDelta !== null && p.rankDelta > thresh && p.ownerName)
     .sort((a,b) => b.rankDelta - a.rankDelta);
 
   // For each of my sells, find best available buy targets from each owner
@@ -1339,51 +1468,55 @@ function renderTradesTab(maxAbs, thresh) {
 }
 
 async function checkPlayerOwnership(trades) {
-  // For each trade, check how many of the target owner's leagues contain the sell player
   const seen = new Set();
   for (const t of trades) {
-    const key = `${t.sell.name}|${t.ownerName}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
+    const cacheKey = `ownership|${t.sell.name}|${t.ownerName}`;
+    if (seen.has(cacheKey)) continue;
+    seen.add(cacheKey);
 
-    const elemId = `ownership-${t.sell.name.replace(/\s+/g,'_')}_${t.ownerName.replace(/\s+/g,'_')}`;
-    const elem = document.getElementById(elemId);
-    if (!elem) continue;
+    // Already resolved — nothing to do, was rendered inline from cache
+    if (ownershipCache[cacheKey]) continue;
 
     const ownerId = leagueRosters.find(r=>r.ownerName===t.ownerName)?.ownerId;
-    if (!ownerId) { elem.textContent=''; continue; }
+    const ownerLeagues = ownerId ? (window._allLeaguesByOwner[ownerId]||[]) : [];
+    const playersMap   = window._sleeperPlayersMap;
 
-    const ownerLeagues = window._allLeaguesByOwner[ownerId] || [];
-    if (!ownerLeagues.length) { elem.textContent=''; continue; }
-
-    // Fetch rosters for each of their leagues and check for the sell player
     let ownerCount = 0;
-    const checked = await Promise.all(
-      ownerLeagues.slice(0,10).map(lg =>
-        fetch(`${SLEEPER}/league/${lg.league_id}/rosters`)
-          .then(r=>r.ok?r.json():[]).catch(()=>[])
-      )
-    );
-    for (const rosters of checked) {
-      const myRoster = rosters.find(r=>r.owner_id===ownerId);
-      if (!myRoster) continue;
-      // Check if sell player appears on their roster
-      const playersMap = window._sleeperPlayersMap;
-      for (const pid of (myRoster.players||[])) {
-        const p = playersMap[pid];
-        if (!p) continue;
-        const pname = norm(`${p.first_name||''} ${p.last_name||''}`.trim());
-        if (pname === norm(t.sell.name)) { ownerCount++; break; }
+    const sliced = ownerLeagues.slice(0,10);
+
+    if (ownerId && sliced.length && playersMap) {
+      const checked = await Promise.all(
+        sliced.map(lg =>
+          fetch(`${SLEEPER}/league/${lg.league_id}/rosters`)
+            .then(r=>r.ok?r.json():[]).catch(()=>[])
+        )
+      );
+      for (const rosters of checked) {
+        const myRoster = rosters.find(r=>r.owner_id===ownerId);
+        if (!myRoster) continue;
+        for (const pid of (myRoster.players||[])) {
+          const p = playersMap[pid];
+          if (!p) continue;
+          if (norm(`${p.first_name||''} ${p.last_name||''}`.trim()) === norm(t.sell.name)) {
+            ownerCount++; break;
+          }
+        }
       }
     }
 
-    const total = ownerLeagues.slice(0,10).length;
-    if (elem) {
-      elem.style.color = ownerCount >= 3 ? 'var(--red)' : ownerCount >= 1 ? 'var(--amber)' : 'var(--accent)';
-      elem.textContent = ownerCount > 0
-        ? `owns ${t.sell.name} in ${ownerCount}/${total} leagues`
-        : `doesn't own ${t.sell.name} in any checked leagues`;
-    }
+    const total = sliced.length;
+    const color = ownerCount >= 3 ? 'var(--red)' : ownerCount >= 1 ? 'var(--amber)' : 'var(--accent)';
+    const text  = ownerCount > 0
+      ? `owns ${t.sell.name} in ${ownerCount}/${total} of their leagues`
+      : `doesn't own ${t.sell.name} in any of their leagues`;
+
+    // Store in cache so re-renders pick it up inline
+    ownershipCache[cacheKey] = { color, text };
+
+    // Also update the live DOM element if it's still there
+    const elemId = `ownership-${t.sell.name.replace(/\s+/g,'_')}_${t.ownerName.replace(/\s+/g,'_')}`;
+    const elem   = document.getElementById(elemId);
+    if (elem) { elem.style.color = color; elem.textContent = text; }
   }
 }
 
@@ -1406,12 +1539,12 @@ function tradeCard(t) {
       <div class="tcard-pname">${esc(t.sell.name)}</div>
       <div class="tcard-pmeta" style="margin-top:3px">
         <span class="pos-pip pos-${t.sell.pos}">${t.sell.pos}</span>
-        <span class="team-pip">${esc(t.sell.team||'—')}</span>
+        ${t.sell.team ? `<span class="team-pip">${esc(t.sell.team)}</span>` : ''}
         <span class="owner-pill you">★ yours</span>
       </div>
       <div style="margin-top:10px;display:flex;gap:12px;font-family:'DM Mono',monospace;font-size:.68rem;">
-        <span>TAT <span style="color:var(--text2)">#${t.sell.tatRank||'—'}</span></span>
-        <span>FC <span style="color:var(--text2)">#${t.sell.fcRank||'—'}</span></span>
+        <span>TAT <span style="color:var(--text2)">${t.sell.tatRank ? '#'+t.sell.tatRank : '—'}</span></span>
+        <span>FC <span style="color:var(--text2)">${t.sell.fcRank ? '#'+t.sell.fcRank : '—'}</span></span>
       </div>
       <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red);margin-top:4px">
         FC ranks ${Math.abs(sellDelta)} spots higher than TAT → sell high
@@ -1432,12 +1565,12 @@ function tradeCard(t) {
       <div class="tcard-pname">${esc(t.recv.name)}</div>
       <div class="tcard-pmeta" style="margin-top:3px;justify-content:flex-end">
         <span class="owner-pill">${esc(t.ownerName)}</span>
-        <span class="team-pip">${esc(t.recv.team||'—')}</span>
+        ${t.recv.team ? `<span class="team-pip">${esc(t.recv.team)}</span>` : ''}
         <span class="pos-pip pos-${t.recv.pos}">${t.recv.pos}</span>
       </div>
       <div style="margin-top:10px;display:flex;gap:12px;font-family:'DM Mono',monospace;font-size:.68rem;justify-content:flex-end">
-        <span>TAT <span style="color:var(--text2)">#${t.recv.tatRank||'—'}</span></span>
-        <span>FC <span style="color:var(--text2)">#${t.recv.fcRank||'—'}</span></span>
+        <span>TAT <span style="color:var(--text2)">${t.recv.tatRank ? '#'+t.recv.tatRank : '—'}</span></span>
+        <span>FC <span style="color:var(--text2)">${t.recv.fcRank ? '#'+t.recv.fcRank : '—'}</span></span>
       </div>
       <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--accent);margin-top:4px;text-align:right">
         TAT ranks ${recvDelta} spots higher than FC → owner may sell cheap
@@ -1463,9 +1596,13 @@ function tradeCard(t) {
         </div>
         <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);text-align:right;display:flex;flex-direction:column;gap:3px;">
           ${t.leagueCount!=null?`<span>${t.leagueCount} league${t.leagueCount!==1?'s':''} · ${t.totalTrades||0} trades (${t.tradeCount||0} this season · ${t.priorTradeCount||0} prior)</span>`:''}
-          <span id="ownership-${t.sell.name.replace(/\s+/g,'_')}_${t.ownerName.replace(/\s+/g,'_')}" style="color:var(--text3)">
-            checking ownership…
-          </span>
+          \${(() => {
+            const _k = ${"`"}ownership|\${t.sell.name}|\${t.ownerName}${"`"};
+            const _c = ownershipCache[_k];
+            const _id = ${"`"}ownership-\${t.sell.name.replace(/\s+/g,'_')}_\${t.ownerName.replace(/\s+/g,'_')}${"`"};
+            if (_c) return ${"`"}<span id="\${_id}" style="color:\${_c.color}">\${_c.text}</span>${"`"};
+            return ${"`"}<span id="\${_id}" style="color:var(--text3)">checking ownership…</span>${"`"};
+          })()}
         </div>
       </div>
     </div>
