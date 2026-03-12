@@ -617,20 +617,20 @@ async function selectLeague(leagueId, leagueName) {
 
 // ── TAT CSV ───────────────────────────────────────────────────
 function parseTierKey(cell) {
-  const s=cell.toLowerCase().replace(/[""]/g,'"');
-  if (/half.?tier|half\s*tier/i.test(cell)) return '__HALF__';
-  if (s.includes('3+'))                         return '3+';
-  if (s.includes('2.5')||s.includes('2.5-3'))   return '2.5-3';
-  if (s.includes('2-2.5'))                      return '2-2.5';
-  if (s.includes('1.5')||s.includes('1.5-2'))   return '1.5-2';
-  if (s.includes('1.25'))                       return '1.25';
-  if ((s.includes('early')||s.includes('"early"'))&&s.includes('3'))            return 'early3';
-  if ((s.includes('base') ||s.includes('"base"')) &&s.includes('3'))            return 'base3';
-  if ((s.includes('late') ||s.includes('"late"')) &&s.includes('2')&&!s.includes('3')) return 'late2';
-  if ((s.includes('early')||s.includes('"early"'))&&s.includes('2')&&!s.includes('3')) return 'early2';
-  if ((s.includes('base') ||s.includes('"base"')) &&s.includes('2')&&!s.includes('3')) return 'base2';
-  if ((s.includes('late') ||s.includes('"late"')) &&(s.includes('0.75')||(s.includes('1')&&!s.includes('2')&&!s.includes('3')))) return 'late1';
-  if (s.includes('= 1 ')||s.match(/value\s*=\s*1\b/)||s.includes('1 (+/-)')) return '1';
+  const s = cell.toLowerCase().replace(/[\u201c\u201d""]/g, '"');
+  if (/half[\s-]?tier/i.test(cell)) return '__HALF__';
+  if (/value\s*=\s*3\+/.test(s) || /\b3\+\s*base/i.test(s)) return '3+';
+  if (/2\.5\s*-\s*3/.test(s))    return '2.5-3';
+  if (/2\s*-\s*2\.5/.test(s))    return '2-2.5';
+  if (/1\.5\s*-\s*2/.test(s))    return '1.5-2';
+  if (/1\.25/.test(s))           return '1.25';
+  if (/"?early"?\s+3\b/.test(s)) return 'early3';
+  if (/"?base"?\s+3\b/.test(s))  return 'base3';
+  if (/"?late"?\s+2\b/.test(s))  return 'late2';
+  if (/"?early"?\s+2\b/.test(s)) return 'early2';
+  if (/"?base"?\s+2\b/.test(s))  return 'base2';
+  if (/"?late"?\s+1\b/.test(s) || /0\.75\s*base/i.test(s)) return 'late1';
+  if (/value\s*=\s*1\b/.test(s)) return '1';
   return null;
 }
 function splitCSV(line) {
@@ -644,22 +644,22 @@ function parseTATcsv(text,filename) {
   let headerIdx=-1,headers=[];
   for(let i=0;i<Math.min(10,lines.length);i++){
     const cols=splitCSV(lines[i]);
-    if(cols[0].toLowerCase()==='rank'&&cols.some(c=>c.toLowerCase()==='player')){headerIdx=i;headers=cols.map(c=>c.toLowerCase().trim());break;}
+    if(cols[0].toLowerCase()==='rank'&&cols.some(c=>c.toLowerCase()==='player')){
+      headerIdx=i;headers=cols.map(c=>c.toLowerCase().trim());break;
+    }
   }
   if(headerIdx===-1){bar.className='sbar err';bar.textContent='✗ Could not find header row.';return false;}
   const nameIdx=headers.findIndex(h=>h==='player');
   const posIdx =headers.findIndex(h=>h==='position');
   const teamIdx=headers.findIndex(h=>h==='team');
   const mineIdx=headers.findIndex(h=>['mine','my','roster','myplayer','owned'].includes(h));
-  tatData=[];let curTier=null;let halfCount=0;let players=0;
+  tatData=[];let curTier=null;let players=0;
   for(let i=headerIdx+1;i<lines.length;i++){
     const line=lines[i].trim();if(!line)continue;
     const cols=splitCSV(line);const first=cols[0].trim();
-    if(/^value\s*=/i.test(first)||/half.?tier/i.test(first)){
+    if(/^value\s*=/i.test(first)||/half[\s-]?tier/i.test(first)){
       const k=parseTierKey(first);
       if(k==='__HALF__'){
-        // Half-tier = same label as tier above, score just below it
-        // curTier already holds the tier above; mark as half by storing a derived key
         curTier = curTier ? curTier+'_half' : curTier;
       } else if(k){curTier=k;}
       continue;
@@ -673,12 +673,11 @@ function parseTATcsv(text,filename) {
     const isPick=/\d{4}\s+rookie/i.test(name)||(/rookie/i.test(name)&&/\d/.test(name));
     // Resolve tier -> pick equivalent value and display label
     let resolvedTierKey   = curTier;
-    let resolvedTierVal   = 0;    // sort score (pickVal * 100)
-    let resolvedPickVal   = null; // pick equivalent, e.g. 1.75 = 1.75× 2027 R1
+    let resolvedTierVal   = 0;
+    let resolvedPickVal   = null;
     let resolvedTierLabel = '—';
     if (curTier) {
       if (curTier.endsWith('_half')) {
-        // Half-tier: midpoint in pick terms between tier above and tier below
         const baseKey     = curTier.replace('_half','');
         const baseIdx     = TIER_ORDER.indexOf(baseKey);
         const nextKey     = baseIdx >= 0 && baseIdx+1 < TIER_ORDER.length ? TIER_ORDER[baseIdx+1] : null;
