@@ -1463,37 +1463,30 @@ function renderTradesTab(maxAbs, thresh) {
   // ── Trade generation ──────────────────────────────────────────
   const trades = [];
   const seen   = new Set();
-  const STRONG_TAT_MIN = thresh * 2.5; // fallback rank threshold (buy-motivated rank check)
+  const STRONG_TAT_MIN = thresh * 2.5; // buy-motivated trades need a bigger TAT upgrade
 
   function addTrade(sell, recv, ownerName, motivation) {
     const key = norm(sell.name) + '|' + norm(recv.name);
     if (seen.has(key)) return;
     seen.add(key);
 
-    // TAT tier value gain (in 1st-pick units) — non-linear, scales correctly at top
-    const sellTierVal = sell.tierVal ?? 0;
-    const recvTierVal = recv.tierVal ?? 0;
-    const tierGain    = recvTierVal - sellTierVal; // positive = upgrade
-    if (tierGain <= 0) return;
-
-    // Raw rank improvement as secondary context
     const sellRankProxy  = sell.tatRank ?? sell.fcRank ?? 999;
     const recvRankProxy  = recv.tatRank ?? recv.fcRank ?? 999;
     const tatImprovement = sellRankProxy - recvRankProxy;
+    if (tatImprovement <= 0) return;
 
     const fcEdgeForThem = (recv.fcRank||999) - (sell.fcRank||999);
-
-    // Strong: tier jump ≥ 0.5 1sts for sell-motivated, ≥ 0.75 for buy-motivated
+    const activityBonus = (recv.totalTrades||0) >= 6 ? 15 : (recv.totalTrades||0) >= 3 ? 5 : 0;
     const strong = motivation === 'sell'
-      ? tierGain >= 0.5 && Math.abs(sell.rankDelta||0) > thresh * 1.5
-      : tierGain >= 0.75;
+      ? tatImprovement > 20 && Math.abs(sell.rankDelta||0) > thresh * 1.5
+      : tatImprovement > STRONG_TAT_MIN; // buy-motivated: only strong if huge upgrade
 
     trades.push({ sell, recv, ownerName, motivation,
       tradeCount:      recv.tradeCount,
       priorTradeCount: recv.priorTradeCount,
       totalTrades:     recv.totalTrades,
       leagueCount:     recv.leagueCount,
-      tierGain, tatImprovement, fcEdgeForThem, strong });
+      tatImprovement, fcEdgeForThem, strong });
   }
 
   // ── Sell-motivated: I have FC-overvalued asset, swap for TAT-undervalued ──
@@ -1524,11 +1517,12 @@ function renderTradesTab(maxAbs, thresh) {
     // Find my assets that: FC rates higher than target (they win FC), but TAT rates target higher
     const myOffers = universe.filter(p => {
       if (!p.mine) return false;
-      const myTierVal     = p.tierVal     ?? 0;
-      const targetTierVal = target.tierVal ?? 0;
-      if (targetTierVal <= myTierVal) return false;           // must be tier upgrade for me
+      const myTatRank     = p.tatRank    ?? p.fcRank    ?? 999;
+      const targetTatRank = target.tatRank ?? target.fcRank ?? 999;
+      if (targetTatRank >= myTatRank) return false;           // must be TAT upgrade for me
       if ((p.fcRank||999) > (target.fcRank||999)) return false; // they must win on FC
-      return (targetTierVal - myTierVal) >= 0.33;             // at least ~1 2nd pick equivalent
+      const tatUpgrade = myTatRank - targetTatRank;
+      return tatUpgrade >= STRONG_TAT_MIN;                    // require a meaningful upgrade
     }).sort((a,b) => {
       // Best offer: gives them most FC value while costing me least TAT
       const aFcEdge  = (target.fcRank||999) - (a.fcRank||999);
@@ -1541,8 +1535,8 @@ function renderTradesTab(maxAbs, thresh) {
     }
   }
 
-  // Sort by TAT tier gain descending (1st-pick units), tiebreak by raw rank improvement
-  trades.sort((a,b) => b.tierGain !== a.tierGain ? b.tierGain - a.tierGain : b.tatImprovement - a.tatImprovement);
+  // Sort by TAT improvement descending
+  trades.sort((a,b) => b.tatImprovement - a.tatImprovement);
 
   document.getElementById('badge-trades').textContent = trades.length || '—';
 
@@ -1663,9 +1657,9 @@ function tradeCard(t) {
     <!-- ARROW -->
     <div class="tcard-arrow">
       <div class="tcard-swap">⇄</div>
-      <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">TAT value gain</div>
-      <div class="tcard-net up">+${t.tierGain.toFixed(2)}</div>
-      <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);text-align:center">1sts equivalent</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">TAT upgrade</div>
+      <div class="tcard-net up">+${t.tatImprovement}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);text-align:center">rank spots</div>
     </div>
 
     <!-- RECEIVE -->
@@ -1691,8 +1685,8 @@ function tradeCard(t) {
       font-family:'DM Mono',monospace;font-size:.62rem;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <div style="color:var(--text3)">
         <span style="color:var(--accent);letter-spacing:1px;font-size:.55rem">YOU WIN ON TAT</span><br>
-        ${esc(t.recv.name)} [${esc(t.recv.tierLabel||'?')}] vs ${esc(t.sell.tierLabel||'?')} —
-        <span style="color:var(--accent)">+${t.tierGain.toFixed(2)} 1sts · +${t.tatImprovement} rank spots</span>
+        ${esc(t.recv.name)} is TAT #${t.recv.tatRank || '—'} vs your TAT #${t.sell.tatRank || '—'} —
+        <span style="color:var(--accent)">+${t.tatImprovement} spots</span>
       </div>
       <div style="color:var(--text3);text-align:right">
         ${t.motivation === 'buy'
