@@ -706,6 +706,7 @@ async function selectLeague(leagueId, leagueName) {
 }
 
 async function loadLeagueRosters(leagueId, playersMap, bar) {
+  console.log('[loadLeagueRosters] starting for league:', leagueId);
   try {
     const [rRes, picksRes, leagueRes, draftsRes] = await Promise.all([
       fetch(`${SLEEPER}/league/${leagueId}/rosters`),
@@ -713,12 +714,14 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
       fetch(`${SLEEPER}/league/${leagueId}`),
       fetch(`${SLEEPER}/league/${leagueId}/drafts`),
     ]);
-    if (!rRes.ok) return;
+    console.log('[loadLeagueRosters] fetches done. rRes.ok:', rRes.ok, 'picksRes.ok:', picksRes.ok, 'draftsRes.ok:', draftsRes.ok);
+    if (!rRes.ok) { console.error('[loadLeagueRosters] rosters fetch failed'); return; }
     const rosters      = await rRes.json();
     const tradedPicks  = picksRes.ok  ? await picksRes.json()  : [];
     const leagueInfo   = leagueRes.ok ? await leagueRes.json() : {};
     const draftRounds  = leagueInfo?.settings?.draft_rounds || 3;
     const drafts       = draftsRes.ok ? await draftsRes.json() : [];
+    console.log('[loadLeagueRosters] rosters:', rosters.length, '| tradedPicks:', tradedPicks.length, '| drafts:', drafts.length);
 
     // Build slotByRosterBySeason: season -> roster_id -> pick_slot
     // slot_to_roster_id maps slot (string) -> roster_id for each draft
@@ -916,7 +919,17 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     if (bar) { bar.className='sbar ok'; bar.textContent=`✓ League loaded · trade activity fetched`; }
     renderAll();
   } catch(e) {
-    console.warn('Trade finder: could not load league rosters', e);
+    console.error('[loadLeagueRosters] FAILED:', e);
+    if (bar) {
+      bar.className = 'sbar err';
+      bar.textContent = `✗ League load failed: ${e.message}`;
+    }
+    // Show error in debug panel too
+    const dbEl = document.getElementById('pick-debug');
+    if (dbEl) {
+      dbEl.style.display = 'block';
+      dbEl.innerHTML = `<div style="color:var(--red)">ERROR in loadLeagueRosters: ${esc(String(e))}</div>`;
+    }
   }
 }
 
