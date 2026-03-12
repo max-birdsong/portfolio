@@ -719,14 +719,36 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     const rosterOwner = {};
     rosters.forEach(r => { if (r.owner_id) rosterOwner[r.roster_id] = r.owner_id; });
 
-    // Fetch trade transactions for all 18 weeks in parallel
-    const weekFetches = Array.from({length:18},(_,i)=>
+    // Fetch trade history across current + 2 prior seasons for a reliable read
+    const season = document.getElementById('sleeper-season').value;
+    const seasons = [season, String(+season-1), String(+season-2)];
+
+    // For prior seasons we need to find each owner's leagues and pull transactions from those too.
+    // Strategy: fetch current league transactions (all 18 weeks) + each owner's leagues for prior
+    // seasons, then count completed trades across all of them.
+
+    // 1. Current league — all weeks
+    const curWeekFetches = Array.from({length:18},(_,i)=>
       fetch(`${SLEEPER}/league/${leagueId}/transactions/${i+1}`)
         .then(r=>r.ok?r.json():[]).catch(()=>[])
     );
-    const allWeeks = await Promise.all(weekFetches);
-    const tradesByOwner = {}; // owner_id -> trade count
-    for (const week of allWeeks) {
+
+    // 2. Each owner's leagues for prior two seasons
+    const priorSeasonFetches = await Promise.all(
+      ownerIds.flatMap(id =>
+        [String(+season-1), String(+season-2)].map(s =>
+          fetch(`${SLEEPER}/user/${id}/leagues/nfl/${s}`)
+            .then(r=>r.ok?r.json():[]).catch(()=>[])
+        )
+      )
+    );
+
+    // 3. All current-league weeks
+    const curWeeks = await Promise.all(curWeekFetches);
+
+    // Count trades in current league
+    const tradesByOwner = {};
+    for (const week of curWeeks) {
       for (const tx of week) {
         if (tx.type !== 'trade' || tx.status !== 'complete') continue;
         for (const rid of (tx.roster_ids||[])) {
@@ -736,8 +758,42 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
       }
     }
 
-    // Fetch league counts for each owner in parallel (how many leagues are they in this season)
-    const season = document.getElementById('sleeper-season').value;
+    // For prior seasons: fetch transactions for a sample of weeks from each prior league
+    // (weeks 1-18, but we cap at 18 fetches per league to avoid explosion)
+    // Build map: ownerId -> prior leagues list
+    const priorLeaguesByOwner = {};
+    ownerIds.forEach((id, idx) => {
+      priorLeaguesByOwner[id] = priorSeasonFetches.slice(idx*2, idx*2+2).flat();
+    });
+
+    // Fetch week 1 transactions for each prior league (quick proxy for activity)
+    // then weeks 1-18 for leagues that show trades in week 1
+    const priorTxFetches = [];
+    const priorTxMeta = []; // {ownerId}
+    for (const [ownerId, leagues] of Object.entries(priorLeaguesByOwner)) {
+      for (const lg of leagues.slice(0, 6)) { // cap at 6 prior leagues per owner
+        for (let w = 1; w <= 18; w++) {
+          priorTxFetches.push(
+            fetch(`${SLEEPER}/league/${lg.league_id}/transactions/${w}`)
+              .then(r=>r.ok?r.json():[]).catch(()=>[])
+          );
+          priorTxMeta.push({ownerId, leagueId: lg.league_id});
+        }
+      }
+    }
+    const priorTxResults = await Promise.all(priorTxFetches);
+    const priorTradesByOwner = {};
+    priorTxResults.forEach((week, i) => {
+      const {ownerId} = priorTxMeta[i];
+      for (const tx of week) {
+        if (tx.type !== 'trade' || tx.status !== 'complete') continue;
+        // Check if this owner was involved (consenter_ids or roster_ids)
+        const involved = (tx.consenter_ids||[]).includes(ownerId);
+        if (involved) priorTradesByOwner[ownerId] = (priorTradesByOwner[ownerId]||0) + 1;
+      }
+    });
+
+    // League counts — use current season
     const leagueCountFetches = await Promise.all(
       ownerIds.map(id =>
         fetch(`${SLEEPER}/user/${id}/leagues/nfl/${season}`)
@@ -745,7 +801,20 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
       )
     );
     const leagueCounts = {};
-    ownerIds.forEach((id,i) => { leagueCounts[id] = leagueCountFetches[i].length || 0; });
+    const allLeaguesByOwner = {}; // store for player ownership lookup later
+    ownerIds.forEach((id,i) => {
+      const lgs = leagueCountFetches[i] || [];
+      leagueCounts[id] = lgs.length;
+      allLeaguesByOwner[id] = lgs;
+    });
+
+    // Player ownership: for each player on the target owner's roster,
+    // check how many of their leagues they own that player.
+    // We'll resolve this lazily in the trade card using a separate async lookup stored in a map.
+    // For now store allLeaguesByOwner so we can query it when building trade cards.
+    // We'll compute playerOwnershipCount per (ownerId, playerName) on demand.
+    window._allLeaguesByOwner = allLeaguesByOwner;
+    window._sleeperPlayersMap = playersMap;
 
     leagueRosters = rosters.map(r => {
       const playerNames = new Set();
@@ -757,15 +826,15 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
         }
       }
       const oid = r.owner_id;
-      const tradeCount  = tradesByOwner[oid] || 0;
-      const leagueCount = leagueCounts[oid]  || 0;
-      // Activity tier: trades made this season in this league
-      const activity = tradeCount >= 4 ? 'active' : tradeCount >= 2 ? 'moderate' : 'passive';
+      const tradeCount      = tradesByOwner[oid]      || 0;
+      const priorTradeCount = priorTradesByOwner[oid]  || 0;
+      const totalTrades     = tradeCount + priorTradeCount;
+      const leagueCount     = leagueCounts[oid]        || 0;
       return {
         ownerId: oid,
         ownerName: ownerNames[oid] || oid || 'Unknown',
         playerNames, isMe: oid === sleeperUserId,
-        tradeCount, leagueCount, activity,
+        tradeCount, priorTradeCount, totalTrades, leagueCount,
       };
     });
 
@@ -774,11 +843,12 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     for (const roster of leagueRosters) {
       for (const name of roster.playerNames) {
         ownerByPlayer[name] = {
-          ownerName:   roster.ownerName,
-          isMe:        roster.isMe,
-          tradeCount:  roster.tradeCount,
-          leagueCount: roster.leagueCount,
-          activity:    roster.activity,
+          ownerName:        roster.ownerName,
+          isMe:             roster.isMe,
+          tradeCount:       roster.tradeCount,
+          priorTradeCount:  roster.priorTradeCount,
+          totalTrades:      roster.totalTrades,
+          leagueCount:      roster.leagueCount,
         };
       }
     }
@@ -909,11 +979,12 @@ function mergeAndRender() {
     return {...p, mine:isMine(p), fc,
       fcRank:fc?.fcRank??null, fcValue:fc?.fcValue??null, fcPickVal,
       rankDelta:fc?(fc.fcRank-p.tatRank):null, pickDelta,
-      ownerName:   ownerInfo?.ownerName   || null,
-      ownerIsMe:   ownerInfo?.isMe        || false,
-      tradeCount:  ownerInfo?.tradeCount  ?? null,
-      leagueCount: ownerInfo?.leagueCount ?? null,
-      activity:    ownerInfo?.activity    || null,
+      ownerName:       ownerInfo?.ownerName       || null,
+      ownerIsMe:       ownerInfo?.isMe            || false,
+      tradeCount:      ownerInfo?.tradeCount      ?? null,
+      priorTradeCount: ownerInfo?.priorTradeCount ?? null,
+      totalTrades:     ownerInfo?.totalTrades     ?? null,
+      leagueCount:     ownerInfo?.leagueCount     ?? null,
     };
   });
 
@@ -1228,14 +1299,15 @@ function renderTradesTab(maxAbs, thresh) {
 
       const tatImprovement = (sell.tatRank||999) - (recv.tatRank||999); // spots I gain in TAT
       const fcEdgeForThem  = (recv.fcRank||999) - (sell.fcRank||999);   // how much better FC looks for them (positive = they win on FC)
-      const activityBonus = recv.activity==='active' ? 15 : recv.activity==='moderate' ? 5 : 0;
+      const activityBonus = (recv.totalTrades||0) >= 6 ? 15 : (recv.totalTrades||0) >= 3 ? 5 : 0;
       const score = tatImprovement * 2 + fcEdgeForThem + recv.rankDelta + activityBonus;
       const strong = tatImprovement > 20 && Math.abs(sell.rankDelta) > thresh * 1.5;
 
       trades.push({ sell, recv, ownerName,
-        tradeCount:  recv.tradeCount,
-        leagueCount: recv.leagueCount,
-        activity:    recv.activity,
+        tradeCount:      recv.tradeCount,
+        priorTradeCount: recv.priorTradeCount,
+        totalTrades:     recv.totalTrades,
+        leagueCount:     recv.leagueCount,
         tatImprovement, fcEdgeForThem, score, strong });
     }
   }
@@ -1259,6 +1331,60 @@ function renderTradesTab(maxAbs, thresh) {
   if (regular.length) html += tradeSection('Recommended', 'var(--text2)', 'Worth exploring at the right terms', regular);
   html += `<div class="tfoot" style="margin-top:12px">Rank gap = FC rank − TAT rank · Positive = TAT values higher · Combined signal = sum of both gaps</div>`;
   document.getElementById('trades-inner').innerHTML = html;
+
+  // Async: check how many leagues each target owner has the sell player in
+  if (window._allLeaguesByOwner && window._sleeperPlayersMap) {
+    checkPlayerOwnership(trades.filter(t=>t.netPickGain===undefined)); // all trades
+  }
+}
+
+async function checkPlayerOwnership(trades) {
+  // For each trade, check how many of the target owner's leagues contain the sell player
+  const seen = new Set();
+  for (const t of trades) {
+    const key = `${t.sell.name}|${t.ownerName}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const elemId = `ownership-${t.sell.name.replace(/\s+/g,'_')}_${t.ownerName.replace(/\s+/g,'_')}`;
+    const elem = document.getElementById(elemId);
+    if (!elem) continue;
+
+    const ownerId = leagueRosters.find(r=>r.ownerName===t.ownerName)?.ownerId;
+    if (!ownerId) { elem.textContent=''; continue; }
+
+    const ownerLeagues = window._allLeaguesByOwner[ownerId] || [];
+    if (!ownerLeagues.length) { elem.textContent=''; continue; }
+
+    // Fetch rosters for each of their leagues and check for the sell player
+    let ownerCount = 0;
+    const checked = await Promise.all(
+      ownerLeagues.slice(0,10).map(lg =>
+        fetch(`${SLEEPER}/league/${lg.league_id}/rosters`)
+          .then(r=>r.ok?r.json():[]).catch(()=>[])
+      )
+    );
+    for (const rosters of checked) {
+      const myRoster = rosters.find(r=>r.owner_id===ownerId);
+      if (!myRoster) continue;
+      // Check if sell player appears on their roster
+      const playersMap = window._sleeperPlayersMap;
+      for (const pid of (myRoster.players||[])) {
+        const p = playersMap[pid];
+        if (!p) continue;
+        const pname = norm(`${p.first_name||''} ${p.last_name||''}`.trim());
+        if (pname === norm(t.sell.name)) { ownerCount++; break; }
+      }
+    }
+
+    const total = ownerLeagues.slice(0,10).length;
+    if (elem) {
+      elem.style.color = ownerCount >= 3 ? 'var(--red)' : ownerCount >= 1 ? 'var(--amber)' : 'var(--accent)';
+      elem.textContent = ownerCount > 0
+        ? `owns ${t.sell.name} in ${ownerCount}/${total} leagues`
+        : `doesn't own ${t.sell.name} in any checked leagues`;
+    }
+  }
 }
 
 function tradeSection(title, color, sub, trades) {
@@ -1305,7 +1431,6 @@ function tradeCard(t) {
       <div style="font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:2px;color:var(--accent);margin-bottom:4px;text-align:right">GET</div>
       <div class="tcard-pname">${esc(t.recv.name)}</div>
       <div class="tcard-pmeta" style="margin-top:3px;justify-content:flex-end">
-        ${t.activity ? `<span class="owner-pill" style="border-color:${t.activity==='active'?'var(--accent)':t.activity==='moderate'?'var(--amber)':'var(--text3)'};color:${t.activity==='active'?'var(--accent)':t.activity==='moderate'?'var(--amber)':'var(--text3)'}">${t.activity==='active'?'⚡':t.activity==='moderate'?'~':'—'} ${t.tradeCount} trades</span>` : ''}
         <span class="owner-pill">${esc(t.ownerName)}</span>
         <span class="team-pip">${esc(t.recv.team||'—')}</span>
         <span class="pos-pip pos-${t.recv.pos}">${t.recv.pos}</span>
@@ -1331,10 +1456,17 @@ function tradeCard(t) {
         They get FC #${t.sell.fcRank||'—'}, give up FC #${t.recv.fcRank||'—'} —
         <span style="color:var(--amber)">${t.fcEdgeForThem >= 0 ? '+'+t.fcEdgeForThem+' FC spots for them' : 'FC even'}</span>
       </div>
-      <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:7px;color:var(--text3);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span>Message <span style="color:var(--accent)">${esc(t.ownerName)}</span> · offer ${esc(t.sell.name)} for ${esc(t.recv.name)}</span>
-        ${t.leagueCount ? `<span style="color:var(--text3)">·</span><span style="color:var(--text3)">${esc(t.ownerName)} is in ${t.leagueCount} league${t.leagueCount!==1?'s':''} · ${t.tradeCount||0} trade${t.tradeCount!==1?'s':''} this season</span>` : ''}
-        ${t.activity==='passive'?`<span style="color:var(--text3);font-style:italic">— low trade activity, may need extra incentive</span>`:''}
+      <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:8px;
+        display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;">
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3)">
+          Message <span style="color:var(--accent)">${esc(t.ownerName)}</span> · offer ${esc(t.sell.name)} for ${esc(t.recv.name)}
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);text-align:right;display:flex;flex-direction:column;gap:3px;">
+          ${t.leagueCount!=null?`<span>${t.leagueCount} league${t.leagueCount!==1?'s':''} · ${t.totalTrades||0} trades (${t.tradeCount||0} this season · ${t.priorTradeCount||0} prior)</span>`:''}
+          <span id="ownership-${t.sell.name.replace(/\s+/g,'_')}_${t.ownerName.replace(/\s+/g,'_')}" style="color:var(--text3)">
+            checking ownership…
+          </span>
+        </div>
       </div>
     </div>
   </div>`;
