@@ -581,10 +581,32 @@ const TIER_LABELS = {
 const TIER_ORDER = ['3+','2.5-3','2-2.5','1.5-2','1.25','1','late1','early2','base2','late2','early3','base3'];
 
 // ── HELPERS ───────────────────────────────────────────────────
+// Known name variants across Sleeper / FC / TAT data sources
+const NAME_ALIASES = {
+  'colston loveland':  'colston loveland',
+  'coltson loveland':  'colston loveland', // Sleeper typo
+  'brian thomas':      'brian thomas',     // after jr. strip
+  'gabe davis':        'gabriel davis',
+  'gabriel davis':     'gabriel davis',
+  'mack hollins':      'mack hollins',
+  'robbie chosen':     'robbie chosen',
+  'jeffery wilson':    'jeff wilson',
+  'jeff wilson':       'jeff wilson',
+  'odell beckham':     'odell beckham',
+  'odell beckham jr':  'odell beckham',
+  'hollywood brown':   'marquise brown',
+  'marquise brown':    'marquise brown',
+  'dk metcalf':        'dk metcalf',
+  'd.k. metcalf':      'dk metcalf',
+};
+
 function norm(n) {
   if (!n) return '';
-  return String(n).replace(/(\d{4})\s+rookie\s+/i,'$1 Pick ')
-    .toLowerCase().replace(/[^a-z0-9 .]/g,'').replace(/\s+/g,' ').trim();
+  const base = String(n).replace(/(\d{4})\s+rookie\s+/i,'$1 Pick ')
+    .toLowerCase().replace(/[^a-z0-9 .]/g,'').replace(/\s+/g,' ').trim()
+    .replace(/\s+(jr\.?|sr\.?|ii|iii|iv|v)$/, '') // strip name suffixes
+    .replace(/\.+/g, '');                            // strip dots (d.k. → dk)
+  return NAME_ALIASES[base] || base;
 }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
