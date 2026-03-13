@@ -1664,6 +1664,77 @@ function renderTradesTab(maxAbs, thresh) {
     }
   }
 
+  // ── Bundle search (2-for-1): main asset + sweetener ──────────
+  // Only run if a 1-for-1 with this main asset DIDN'T already surface for this owner
+  // Add-ons: my weakest assets (tierVal ≤ 0.15), up to 8
+  const oneFourOneKeys = new Set(trades.map(t => norm(t.sell.name) + '|' + t.ownerName));
+  const addOns = myAssets
+    .filter(p => p.tierVal <= 0.15)
+    .sort((a, b) => (a.tierVal||0) - (b.tierVal||0))
+    .slice(0, 8);
+
+  const bundleSeen = new Set();
+  const bundles    = [];
+
+  for (const mine of myAssets) {
+    // Skip if tierVal is too low to be the main piece
+    if ((mine.tierVal || 0) <= 0.15) continue;
+
+    for (const [ownerName, theirList] of Object.entries(theirByOwner)) {
+      // Only try bundling if the clean 1-for-1 didn't work for this (main, owner) pair
+      if (oneFourOneKeys.has(norm(mine.name) + '|' + ownerName)) continue;
+
+      for (const addon of addOns) {
+        if (addon.name === mine.name) continue; // can't send same asset twice
+
+        const bundleFcValue  = (mine.fcValue  || 0) + (addon.fcValue  || 0);
+        const bundleFcRank   = Math.min(mine.fcRank  || 999, addon.fcRank  || 999); // proxy
+        const bundleTatRank  = Math.min(mine.tatRank || 999, addon.tatRank || 999);
+        const bundleTierVal  = (mine.tierVal || 0)  + (addon.tierVal  || 0);
+
+        for (const theirs of theirList) {
+          const tatImprovement = bundleTatRank - (theirs.tatRank || 999);
+          if (tatImprovement <= thresh) continue;
+          if (bundleFcValue <= (theirs.fcValue || 0)) continue; // they must win on FC value
+
+          const tierGain = (theirs.tierVal || 0) - bundleTierVal;
+          if (tierGain <= 0) continue;
+
+          const key = norm(mine.name) + '+' + norm(addon.name) + '|' + norm(theirs.name) + '|' + ownerName;
+          if (bundleSeen.has(key)) continue;
+          bundleSeen.add(key);
+
+          const fcEdgeForThem  = (theirs.fcRank || 999) - bundleFcRank;
+          const fillsNeed      = !mine.isPick && (theirs.ownerThinPos || new Set()).has(mine.pos);
+          const strong         = tierGain >= 0.4;
+          const motivation     = (mine.rankDelta != null && mine.rankDelta < -thresh) ? 'sell' : 'buy';
+
+          bundles.push({
+            main: mine, addon, recv: theirs, ownerName, motivation,
+            tradeCount:       theirs.tradeCount,
+            totalTrades:      theirs.totalTrades,
+            leagueCount:      theirs.leagueCount,
+            ownerWindow:      theirs.ownerWindow      || null,
+            ownerWindowColor: theirs.ownerWindowColor || 'var(--text3)',
+            ownerAvgAge:      theirs.ownerAvgAge      || null,
+            fillsNeed, tierGain, tatImprovement, fcEdgeForThem,
+            bundleFcValue, strong,
+          });
+        }
+      }
+    }
+  }
+
+  // Best bundle per (main+owner): highest tierGain
+  const bestBundle = {};
+  for (const b of bundles) {
+    const k = norm(b.main.name) + '|' + b.ownerName;
+    if (!bestBundle[k] || b.tierGain > bestBundle[k].tierGain) bestBundle[k] = b;
+  }
+  const bundleList = Object.values(bestBundle)
+    .sort((a, b) => b.tierGain - a.tierGain)
+    .slice(0, 20); // cap at 20 bundle suggestions
+
   // Sort by TAT tier gain descending (1st-pick units), tiebreak by raw rank improvement
   trades.sort((a,b) => b.tierGain !== a.tierGain ? b.tierGain - a.tierGain : b.tatImprovement - a.tatImprovement);
 
@@ -1678,10 +1749,23 @@ function renderTradesTab(maxAbs, thresh) {
 
   const strong  = trades.filter(t => t.strong);
   const regular = trades.filter(t => !t.strong);
+  const bStrong = bundleList.filter(t => t.strong);
+  const bReg    = bundleList.filter(t => !t.strong);
+
+  document.getElementById('badge-trades').textContent = (trades.length + bundleList.length) || '—';
 
   let html = '';
-  if (strong.length)  html += tradeSection('⚡ Act Now', 'var(--accent)', 'Strong signals on both sides', strong);
-  if (regular.length) html += tradeSection('Recommended', 'var(--text2)', 'Worth exploring at the right terms', regular);
+  if (strong.length)  html += tradeSection('⚡ Act Now', 'var(--accent)', 'Strong signals on both sides', strong, false);
+  if (regular.length) html += tradeSection('Recommended', 'var(--text2)', 'Worth exploring at the right terms', regular, false);
+  if (bStrong.length || bReg.length) {
+    html += `<div class="trade-section-head" style="margin-top:24px">
+      <div class="trade-section-title" style="color:var(--amber)">📦 Bundle Offers</div>
+      <div class="trade-section-sub">2-for-1 — add a sweetener to unlock a deal that wasn't there clean</div>
+    </div><div class="trade-cards">`;
+    if (bStrong.length) html += bStrong.map(t => bundleCard(t)).join('');
+    if (bReg.length)    html += bReg.map(t => bundleCard(t)).join('');
+    html += '</div>';
+  }
   html += `<div class="tfoot" style="margin-top:12px">Rank gap = FC rank − TAT rank · Positive = TAT values higher · Combined signal = sum of both gaps</div>`;
   document.getElementById('trades-inner').innerHTML = html;
 
@@ -1778,6 +1862,81 @@ function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge) {
     + '</div>'
     + '<div style="' + mono + ';font-size:.6rem;color:' + color + ';text-align:center;margin-top:3px;letter-spacing:1px">' + label + '</div>'
     + '</div>';
+}
+
+function bundleCard(t) {
+  const ownerKey = "ownership|" + t.main.name + "|" + t.ownerName;
+  const cached   = ownershipCache[ownerKey];
+  const ownId    = "own_" + (t.main.name + "_" + t.ownerName).replace(/[^a-z0-9]/gi, "_");
+  const ownSpan  = cached
+    ? '<span id="' + ownId + '" style="color:' + cached.color + '">' + esc(cached.text) + "</span>"
+    : '<span id="' + ownId + '" style="color:var(--text3)">checking ownership…</span>';
+
+  const mono = "font-family:\'DM Mono\',monospace";
+
+  return '<div class="tcard ' + (t.strong ? "strong" : "") + '">'
+
+    // SEND (stacked: main + addon)
+    + '<div class="tcard-player send">'
+    +   '<div style="' + mono + ';font-size:.56rem;letter-spacing:2px;color:var(--red);margin-bottom:4px">SEND</div>'
+    // main piece
+    +   '<div class="tcard-pname">' + esc(t.main.name) + (t.main.tierLabel ? ' <span class="tier-chip" style="font-size:.6rem;vertical-align:middle;opacity:.85">' + esc(t.main.tierLabel) + "</span>" : "") + "</div>"
+    +   '<div class="tcard-pmeta" style="margin-top:2px">'
+    +     '<span class="pos-pip pos-' + t.main.pos + '">' + t.main.pos + "</span>"
+    +     (t.main.team ? '<span class="team-pip">' + esc(t.main.team) + "</span>" : "")
+    +   "</div>"
+    // addon piece
+    +   '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">'
+    +     '<div style="' + mono + ';font-size:.52rem;color:var(--text3);margin-bottom:2px;letter-spacing:1px">+ ADD</div>'
+    +     '<div class="tcard-pname" style="font-size:.82rem">' + esc(t.addon.name) + (t.addon.tierLabel ? ' <span class="tier-chip" style="font-size:.55rem;vertical-align:middle;opacity:.75">' + esc(t.addon.tierLabel) + "</span>" : "") + "</div>"
+    +     '<div class="tcard-pmeta" style="margin-top:2px">'
+    +       '<span class="pos-pip pos-' + t.addon.pos + '" style="font-size:.55rem">' + t.addon.pos + "</span>"
+    +       (t.addon.team ? '<span class="team-pip" style="font-size:.55rem">' + esc(t.addon.team) + "</span>" : "")
+    +     "</div>"
+    +   "</div>"
+    +   '<div style="margin-top:8px;display:flex;gap:12px;' + mono + ';font-size:.65rem">'
+    +     '<span>Bundle FC <span style="color:var(--text2)">' + Math.round(t.bundleFcValue) + "</span></span>"
+    +   "</div>"
+    +   (t.fillsNeed ? '<div style="margin-top:4px;display:inline-block;' + mono + ';font-size:.57rem;color:var(--accent);border:1px solid var(--accent);padding:1px 6px">✓ fills their ' + esc(t.main.pos) + " need</div>" : "")
+    + "</div>"
+
+    // ARROW
+    + '<div class="tcard-arrow">'
+    +   '<div class="tcard-swap">⇄</div>'
+    +   '<div style="' + mono + ';font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">TAT value gain</div>'
+    +   '<div class="tcard-net up">+' + t.tierGain.toFixed(2) + "</div>"
+    +   '<div style="' + mono + ';font-size:.52rem;color:var(--text3);text-align:center">1sts equivalent</div>'
+    +   acceptanceMeter(t.bundleFcValue, t.recv.fcValue, t.ownerWindow, t.main.age)
+    + "</div>"
+
+    // RECEIVE
+    + '<div class="tcard-player recv">'
+    +   '<div style="' + mono + ';font-size:.56rem;letter-spacing:2px;color:var(--accent);margin-bottom:4px;text-align:right">GET</div>'
+    +   '<div class="tcard-pname">' + esc(t.recv.name) + (t.recv.tierLabel ? ' <span class="tier-chip" style="font-size:.6rem;vertical-align:middle;opacity:.85">' + esc(t.recv.tierLabel) + "</span>" : "") + "</div>"
+    +   '<div class="tcard-pmeta" style="margin-top:3px;justify-content:flex-end;flex-wrap:wrap">'
+    +     (t.ownerWindow ? '<span style="' + mono + ';font-size:.55rem;padding:2px 6px;border:1px solid ' + t.ownerWindowColor + ";color:" + t.ownerWindowColor + '">' + esc(t.ownerWindow) + (t.ownerAvgAge ? " · " + t.ownerAvgAge : "") + "</span>" : "")
+    +     '<span class="owner-pill">' + esc(t.ownerName) + "</span>"
+    +     (t.recv.team ? '<span class="team-pip">' + esc(t.recv.team) + "</span>" : "")
+    +     '<span class="pos-pip pos-' + t.recv.pos + '">' + t.recv.pos + "</span>"
+    +   "</div>"
+    +   '<div style="margin-top:10px;display:flex;gap:12px;' + mono + ';font-size:.68rem;justify-content:flex-end">'
+    +     '<span>TAT <span style="color:var(--text2)">' + (t.recv.tatRank ? "#" + t.recv.tatRank : "—") + "</span></span>"
+    +     '<span>FC <span style="color:var(--text2)">' + (t.recv.fcRank ? "#" + t.recv.fcRank : "—") + "</span></span>"
+    +   "</div>"
+    +   '<div style="' + mono + ';font-size:.62rem;color:var(--accent);margin-top:4px;text-align:right">TAT undervalued by FC → owner may sell cheap</div>'
+    + "</div>"
+
+    // FOOTER
+    + '<div style="grid-column:1/-1;border-top:1px solid var(--border);margin-top:12px;padding-top:10px;'
+    +   mono + ';font-size:.62rem;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">'
+    +   '<div style="color:var(--text3)">Message <span style="color:var(--accent)">' + esc(t.ownerName) + "</span> · offer " + esc(t.main.name) + " + " + esc(t.addon.name) + " for " + esc(t.recv.name) + "</div>"
+    +   '<div style="text-align:right;display:flex;flex-direction:column;gap:3px">'
+    +     (t.leagueCount != null ? '<span style="color:var(--text3)">' + t.leagueCount + " league" + (t.leagueCount !== 1 ? "s" : "") + " · " + (t.totalTrades || 0) + " pick trade" + (t.totalTrades !== 1 ? "s" : "") + " this season</span>" : "")
+    +     ownSpan
+    +   "</div>"
+    + "</div>"
+
+  + "</div>";
 }
 
 function tradeCard(t) {
