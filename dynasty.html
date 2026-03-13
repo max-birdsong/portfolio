@@ -1816,6 +1816,37 @@ function computeRosterProfiles() {
     roster.redraftStrength = rdVals.length
       ? rdVals.reduce((s, v) => s + v, 0)
       : 0;
+
+    // Replacement level from FC redraft — fallback used when Sleeper projections
+    // aren't available. Identifies the first bench player at each position
+    // after STARTER_N slots are filled, sorted by redraft value descending.
+    // This prevents bench players with 0 redraft (e.g. unproven rookies) from
+    // making starters look artificially valuable at the margin.
+    if (!roster.replacementLevel) {
+      roster.replacementLevel = {};
+      const LOCKED = { QB:2, RB:2, WR:2, TE:1 };
+      const N_FLEX = 3;
+      const rdByPos = { QB:[], RB:[], WR:[], TE:[] };
+      for (const rp of (roster.rosterPlayers || [])) {
+        if (!rdByPos[rp.pos]) continue;
+        rdByPos[rp.pos].push({ name: rp.name, rd: fcMap[rp.name]?.redraftValue || 0 });
+      }
+      for (const pos of Object.keys(rdByPos)) {
+        rdByPos[pos].sort((a, b) => b.rd - a.rd);
+      }
+      // Fill locked starters, then flex greedily
+      const usedRd = { QB:0, RB:0, WR:0, TE:0 };
+      for (const [pos, n] of Object.entries(LOCKED)) usedRd[pos] = Math.min(n, rdByPos[pos].length);
+      const flexPool = ['RB','WR','TE'].flatMap(pos => rdByPos[pos].slice(usedRd[pos]))
+        .sort((a, b) => b.rd - a.rd);
+      const flexStarted = new Set(flexPool.slice(0, N_FLEX).map(p => p.name));
+      for (const pos of ['QB','RB','WR','TE']) {
+        const bench = rdByPos[pos].filter((p, i) => i >= usedRd[pos] && !flexStarted.has(p.name));
+        // Use first bench player's rd, but floor at a small positive so rookie bench
+        // players with rd:0 don't collapse replacement level to zero
+        roster.replacementLevel[pos] = bench[0]?.rd || 0;
+      }
+    }
   }
 
   // ── League-average depth → thin positions (based on locked starters) ──
