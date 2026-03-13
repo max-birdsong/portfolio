@@ -370,6 +370,9 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
   <div class="tab" data-tab="table" onclick="switchTab('table')">
     Full Rankings <span class="badge badge-n" id="badge-table">—</span>
   </div>
+  <div class="tab" data-tab="sim" onclick="switchTab('sim')">
+    Simulator <span class="badge" id="badge-sim" style="background:var(--surface2);color:var(--text3)">—</span>
+  </div>
 </div>
 
 <!-- TAB CONTENTS -->
@@ -506,6 +509,39 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
       </div>
       <div id="tbl-inner"></div>
     </div>
+  </div>
+
+
+  <!-- SIMULATOR -->
+  <div class="tab-content" id="tab-sim">
+    <div class="section-head" style="margin-bottom:16px">
+      <div class="section-head-title">Season Simulator</div>
+      <div class="section-head-sub">10,000 simulated seasons · roster strength derived from TAT tier values</div>
+    </div>
+    <div id="sim-controls" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
+      <label style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text2);display:flex;align-items:center;gap:6px">
+        Playoff teams
+        <select id="sim-playoff-spots" style="background:var(--surface);border:1px solid var(--border);color:var(--text1);font-family:'DM Mono',monospace;font-size:.7rem;padding:3px 6px">
+          <option value="4">4</option>
+          <option value="6" selected>6</option>
+          <option value="8">8</option>
+        </select>
+      </label>
+      <label style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text2);display:flex;align-items:center;gap:6px">
+        Season weeks
+        <select id="sim-weeks" style="background:var(--surface);border:1px solid var(--border);color:var(--text1);font-family:'DM Mono',monospace;font-size:.7rem;padding:3px 6px">
+          <option value="13">13</option>
+          <option value="14" selected>14</option>
+          <option value="15">15</option>
+        </select>
+      </label>
+      <label style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text2);display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="sim-use-scores" style="accent-color:var(--accent)">
+        Blend with actual scores (if available)
+      </label>
+      <button onclick="runSimulator()" style="background:var(--accent);color:#000;border:none;font-family:'DM Mono',monospace;font-size:.7rem;padding:5px 14px;cursor:pointer;letter-spacing:1px">▶ RUN</button>
+    </div>
+    <div id="sim-output"></div>
   </div>
 
 </div>
@@ -728,6 +764,7 @@ async function selectLeague(leagueId, leagueName) {
 
 async function loadLeagueRosters(leagueId, playersMap, bar) {
   try {
+    window._leagueId = leagueId; // store for simulator
     // Step 1: fetch rosters, traded picks, league info in parallel
     const [rRes, picksRes, leagueRes] = await Promise.all([
       fetch(`${SLEEPER}/league/${leagueId}/rosters`),
@@ -948,7 +985,8 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
         });
       }
       return {
-        ownerId: oid,
+        ownerId:  oid,
+        rosterId: r.roster_id, // Sleeper roster_id — needed for matchup score lookup
         ownerName: ownerNames[oid] || oid || 'Unknown',
         playerNames,
         rosterPlayers,
@@ -1180,6 +1218,227 @@ function buildPickPool() {
   }
 }
 
+
+
+// ── SEASON SIMULATOR ─────────────────────────────────────────────────────
+// Methodology:
+//   Each team gets a "strength score" = avgTierVal from computeRosterProfiles()
+//   We model weekly scoring as Normal(mean, sd) where:
+//     mean = BASE_SCORE + strength * SCALE  (maps tier value to realistic FF scores)
+//     sd   = BASE_SD (inherent weekly variance — the key randomness driver)
+//   If actual Sleeper matchup scores exist, we blend strength-based mean
+//   with the team's actual historical mean (configurable).
+//   10k seasons: each week, every team draws a score, matchups are round-robin,
+//   top N teams by wins (tiebreak: total points) make playoffs.
+
+const SIM_N         = 10000;
+const BASE_SCORE    = 90;   // baseline weekly score for an avg roster
+const SCORE_SCALE   = 60;   // avgTierVal 0→1 maps to +0→+60 points above base
+const BASE_SD       = 22;   // weekly SD — realistic for dynasty scoring variance
+const BLEND_WEIGHT  = 0.55; // weight on actual scores vs roster strength (when available)
+
+function randn() {
+  // Box-Muller transform — standard normal
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function teamStrengthToMean(avgTierVal) {
+  return BASE_SCORE + (avgTierVal || 0) * SCORE_SCALE;
+}
+
+async function fetchMatchupScores(leagueId, totalWeeks) {
+  // Fetch completed matchup weeks from Sleeper to get actual team scoring history
+  // Returns map: rosterId → { mean, sd, n }
+  const results = {};
+  const weeks = Array.from({ length: totalWeeks }, (_, i) => i + 1);
+
+  const allMatchups = await Promise.all(
+    weeks.map(w =>
+      fetch(`${SLEEPER}/league/${leagueId}/matchups/${w}`)
+        .then(r => r.ok ? r.json() : []).catch(() => [])
+    )
+  );
+
+  for (const weekMatchups of allMatchups) {
+    for (const entry of weekMatchups) {
+      if (entry.points == null || entry.points === 0) continue;
+      if (!results[entry.roster_id]) results[entry.roster_id] = [];
+      results[entry.roster_id].push(entry.points);
+    }
+  }
+
+  const stats = {};
+  for (const [rid, scores] of Object.entries(results)) {
+    if (scores.length < 2) continue;
+    const mean = scores.reduce((s, v) => s + v, 0) / scores.length;
+    const sd   = Math.sqrt(scores.reduce((s, v) => s + (v - mean) ** 2, 0) / scores.length);
+    stats[rid] = { mean, sd: Math.max(sd, 8), n: scores.length };
+  }
+  return stats;
+}
+
+function generateSchedule(numTeams, numWeeks) {
+  // Round-robin schedule — every team plays every other team,
+  // cycling through opponents week by week
+  const schedule = [];
+  const teams = Array.from({ length: numTeams }, (_, i) => i);
+  for (let w = 0; w < numWeeks; w++) {
+    const matchups = [];
+    const rotated  = [teams[0], ...teams.slice(w % (numTeams - 1) + 1), ...teams.slice(1, w % (numTeams - 1) + 1)];
+    for (let i = 0; i < numTeams / 2; i++) {
+      matchups.push([rotated[i], rotated[numTeams - 1 - i]]);
+    }
+    schedule.push(matchups);
+  }
+  return schedule;
+}
+
+async function runSimulator() {
+  const btn = document.querySelector('#sim-controls button');
+  btn.textContent = '⏳ Running…';
+  btn.disabled = true;
+
+  const playoffSpots = parseInt(document.getElementById('sim-playoff-spots').value);
+  const numWeeks     = parseInt(document.getElementById('sim-weeks').value);
+  const useScores    = document.getElementById('sim-use-scores').checked;
+
+  const out = document.getElementById('sim-output');
+  out.innerHTML = "<div style=\"font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);padding:20px 0\">Simulating…</div>";
+
+  // Small delay so UI updates
+  await new Promise(r => setTimeout(r, 30));
+
+  if (!leagueRosters.length) {
+    out.innerHTML = '<div class="empty"><div class="empty-title">League not loaded</div><div class="empty-sub">Load your Sleeper league first</div></div>';
+    btn.textContent = '▶ RUN'; btn.disabled = false;
+    return;
+  }
+
+  // ── Build team profiles ──────────────────────────────────────
+  let actualScores = {};
+  if (useScores && window._leagueId) {
+    out.innerHTML = "<div style=\"font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);padding:20px 0\">Fetching matchup history…</div>";
+    await new Promise(r => setTimeout(r, 10));
+    actualScores = await fetchMatchupScores(window._leagueId, numWeeks);
+  }
+
+  const teams = leagueRosters.map(r => {
+    const strengthMean = teamStrengthToMean(r.avgTierVal || 0);
+    const actual       = actualScores[r.rosterId] || null;
+
+    let mean, sd;
+    if (actual && actual.n >= 3) {
+      mean = BLEND_WEIGHT * actual.mean + (1 - BLEND_WEIGHT) * strengthMean;
+      sd   = BLEND_WEIGHT * actual.sd   + (1 - BLEND_WEIGHT) * BASE_SD;
+    } else {
+      mean = strengthMean;
+      sd   = BASE_SD;
+    }
+
+    return {
+      ownerName: r.ownerName,
+      isMe:      r.isMe,
+      window:    r.window,
+      windowColor: r.windowColor,
+      rosterId:  r.rosterId,
+      mean, sd,
+      avgTierVal: r.avgTierVal || 0,
+      actualN:   actual?.n || 0,
+    };
+  });
+
+  const numTeams = teams.length;
+  const schedule = generateSchedule(numTeams, numWeeks);
+
+  // ── Run simulations ─────────────────────────────────────────
+  const playoffCount  = new Array(numTeams).fill(0);
+  const winTotals     = new Array(numTeams).fill(0);
+  const pointTotals   = new Array(numTeams).fill(0);
+
+  for (let sim = 0; sim < SIM_N; sim++) {
+    const wins   = new Array(numTeams).fill(0);
+    const points = new Array(numTeams).fill(0);
+
+    for (const weekMatchups of schedule) {
+      const scores = teams.map(t => Math.max(0, t.mean + t.sd * randn()));
+      for (const [a, b] of weekMatchups) {
+        points[a] += scores[a];
+        points[b] += scores[b];
+        if (scores[a] > scores[b]) wins[a]++;
+        else if (scores[b] > scores[a]) wins[b]++;
+      }
+    }
+
+    // Rank by wins, tiebreak by total points — top N make playoffs
+    const ranked = teams.map((_, i) => i)
+      .sort((a, b) => wins[b] - wins[a] || points[b] - points[a]);
+
+    for (let i = 0; i < playoffSpots; i++) playoffCount[ranked[i]]++;
+    for (let i = 0; i < numTeams; i++) {
+      winTotals[i]   += wins[i];
+      pointTotals[i] += points[i];
+    }
+  }
+
+  // ── Build results ────────────────────────────────────────────
+  const results = teams.map((t, i) => ({
+    ...t,
+    playoffPct: playoffCount[i] / SIM_N,
+    avgWins:    +(winTotals[i]   / SIM_N).toFixed(1),
+    avgPoints:  +(pointTotals[i] / SIM_N).toFixed(0),
+  })).sort((a, b) => b.playoffPct - a.playoffPct);
+
+  document.getElementById('badge-sim').textContent =
+    Math.round((results.find(r => r.isMe)?.playoffPct || 0) * 100) + '%';
+
+  // ── Render ───────────────────────────────────────────────────
+  const mono = "font-family:'DM Mono',monospace";
+  const blendNote = useScores && Object.keys(actualScores).length
+    ? `<div style="${mono};font-size:.6rem;color:var(--text3);margin-bottom:14px">Blending roster strength with actual scores (${Object.values(actualScores)[0]?.n || 0} weeks of data)</div>`
+    : `<div style="${mono};font-size:.6rem;color:var(--text3);margin-bottom:14px">Roster strength only · load actual scores by checking the blend option</div>`;
+
+  let rows = results.map((t, rank) => {
+    const pct     = Math.round(t.playoffPct * 100);
+    const barW    = pct;
+    const barCol  = pct >= 60 ? 'var(--accent)' : pct >= 35 ? 'var(--amber)' : 'var(--red)';
+    const isMe    = t.isMe;
+    const border  = isMe ? 'border:1px solid var(--accent);' : 'border:1px solid var(--border);';
+    const inBubble = rank < playoffSpots;
+
+    return `<div style="padding:10px 14px;margin-bottom:6px;background:var(--surface);${border}${isMe ? 'background:rgba(0,229,160,.04);' : ''}">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="${mono};font-size:.6rem;color:var(--text3);width:16px;text-align:right">${rank + 1}</div>
+        <div style="flex:1;min-width:120px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="${mono};font-size:.75rem;color:${isMe ? 'var(--accent)' : 'var(--text1)'};font-weight:${isMe ? 'bold' : 'normal'}">${esc(t.ownerName)}</span>
+            ${isMe ? '<span style="' + mono + ';font-size:.52rem;color:var(--accent);border:1px solid var(--accent);padding:1px 4px">YOU</span>' : ''}
+            ${t.window ? '<span style="' + mono + ';font-size:.52rem;padding:1px 5px;border:1px solid ' + t.windowColor + ';color:' + t.windowColor + '">' + t.window + '</span>' : ''}
+            ${!inBubble && rank === playoffSpots ? '<div style="width:100%;height:1px;background:var(--border);margin:4px 0;flex-basis:100%"></div>' : ''}
+          </div>
+          <div style="background:var(--surface2);border-radius:2px;height:4px;overflow:hidden">
+            <div style="height:100%;width:${barW}%;background:${barCol};border-radius:2px;transition:width .4s"></div>
+          </div>
+        </div>
+        <div style="${mono};font-size:.85rem;color:${barCol};width:42px;text-align:right;font-weight:bold">${pct}%</div>
+        <div style="${mono};font-size:.6rem;color:var(--text3);text-align:right;min-width:80px">${t.avgWins}W · ${t.avgPoints}pts</div>
+      </div>
+    </div>`;
+  });
+
+  // Insert playoff cutline divider
+  rows.splice(playoffSpots, 0,
+    `<div style="${mono};font-size:.58rem;color:var(--text3);text-align:center;padding:4px 0;letter-spacing:2px;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);margin:4px 0">── PLAYOFF CUTLINE ──</div>`
+  );
+
+  out.innerHTML = blendNote
+    + `<div style="${mono};font-size:.58rem;color:var(--text3);margin-bottom:8px;letter-spacing:1px">${SIM_N.toLocaleString()} SIMULATIONS · ${numWeeks} WEEKS · TOP ${playoffSpots} MAKE PLAYOFFS</div>`
+    + rows.join('');
+
+  btn.textContent = '▶ RUN'; btn.disabled = false;
+}
 
 // ── ROSTER PROFILES (position depth + window read) ───────────
 // Called from mergeAndRender() after tatData is available.
