@@ -1075,12 +1075,9 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     computeRosterProfiles(); // compute depth+window now that roster data is ready
     buildPickPool();         // picks need roster profile fields
     if (bar) { bar.className = 'sbar ok'; bar.textContent = `✓ League loaded`; }
-    renderAll();
-
-    if (fcData.some(p => p.redraftValue > 0)) {
-      clearTimeout(window._autoSimTimer);
-      window._autoSimTimer = setTimeout(() => runSimulator({ silent: true }), 200);
-    }
+    // Use mergeAndRender (not renderAll) so ownerByPlayer gets re-applied to merged
+    // before the trade finder renders — prevents stale owner names from prev league
+    mergeAndRender();
 
   } catch(e) {
     console.error('[loadLeagueRosters] FAILED:', e);
