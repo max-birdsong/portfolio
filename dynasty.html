@@ -1027,6 +1027,12 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     if (bar) { bar.className = 'sbar ok'; bar.textContent = `✓ League loaded`; }
     renderAll();
 
+    // Auto-run simulator if FC redraft data is already available
+    if (fcData.some(p => p.redraftValue > 0)) {
+      clearTimeout(window._autoSimTimer);
+      window._autoSimTimer = setTimeout(() => runSimulator({ silent: true }), 200);
+    }
+
   } catch(e) {
     console.error('[loadLeagueRosters] FAILED:', e);
     if (bar) { bar.className = 'sbar err'; bar.textContent = `✗ League load failed: ${e.message}`; }
@@ -1298,28 +1304,29 @@ function generateSchedule(numTeams, numWeeks) {
   return schedule;
 }
 
-async function runSimulator() {
+async function runSimulator(opts = {}) {
+  const silent = opts.silent || false;
   const btn = document.querySelector('#sim-controls button');
-  btn.textContent = '⏳ Running…';
-  btn.disabled = true;
+  const out = document.getElementById('sim-output');
+
+  if (!silent) {
+    btn.textContent = '⏳ Running…';
+    btn.disabled = true;
+    out.innerHTML = "<div style=\"font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);padding:20px 0\">Simulating…</div>";
+  }
 
   const playoffSpots = 6;   // fixed league setting
   const numWeeks     = 14;  // regular season weeks
-  const useScores    = document.getElementById('sim-use-scores').checked;
+  const useScores    = !silent && document.getElementById('sim-use-scores').checked;
 
-  const out = document.getElementById('sim-output');
-  out.innerHTML = "<div style=\"font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);padding:20px 0\">Simulating…</div>";
-
-  // Small delay so UI updates
-  await new Promise(r => setTimeout(r, 30));
-
-  // ── Debug dump — remove once confirmed working ───────────────
-  console.log('[SIM] leagueRosters:', leagueRosters.length, 'teams');
-  console.log('[SIM] redraftStrengths:', leagueRosters.map(r => r.ownerName + ':' + (r.redraftStrength||0)));
+  // Small delay so UI updates (skip in silent mode)
+  if (!silent) await new Promise(r => setTimeout(r, 30));
 
   if (!leagueRosters.length) {
-    out.innerHTML = '<div class="empty"><div class="empty-title">League not loaded</div><div class="empty-sub">Load your Sleeper league first</div></div>';
-    btn.textContent = '▶ RUN'; btn.disabled = false;
+    if (!silent) {
+      out.innerHTML = '<div class="empty"><div class="empty-title">League not loaded</div><div class="empty-sub">Load your Sleeper league first</div></div>';
+      btn.textContent = '▶ RUN'; btn.disabled = false;
+    }
     return;
   }
 
@@ -1572,11 +1579,12 @@ async function runSimulator() {
     '<div style="' + mono + ';font-size:.56rem;color:var(--text3);text-align:center;padding:3px 0;letter-spacing:2px;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);margin:3px 0">── PLAYOFF CUTLINE (top 6) ──</div>'
   );
 
-  out.innerHTML = blendNote + strengthNote
-    + '<div style="' + mono + ';font-size:.58rem;color:var(--text3);margin-bottom:8px;letter-spacing:1px">' + SIM_N.toLocaleString() + ' SIMULATIONS · 14 WEEKS · 6 PLAYOFF SPOTS · TOP 2 BYE</div>'
-    + rows.join('');
-
-  btn.textContent = '▶ RUN'; btn.disabled = false;
+  if (!silent) {
+    out.innerHTML = blendNote + strengthNote
+      + '<div style="' + mono + ';font-size:.58rem;color:var(--text3);margin-bottom:8px;letter-spacing:1px">' + SIM_N.toLocaleString() + ' SIMULATIONS · 14 WEEKS · 6 PLAYOFF SPOTS · TOP 2 BYE</div>'
+      + rows.join('');
+    btn.textContent = '▶ RUN'; btn.disabled = false;
+  }
 }
 
 // ── ROSTER PROFILES (position depth + window read) ───────────
@@ -1715,6 +1723,13 @@ function mergeAndRender() {
   }
 
   renderAll();
+
+  // Auto-run simulator whenever both FC redraft data and league rosters are ready
+  // Debounced so rapid re-fetches (e.g. TAT load after FC) don't fire twice
+  if (leagueLoaded && fcData.some(p => p.redraftValue > 0)) {
+    clearTimeout(window._autoSimTimer);
+    window._autoSimTimer = setTimeout(() => runSimulator({ silent: true }), 200);
+  }
 }
 
 // ── RENDER ALL ────────────────────────────────────────────────
