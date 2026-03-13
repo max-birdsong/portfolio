@@ -1027,7 +1027,6 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     if (bar) { bar.className = 'sbar ok'; bar.textContent = `✓ League loaded`; }
     renderAll();
 
-    // Auto-run simulator if FC redraft data is already available
     if (fcData.some(p => p.redraftValue > 0)) {
       clearTimeout(window._autoSimTimer);
       window._autoSimTimer = setTimeout(() => runSimulator({ silent: true }), 200);
@@ -1315,18 +1314,19 @@ async function runSimulator(opts = {}) {
     out.innerHTML = "<div style=\"font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);padding:20px 0\">Simulating…</div>";
   }
 
-  const playoffSpots = 6;   // fixed league setting
-  const numWeeks     = 14;  // regular season weeks
+  const playoffSpots = 6;
+  const numWeeks     = 14;
   const useScores    = !silent && document.getElementById('sim-use-scores').checked;
 
-  // Small delay so UI updates (skip in silent mode)
   if (!silent) await new Promise(r => setTimeout(r, 30));
 
+  // ── Debug dump — remove once confirmed working ───────────────
+  console.log('[SIM] leagueRosters:', leagueRosters.length, 'teams');
+  console.log('[SIM] redraftStrengths:', leagueRosters.map(r => r.ownerName + ':' + (r.redraftStrength||0)));
+
   if (!leagueRosters.length) {
-    if (!silent) {
-      out.innerHTML = '<div class="empty"><div class="empty-title">League not loaded</div><div class="empty-sub">Load your Sleeper league first</div></div>';
-      btn.textContent = '▶ RUN'; btn.disabled = false;
-    }
+    out.innerHTML = '<div class="empty"><div class="empty-title">League not loaded</div><div class="empty-sub">Load your Sleeper league first</div></div>';
+    btn.textContent = '▶ RUN'; btn.disabled = false;
     return;
   }
 
@@ -1514,12 +1514,17 @@ async function runSimulator(opts = {}) {
     }
   }
 
-  // Refresh trade finder with updated windows (no full re-fetch needed)
-  renderTradesTab(
-    merged.filter(p=>p.rankDelta!==null).reduce((m,p)=>Math.max(m,Math.abs(p.rankDelta)),1),
-    Math.max(merged.filter(p=>p.rankDelta!==null).reduce((m,p)=>Math.max(m,Math.abs(p.rankDelta)),1)*0.1, 5)
-  );
+  // Refresh trade finder
+  const _wd = merged.filter(p=>p.rankDelta!==null);
+  const _maxAbs = _wd.length ? Math.max(..._wd.map(p=>Math.abs(p.rankDelta))) : 1;
+  const _thresh = Math.max(_maxAbs * 0.1, 5);
+  renderTradesTab(_maxAbs, _thresh);
   renderRosterContextBanner();
+
+  // Kick off background champ% delta compute for all trade candidates
+  window._tradeDeltas = {};
+  const _allTrades = window._lastRenderedTrades || [];
+  if (_allTrades.length) computeAllTradeDeltas(_allTrades);
 
   // ── Render ───────────────────────────────────────────────────
   const mono = "font-family:'DM Mono',monospace";
@@ -1724,8 +1729,7 @@ function mergeAndRender() {
 
   renderAll();
 
-  // Auto-run simulator whenever both FC redraft data and league rosters are ready
-  // Debounced so rapid re-fetches (e.g. TAT load after FC) don't fire twice
+  // Auto-run simulator when both FC redraft data and league are ready
   if (leagueLoaded && fcData.some(p => p.redraftValue > 0)) {
     clearTimeout(window._autoSimTimer);
     window._autoSimTimer = setTimeout(() => runSimulator({ silent: true }), 200);
@@ -2306,29 +2310,143 @@ function renderTradesTab(maxAbs, thresh) {
     .sort((a, b) => b.tierGain - a.tierGain)
     .slice(0, 20); // cap at 20 bundle suggestions
 
-  // Sort by TAT tier gain descending (1st-pick units), tiebreak by raw rank improvement
-  trades.sort((a,b) => b.tierGain !== a.tierGain ? b.tierGain - a.tierGain : b.tatImprovement - a.tatImprovement);
+  // ── Attach champ% deltas + determine mode ─────────────────
+  const _deltas = window._tradeDeltas || {};
+  for (const t of trades) {
+    const key = norm(t.sell.name) + '|' + norm(t.recv.name) + '|' + norm(t.ownerName);
+    t.champDelta = _deltas[key] ?? null;
+  }
+  const hasDelta = trades.some(t => t.champDelta !== null);
+
+  // ── Rebuild mode: flip trade logic ──────────────────────────
+  // If champ% is low AND no trade moves the needle meaningfully,
+  // surface "sell high-redraft / buy high-dynasty" trades instead.
+  // These are trades where THEY gain FC redraft value, YOU gain TAT dynasty value.
+  const myRoster   = leagueRosters.find(r => r.isMe);
+  const myChampPct = myRoster?.champPct ?? null;
+  const bestDelta  = hasDelta ? Math.max(...trades.map(t => t.champDelta ?? -99)) : null;
+  const rebuildMode = myChampPct !== null && myChampPct * 100 < 8
+    && (bestDelta === null || bestDelta < 1.0);
+
+  let rebuildTrades = [];
+  if (rebuildMode) {
+    // Find assets I own where redraftValue > dynasty TAT value (win-now guys to sell)
+    // Counterparties: give me TAT-undervalued assets (dynasty value) in return
+    const rdByName = {};
+    for (const p of fcData) rdByName[norm(p.name)] = p.redraftValue || 0;
+
+    // "Redraft premium": my asset has meaningfully higher redraft than dynasty standing
+    // Proxy: fcRank much better than tatRank (they're paying FC, I'm giving up less dynasty)
+    const mySellCandidates = universe.filter(p =>
+      p.mine && p.tatRank != null && p.fcRank != null
+      && (p.fcRank - p.tatRank) < -thresh * 1.5   // FC rank significantly better than TAT
+      && (p.tierVal || 0) > 0
+    );
+
+    const rebuildSeen = new Set();
+    for (const mine of mySellCandidates) {
+      for (const [ownerName, theirList] of Object.entries(theirByOwner)) {
+        let best = null, bestTierGain = 0;
+        for (const theirs of theirList) {
+          if (theirs.tatRank == null || theirs.fcRank == null) continue;
+          // They win on FC redraft; I win on TAT dynasty value
+          const theyWinFc  = (mine.fcRank  || 999) < (theirs.fcRank  || 999); // mine has better FC
+          const iWinTat    = (theirs.tatRank || 999) < (mine.tatRank  || 999); // theirs has better TAT
+          if (!theyWinFc || !iWinTat) continue;
+          const tierGain = (theirs.tierVal || 0) - (mine.tierVal || 0);
+          if (tierGain <= 0) continue;
+          if (tierGain > bestTierGain) { best = theirs; bestTierGain = tierGain; }
+        }
+        if (!best) continue;
+        const key = norm(mine.name) + '|' + norm(best.name) + '|' + ownerName;
+        if (rebuildSeen.has(key)) continue;
+        rebuildSeen.add(key);
+        const deltaKey = norm(mine.name) + '|' + norm(best.name) + '|' + norm(ownerName);
+        rebuildTrades.push({
+          sell: mine, recv: best, ownerName, motivation: 'rebuild',
+          tierGain: bestTierGain,
+          tatImprovement: (mine.tatRank || 999) - (best.tatRank || 999),
+          fcEdgeForThem: (best.fcRank || 999) - (mine.fcRank || 999),
+          tradeCount: best.tradeCount, totalTrades: best.totalTrades,
+          leagueCount: best.leagueCount,
+          ownerWindow: best.ownerWindow || null,
+          ownerWindowColor: best.ownerWindowColor || 'var(--text3)',
+          ownerAvgAge: best.ownerAvgAge || null,
+          champPct: (leagueRosters.find(r => r.ownerName === ownerName) || {}).champPct ?? null,
+          champDelta: _deltas[deltaKey] ?? null,
+          fillsNeed: (best.ownerThinPos || new Set()).has(mine.pos),
+          strong: bestTierGain >= 0.5,
+        });
+      }
+    }
+    rebuildTrades.sort((a, b) => b.tierGain - a.tierGain);
+
+    // Compute deltas for rebuild trades too if not yet done
+    const needDelta = rebuildTrades.filter(t => t.champDelta === null);
+    if (needDelta.length) computeAllTradeDeltas([...trades, ...needDelta]);
+  }
+
+  // ── Sort ──────────────────────────────────────────────────────
+  if (hasDelta) {
+    trades.sort((a, b) => {
+      const da = a.champDelta ?? -999, db = b.champDelta ?? -999;
+      return db !== da ? db - da : b.tierGain - a.tierGain;
+    });
+  } else {
+    trades.sort((a, b) => b.tierGain !== a.tierGain ? b.tierGain - a.tierGain : b.tatImprovement - a.tatImprovement);
+  }
+
+  // Store for batch delta compute
+  window._lastRenderedTrades = trades.slice();
 
   renderRosterContextBanner();
-  document.getElementById('badge-trades').textContent = (trades.length + bundleList.length) || '—';
+  document.getElementById('badge-trades').textContent = (trades.length + bundleList.length + rebuildTrades.length) || '—';
 
-  if (!trades.length && !bundleList.length) {
+  if (!trades.length && !bundleList.length && !rebuildTrades.length) {
     document.getElementById('trades-inner').innerHTML = `<div class="empty">
       <div class="empty-title">No Trade Opportunities</div>
       <div class="empty-sub">No strong buy/sell mismatches found across league rosters right now.</div></div>`;
     return;
   }
 
-  const strong  = trades.filter(t => t.strong);
-  const regular = trades.filter(t => !t.strong);
+  // ── Section labels adapt to mode ─────────────────────────────
+  const strongLabel   = hasDelta ? '⚡ Moves the Needle' : '⚡ Act Now';
+  const strongSub     = hasDelta ? 'Best champ% uplift available' : 'Strong signals on both sides';
+  const regularLabel  = 'Recommended';
+  const regularSub    = hasDelta ? 'Positive champ% impact' : 'Worth exploring at the right terms';
+
+  const strong  = trades.filter(t => hasDelta ? (t.champDelta !== null ? t.champDelta > 1.5 : t.strong) : t.strong);
+  const regular = trades.filter(t => hasDelta ? (t.champDelta !== null ? t.champDelta <= 1.5 : !t.strong) : !t.strong);
   const bStrong = bundleList.filter(t => t.strong);
   const bReg    = bundleList.filter(t => !t.strong);
 
-  document.getElementById('badge-trades').textContent = (trades.length + bundleList.length) || '—';
+  document.getElementById('badge-trades').textContent = (trades.length + bundleList.length + rebuildTrades.length) || '—';
 
   let html = '';
-  if (strong.length)  html += tradeSection('⚡ Act Now', 'var(--accent)', 'Strong signals on both sides', strong, false);
-  if (regular.length) html += tradeSection('Recommended', 'var(--text2)', 'Worth exploring at the right terms', regular, false);
+
+  // Rebuild mode banner
+  if (rebuildMode) {
+    const mono2 = "font-family:'DM Mono',monospace";
+    html += '<div style="margin-bottom:16px;padding:10px 14px;border:1px solid var(--blue);background:rgba(96,165,250,.06)">'
+      + '<div style="' + mono2 + ';font-size:.6rem;color:var(--blue);letter-spacing:1px;margin-bottom:4px">🔄 REBUILD MODE</div>'
+      + '<div style="' + mono2 + ';font-size:.62rem;color:var(--text2);line-height:1.5">'
+      + 'Your champ% is low and no available trades meaningfully improve it. '
+      + 'Focus on selling win-now assets to contenders for dynasty value — and tank for draft position.'
+      + '</div></div>';
+  }
+
+  if (strong.length)  html += tradeSection(strongLabel, 'var(--accent)', strongSub, strong, false);
+  if (regular.length) html += tradeSection(regularLabel, 'var(--text2)', regularSub, regular, false);
+
+  if (rebuildTrades.length) {
+    html += '<div class="trade-section-head" style="margin-top:24px">'
+      + '<div class="trade-section-title" style="color:var(--blue)">📉 Sell Win-Now Assets</div>'
+      + '<div class="trade-section-sub">High redraft / lower dynasty — move these to contenders for dynasty value</div>'
+      + '</div><div class="trade-cards">'
+      + rebuildTrades.map(t => tradeCard(t)).join('')
+      + '</div>';
+  }
+
   if (bStrong.length || bReg.length) {
     html += `<div class="trade-section-head" style="margin-top:24px">
       <div class="trade-section-title" style="color:var(--amber)">📦 Bundle Offers</div>
@@ -2338,7 +2456,7 @@ function renderTradesTab(maxAbs, thresh) {
     if (bReg.length)    html += bReg.map(t => bundleCard(t)).join('');
     html += '</div>';
   }
-  html += `<div class="tfoot" style="margin-top:12px">Rank gap = FC rank − TAT rank · Positive = TAT values higher · Combined signal = sum of both gaps</div>`;
+  html += `<div class="tfoot" style="margin-top:12px">Rank gap = FC rank − TAT rank · Positive = TAT values higher · Rebuild mode: sell FC-overvalued assets for TAT dynasty value</div>`;
   document.getElementById('trades-inner').innerHTML = html;
 
   // Async: check how many leagues each target owner has the sell player in
@@ -2554,6 +2672,77 @@ function bundleCard(t) {
   + "</div>";
 }
 
+
+// ── BATCH TRADE DELTA COMPUTE ────────────────────────────────
+// Pre-computes champ% delta for every trade candidate after sim runs.
+// 500 mini-sim iterations per trade, batched async to keep UI responsive.
+// Results in window._tradeDeltas keyed "sendName|recvName|ownerName".
+async function computeAllTradeDeltas(trades) {
+  if (!leagueRosters.length || !fcData.some(p => p.redraftValue > 0)) return;
+  window._tradeDeltas = window._tradeDeltas || {};
+  const MINI = 500, BATCH = 5;
+  const N = leagueRosters.length;
+  const schedule = generateSchedule(N, 14);
+  const allRdBefore = leagueRosters.map(r => r.redraftStrength || 0);
+  const myIdx = leagueRosters.findIndex(r => r.isMe);
+  if (myIdx < 0) return;
+
+  function runMini(rdStrengths) {
+    const maxRd = Math.max(...rdStrengths, 1);
+    const teams = rdStrengths.map(rd => ({ mean: BASE_SCORE + (rd/maxRd)*SCORE_SCALE, sd: BASE_SD }));
+    const champ = new Array(N).fill(0);
+    function sg(a,b) { return Math.max(0,teams[a].mean+teams[a].sd*randn()) >= Math.max(0,teams[b].mean+teams[b].sd*randn()) ? a : b; }
+    for (let s=0; s<MINI; s++) {
+      const wins=new Array(N).fill(0), pts=new Array(N).fill(0);
+      for (const wk of schedule) {
+        const sc=teams.map(t=>Math.max(0,t.mean+t.sd*randn()));
+        for (const [a,b] of wk) { pts[a]+=sc[a]; pts[b]+=sc[b]; if(sc[a]>sc[b]) wins[a]++; else wins[b]++; }
+      }
+      const seeds=teams.map((_,i)=>i).sort((a,b)=>wins[b]-wins[a]||pts[b]-pts[a]);
+      champ[sg(sg(seeds[0],sg(seeds[3],seeds[4])),sg(seeds[1],sg(seeds[2],seeds[5])))]++;
+    }
+    return champ.map(c=>c/MINI);
+  }
+
+  const baseline = runMini(allRdBefore);
+  const myBaseline = baseline[myIdx];
+  const rdByName = {};
+  for (const p of fcData) rdByName[norm(p.name)] = p.redraftValue || 0;
+
+  async function processBatch(batch) {
+    for (const t of batch) {
+      const sendName = norm(t.sell.name), recvName = norm(t.recv.name);
+      const theirIdx = leagueRosters.findIndex(r => r.ownerName === t.ownerName);
+      if (theirIdx < 0) continue;
+      const sendRd = rdByName[sendName]||0, recvRd = rdByName[recvName]||0;
+      const rdAfter = allRdBefore.map((v,i) =>
+        i===myIdx    ? Math.max(0,v-sendRd+recvRd) :
+        i===theirIdx ? Math.max(0,v-recvRd+sendRd) : v
+      );
+      const delta = (runMini(rdAfter)[myIdx] - myBaseline) * 100;
+      const key = sendName + '|' + recvName + '|' + norm(t.ownerName);
+      window._tradeDeltas[key] = +delta.toFixed(2);
+    }
+  }
+
+  // Skip already-computed trades
+  const pending = trades.filter(t => {
+    const key = norm(t.sell.name)+'|'+norm(t.recv.name)+'|'+norm(t.ownerName);
+    return window._tradeDeltas[key] === undefined;
+  });
+
+  for (let i=0; i<pending.length; i+=BATCH) {
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await processBatch(pending.slice(i, i+BATCH));
+  }
+
+  if (!pending.length) return;
+
+  // Re-render with deltas
+  const wd = merged.filter(p=>p.rankDelta!==null);
+  const maxAbs = wd.length ? Math.max(...wd.map(p=>Math.abs(p.rankDelta))) : 1;
+  renderTradesTab(maxAbs, Math.max(maxAbs*0.1, 5));
+}
 
 // ── TRADE IMPACT SIMULATOR ────────────────────────────────────
 // Runs a fast mini-sim (2k iterations) with rosters adjusted for the trade.
@@ -2803,12 +2992,21 @@ function tradeCard(t) {
         </div>
       </div>
       ${leagueRosters.some(r => r.champPct != null) ? `
-      <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:8px;">
-        <div id="${impactId}"></div>
-        <button onclick="runTradeImpact(this,[${sendJson}],[${recvJson}],'${esc(t.ownerName)}','${impactId}')"
-          style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);background:none;border:1px solid var(--border);padding:3px 10px;cursor:pointer;letter-spacing:1px;margin-top:2px">
-          ▶ simulate impact
-        </button>
+      <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:6px;">
+        ${t.champDelta !== null && t.champDelta !== undefined ? `
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:bold;color:${t.champDelta > 0.4 ? 'var(--accent)' : t.champDelta > 0 ? 'var(--text1)' : t.champDelta < -0.4 ? 'var(--red)' : 'var(--text2)'}">
+              ${t.champDelta >= 0 ? '+' : ''}${t.champDelta.toFixed(1)}% champ
+            </span>
+            <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--text3)">
+              ${((leagueRosters.find(r=>r.isMe)||{}).champPct*100||0).toFixed(1)}% → ${(((leagueRosters.find(r=>r.isMe)||{}).champPct||0)*100 + t.champDelta).toFixed(1)}%
+            </span>
+          </div>` : `
+          <div id="${impactId}"></div>
+          <button onclick="runTradeImpact(this,[${sendJson}],[${recvJson}],'${esc(t.ownerName)}','${impactId}')"
+            style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);background:none;border:1px solid var(--border);padding:3px 10px;cursor:pointer;letter-spacing:1px;margin-top:2px">
+            ▶ simulate impact
+          </button>`}
       </div>` : ''}
     </div>
   </div>`;
