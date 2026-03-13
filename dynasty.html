@@ -766,7 +766,16 @@ async function selectLeague(leagueId, leagueName) {
 
 async function loadLeagueRosters(leagueId, playersMap, bar) {
   try {
-    window._leagueId = leagueId; // store for simulator
+    // Invalidate all per-league cached state when switching leagues
+    if (window._leagueId && window._leagueId !== leagueId) {
+      window._tradeDeltas        = {};
+      window._projPtsByName      = {};
+      window._sleeperProjections = null;
+      window._scoringSettings    = null;
+      window._lastRenderedTrades = [];
+      window._autoSimTimer && clearTimeout(window._autoSimTimer);
+    }
+    window._leagueId = leagueId;
     // Step 1: fetch rosters, traded picks, league info in parallel
     const [rRes, picksRes, leagueRes] = await Promise.all([
       fetch(`${SLEEPER}/league/${leagueId}/rosters`),
@@ -2349,8 +2358,8 @@ function renderTradesTab(maxAbs, thresh) {
 
     // Strong: tier jump ≥ 0.5 1sts for sell-motivated, ≥ 0.75 for buy-motivated
     const strong = motivation === 'sell'
-      ? tierGain >= 0.5 && Math.abs(sell.rankDelta||0) > thresh * 1.5
-      : tierGain >= 0.75;
+      ? tierGain >= 50 && Math.abs(sell.rankDelta||0) > thresh * 1.5
+      : tierGain >= 75;
 
     const fillsNeed = !sell.isPick && (recv.ownerThinPos || new Set()).has(sell.pos);
 
@@ -2416,7 +2425,7 @@ function renderTradesTab(maxAbs, thresh) {
   // Add-ons: my weakest assets (tierVal ≤ 0.15), up to 8
   const oneFourOneKeys = new Set(trades.map(t => norm(t.sell.name) + '|' + t.ownerName));
   const addOns = myAssets
-    .filter(p => p.tierVal <= 0.15)
+    .filter(p => p.tierVal <= 15)
     .sort((a, b) => (a.tierVal||0) - (b.tierVal||0))
     .slice(0, 8);
 
@@ -2453,7 +2462,7 @@ function renderTradesTab(maxAbs, thresh) {
 
           const fcEdgeForThem  = (theirs.fcRank || 999) - bundleFcRank;
           const fillsNeed      = !mine.isPick && (theirs.ownerThinPos || new Set()).has(mine.pos);
-          const strong         = tierGain >= 0.4;
+          const strong         = tierGain >= 40;
           const motivation     = (mine.rankDelta != null && mine.rankDelta < -thresh) ? 'sell' : 'buy';
 
           bundles.push({
@@ -2548,7 +2557,7 @@ function renderTradesTab(maxAbs, thresh) {
           champPct: (leagueRosters.find(r => r.ownerName === ownerName) || {}).champPct ?? null,
           champDelta: _deltas[deltaKey] ?? null,
           fillsNeed: (best.ownerThinPos || new Set()).has(mine.pos),
-          strong: bestTierGain >= 0.5,
+          strong: bestTierGain >= 50,
         });
       }
     }
@@ -2802,7 +2811,7 @@ function bundleCard(t) {
     + '<div class="tcard-arrow">'
     +   '<div class="tcard-swap">⇄</div>'
     +   '<div style="' + mono + ';font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">TAT value gain</div>'
-    +   '<div class="tcard-net up">+' + t.tierGain.toFixed(2) + "</div>"
+    +   '<div class="tcard-net up">+' + (t.tierGain/100).toFixed(2) + "</div>"
     +   '<div style="' + mono + ';font-size:.52rem;color:var(--text3);text-align:center">1sts equivalent</div>'
     +   acceptanceMeter(t.bundleFcValue, t.recv.fcValue, t.ownerWindow, t.main.age, t.main.trend)
     + "</div>"
@@ -3196,7 +3205,7 @@ function tradeCard(t) {
       <div style="color:var(--text3)">
         <span style="color:var(--accent);letter-spacing:1px;font-size:.55rem">YOU WIN ON TAT</span><br>
         ${esc(t.recv.name)} [${esc(t.recv.tierLabel||'?')}] vs ${esc(t.sell.tierLabel||'?')} —
-        <span style="color:var(--accent)">+${t.tierGain.toFixed(2)} 1sts · +${t.tatImprovement} rank spots</span>
+        <span style="color:var(--accent)">+${(t.tierGain/100).toFixed(2)} 1sts · +${t.tatImprovement} rank spots</span>
       </div>
       <div style="color:var(--text3);text-align:right">
         ${t.motivation === 'buy'
