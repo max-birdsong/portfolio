@@ -1931,6 +1931,18 @@ function renderRosterContextBanner() {
 
   // ── Roster rows: top starters per position ─────────────────
   const tatTierByName2 = {};
+  // Position rank lookup: for each player, how many of same pos rank ahead of them in TAT
+  // Position rank by FC redraft value (better signal for who starts this season)
+  const tatPosRank = {};
+  const fcPosCounts = {};
+  const fcSortedForPos = [...fcData]
+    .filter(p => p.redraftValue > 0 && p.position && p.position !== 'PICK')
+    .sort((a, b) => b.redraftValue - a.redraftValue);
+  for (const p of fcSortedForPos) {
+    const pos = (p.position || '').toUpperCase();
+    fcPosCounts[pos] = (fcPosCounts[pos] || 0) + 1;
+    tatPosRank[norm(p.name)] = fcPosCounts[pos]; // e.g. QB3, WR12
+  }
   for (const p of tatData) tatTierByName2[norm(p.name)] = { tatRank: p.tatRank, tierLabel: p.tierLabel };
 
   const rosterRows = (() => {
@@ -1948,6 +1960,7 @@ function renderRosterContextBanner() {
           const nn = norm(p.name);
           const tat = tatTierByName2[nn] || {};
           return { name: p.name, age: p.age, tatRank: tat.tatRank || null,
+                   posRank: tatPosRank[nn] || null,
                    redraftVal: rdByName[nn] || 0, tierLabel: tat.tierLabel || '' };
         })
         .sort((a,b) => (a.tatRank||9999)-(b.tatRank||9999))
@@ -1957,9 +1970,10 @@ function renderRosterContextBanner() {
       html += '<div>';
       html += '<div style="' + mono + ';font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-bottom:2px">' + pos + '</div>';
       for (const s of starters) {
-        const rdStr = s.redraftVal > 0 ? ' <span style="color:var(--text3)">rd:' + s.redraftVal.toLocaleString() + '</span>' : '';
-        const ageStr = s.age ? ' <span style="color:var(--text3)">age ' + s.age + '</span>' : '';
-        const rankStr = s.tatRank ? ' <span style="color:var(--text3)">#' + s.tatRank + '</span>' : '';
+        const rdStr   = s.redraftVal > 0 ? ' <span style="color:var(--text3)">rd:' + s.redraftVal.toLocaleString() + '</span>' : '';
+        const ageStr  = s.age ? ' <span style="color:var(--text3)">age ' + s.age + '</span>' : '';
+        const posTag  = s.posRank ? pos + s.posRank : (s.tatRank ? '#' + s.tatRank : '');
+        const rankStr = posTag ? ' <span style="color:var(--accent);opacity:.7">' + posTag + '</span>' : '';
         html += '<div style="' + mono + ';font-size:.6rem;color:var(--text1);display:flex;align-items:baseline;gap:4px;margin-bottom:1px">'
           + '<span>' + esc(s.name) + '</span>'
           + rankStr + ageStr + rdStr
