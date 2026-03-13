@@ -519,22 +519,7 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
       <div class="section-head-sub">10,000 simulated seasons · roster strength derived from TAT tier values</div>
     </div>
     <div id="sim-controls" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
-      <label style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text2);display:flex;align-items:center;gap:6px">
-        Playoff teams
-        <select id="sim-playoff-spots" style="background:var(--surface);border:1px solid var(--border);color:var(--text1);font-family:'DM Mono',monospace;font-size:.7rem;padding:3px 6px">
-          <option value="4">4</option>
-          <option value="6" selected>6</option>
-          <option value="8">8</option>
-        </select>
-      </label>
-      <label style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text2);display:flex;align-items:center;gap:6px">
-        Season weeks
-        <select id="sim-weeks" style="background:var(--surface);border:1px solid var(--border);color:var(--text1);font-family:'DM Mono',monospace;font-size:.7rem;padding:3px 6px">
-          <option value="13">13</option>
-          <option value="14" selected>14</option>
-          <option value="15">15</option>
-        </select>
-      </label>
+      <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3)">14 weeks · 6 playoff spots · top 2 get bye · wks 15/16/17</div>
       <label style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text2);display:flex;align-items:center;gap:6px">
         <input type="checkbox" id="sim-use-scores" style="accent-color:var(--accent)">
         Blend with actual scores (if available)
@@ -1301,8 +1286,8 @@ async function runSimulator() {
   btn.textContent = '⏳ Running…';
   btn.disabled = true;
 
-  const playoffSpots = parseInt(document.getElementById('sim-playoff-spots').value);
-  const numWeeks     = parseInt(document.getElementById('sim-weeks').value);
+  const playoffSpots = 6;   // fixed league setting
+  const numWeeks     = 14;  // regular season weeks
   const useScores    = document.getElementById('sim-use-scores').checked;
 
   const out = document.getElementById('sim-output');
@@ -1354,45 +1339,87 @@ async function runSimulator() {
   const schedule = generateSchedule(numTeams, numWeeks);
 
   // ── Run simulations ─────────────────────────────────────────
-  const playoffCount  = new Array(numTeams).fill(0);
+  // Playoff bracket: seeds 1-2 get byes to semis
+  //   Wk 15 (R1):   3v6, 4v5
+  //   Wk 16 (semi): 1v(worst R1 winner), 2v(best R1 winner)
+  //   Wk 17 (final): semi winners
+  // Championship = win the final; we track that + playoff appearances
+
+  const playoffCount  = new Array(numTeams).fill(0); // made playoffs (top 6)
+  const championCount = new Array(numTeams).fill(0); // won championship
+  const byeCount      = new Array(numTeams).fill(0); // earned bye (top 2)
   const winTotals     = new Array(numTeams).fill(0);
   const pointTotals   = new Array(numTeams).fill(0);
+
+  function simGame(a, b) {
+    // Returns index of winner; draw a score for each team
+    const sa = Math.max(0, teams[a].mean + teams[a].sd * randn());
+    const sb = Math.max(0, teams[b].mean + teams[b].sd * randn());
+    return sa >= sb ? a : b;
+  }
 
   for (let sim = 0; sim < SIM_N; sim++) {
     const wins   = new Array(numTeams).fill(0);
     const points = new Array(numTeams).fill(0);
 
+    // Regular season
     for (const weekMatchups of schedule) {
       const scores = teams.map(t => Math.max(0, t.mean + t.sd * randn()));
       for (const [a, b] of weekMatchups) {
         points[a] += scores[a];
         points[b] += scores[b];
         if (scores[a] > scores[b]) wins[a]++;
-        else if (scores[b] > scores[a]) wins[b]++;
+        else wins[b]++;
       }
     }
 
-    // Rank by wins, tiebreak by total points — top N make playoffs
-    const ranked = teams.map((_, i) => i)
+    // Seed teams by wins, tiebreak total points
+    const seeds = teams.map((_, i) => i)
       .sort((a, b) => wins[b] - wins[a] || points[b] - points[a]);
 
-    for (let i = 0; i < playoffSpots; i++) playoffCount[ranked[i]]++;
+    // Track regular season stats
     for (let i = 0; i < numTeams; i++) {
       winTotals[i]   += wins[i];
       pointTotals[i] += points[i];
     }
+
+    // Top 6 make playoffs
+    for (let i = 0; i < playoffSpots; i++) playoffCount[seeds[i]]++;
+
+    // Top 2 get byes
+    const s1 = seeds[0], s2 = seeds[1];
+    byeCount[s1]++;
+    byeCount[s2]++;
+
+    // Wk 15 — R1: 3v6 and 4v5 (0-indexed: seeds[2]vs[5], seeds[3]vs[4])
+    const w1a = simGame(seeds[2], seeds[5]); // winner plays s2 in semi
+    const w1b = simGame(seeds[3], seeds[4]); // winner plays s1 in semi
+
+    // Wk 16 — Semis: 1 vs worse R1 winner, 2 vs better R1 winner
+    // "Better" = higher seed (lower index) — plays the 1 seed
+    // seeds[2] is higher seed than seeds[3], so:
+    //   1-seed plays winner of 4v5 (w1b), 2-seed plays winner of 3v6 (w1a)
+    const semiW1 = simGame(s1, w1b); // 1-seed vs 4v5 winner
+    const semiW2 = simGame(s2, w1a); // 2-seed vs 3v6 winner
+
+    // Wk 17 — Final
+    const champion = simGame(semiW1, semiW2);
+    championCount[champion]++;
   }
 
   // ── Build results ────────────────────────────────────────────
   const results = teams.map((t, i) => ({
     ...t,
-    playoffPct: playoffCount[i] / SIM_N,
-    avgWins:    +(winTotals[i]   / SIM_N).toFixed(1),
-    avgPoints:  +(pointTotals[i] / SIM_N).toFixed(0),
+    playoffPct:  playoffCount[i]  / SIM_N,
+    champPct:    championCount[i] / SIM_N,
+    byePct:      byeCount[i]      / SIM_N,
+    avgWins:     +(winTotals[i]   / SIM_N).toFixed(1),
+    avgPoints:   +(pointTotals[i] / SIM_N).toFixed(0),
   })).sort((a, b) => b.playoffPct - a.playoffPct);
 
+  const myResult = results.find(r => r.isMe);
   document.getElementById('badge-sim').textContent =
-    Math.round((results.find(r => r.isMe)?.playoffPct || 0) * 100) + '%';
+    Math.round((myResult?.champPct || 0) * 100) + '%🏆';
 
   // ── Render ───────────────────────────────────────────────────
   const mono = "font-family:'DM Mono',monospace";
@@ -1400,41 +1427,60 @@ async function runSimulator() {
     ? `<div style="${mono};font-size:.6rem;color:var(--text3);margin-bottom:14px">Blending roster strength with actual scores (${Object.values(actualScores)[0]?.n || 0} weeks of data)</div>`
     : `<div style="${mono};font-size:.6rem;color:var(--text3);margin-bottom:14px">Roster strength only · load actual scores by checking the blend option</div>`;
 
+  // Find bye cutline index (top 2 after sorting by playoff%)
+  const byeCutline = 2;
+
   let rows = results.map((t, rank) => {
-    const pct     = Math.round(t.playoffPct * 100);
-    const barW    = pct;
-    const barCol  = pct >= 60 ? 'var(--accent)' : pct >= 35 ? 'var(--amber)' : 'var(--red)';
+    const playoff = Math.round(t.playoffPct * 100);
+    const champ   = Math.round(t.champPct   * 100);
+    const bye     = Math.round(t.byePct     * 100);
+    const barW    = playoff;
+    const barCol  = playoff >= 60 ? 'var(--accent)' : playoff >= 35 ? 'var(--amber)' : 'var(--red)';
     const isMe    = t.isMe;
     const border  = isMe ? 'border:1px solid var(--accent);' : 'border:1px solid var(--border);';
-    const inBubble = rank < playoffSpots;
 
-    return `<div style="padding:10px 14px;margin-bottom:6px;background:var(--surface);${border}${isMe ? 'background:rgba(0,229,160,.04);' : ''}">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div style="${mono};font-size:.6rem;color:var(--text3);width:16px;text-align:right">${rank + 1}</div>
-        <div style="flex:1;min-width:120px">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-            <span style="${mono};font-size:.75rem;color:${isMe ? 'var(--accent)' : 'var(--text1)'};font-weight:${isMe ? 'bold' : 'normal'}">${esc(t.ownerName)}</span>
-            ${isMe ? '<span style="' + mono + ';font-size:.52rem;color:var(--accent);border:1px solid var(--accent);padding:1px 4px">YOU</span>' : ''}
-            ${t.window ? '<span style="' + mono + ';font-size:.52rem;padding:1px 5px;border:1px solid ' + t.windowColor + ';color:' + t.windowColor + '">' + t.window + '</span>' : ''}
-            ${!inBubble && rank === playoffSpots ? '<div style="width:100%;height:1px;background:var(--border);margin:4px 0;flex-basis:100%"></div>' : ''}
-          </div>
-          <div style="background:var(--surface2);border-radius:2px;height:4px;overflow:hidden">
-            <div style="height:100%;width:${barW}%;background:${barCol};border-radius:2px;transition:width .4s"></div>
-          </div>
-        </div>
-        <div style="${mono};font-size:.85rem;color:${barCol};width:42px;text-align:right;font-weight:bold">${pct}%</div>
-        <div style="${mono};font-size:.6rem;color:var(--text3);text-align:right;min-width:80px">${t.avgWins}W · ${t.avgPoints}pts</div>
-      </div>
-    </div>`;
+    return '<div style="padding:10px 14px;margin-bottom:6px;background:var(--surface);' + border + (isMe ? 'background:rgba(0,229,160,.04);' : '') + '">'
+      + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+        // rank
+        + '<div style="' + mono + ';font-size:.6rem;color:var(--text3);width:16px;text-align:right">' + (rank + 1) + '</div>'
+        // name + bar
+        + '<div style="flex:1;min-width:140px">'
+          + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap">'
+            + '<span style="' + mono + ';font-size:.75rem;color:' + (isMe ? 'var(--accent)' : 'var(--text1)') + ';font-weight:' + (isMe ? 'bold' : 'normal') + '">' + esc(t.ownerName) + '</span>'
+            + (isMe ? '<span style="' + mono + ';font-size:.52rem;color:var(--accent);border:1px solid var(--accent);padding:1px 4px">YOU</span>' : '')
+            + (t.window ? '<span style="' + mono + ';font-size:.52rem;padding:1px 5px;border:1px solid ' + t.windowColor + ';color:' + t.windowColor + '">' + t.window + '</span>' : '')
+            + (rank < byeCutline ? '<span style="' + mono + ';font-size:.52rem;padding:1px 5px;border:1px solid var(--amber);color:var(--amber)">BYE ' + bye + '%</span>' : '')
+          + '</div>'
+          + '<div style="background:var(--surface2);border-radius:2px;height:4px;overflow:hidden">'
+            + '<div style="height:100%;width:' + barW + '%;background:' + barCol + ';border-radius:2px"></div>'
+          + '</div>'
+        + '</div>'
+        // playoff %
+        + '<div style="text-align:right;min-width:100px">'
+          + '<div style="' + mono + ';font-size:.85rem;color:' + barCol + ';font-weight:bold">' + playoff + '%</div>'
+          + '<div style="' + mono + ';font-size:.58rem;color:var(--text3)">playoff</div>'
+        + '</div>'
+        // champ %
+        + '<div style="text-align:right;min-width:60px">'
+          + '<div style="' + mono + ';font-size:.75rem;color:var(--amber);font-weight:bold">' + champ + '%</div>'
+          + '<div style="' + mono + ';font-size:.58rem;color:var(--text3)">🏆 champ</div>'
+        + '</div>'
+        // avg wins / pts
+        + '<div style="' + mono + ';font-size:.58rem;color:var(--text3);text-align:right;min-width:72px">' + t.avgWins + 'W<br>' + t.avgPoints + 'pts</div>'
+      + '</div>'
+    + '</div>';
   });
 
-  // Insert playoff cutline divider
-  rows.splice(playoffSpots, 0,
-    `<div style="${mono};font-size:.58rem;color:var(--text3);text-align:center;padding:4px 0;letter-spacing:2px;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);margin:4px 0">── PLAYOFF CUTLINE ──</div>`
+  // Insert cutlines
+  rows.splice(byeCutline, 0,
+    '<div style="' + mono + ';font-size:.56rem;color:var(--amber);text-align:center;padding:3px 0;letter-spacing:2px;border-top:1px solid rgba(255,176,0,.3);border-bottom:1px solid rgba(255,176,0,.3);margin:3px 0">── BYE CUTLINE (top 2) ──</div>'
+  );
+  rows.splice(playoffSpots + 1, 0,
+    '<div style="' + mono + ';font-size:.56rem;color:var(--text3);text-align:center;padding:3px 0;letter-spacing:2px;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);margin:3px 0">── PLAYOFF CUTLINE (top 6) ──</div>'
   );
 
   out.innerHTML = blendNote
-    + `<div style="${mono};font-size:.58rem;color:var(--text3);margin-bottom:8px;letter-spacing:1px">${SIM_N.toLocaleString()} SIMULATIONS · ${numWeeks} WEEKS · TOP ${playoffSpots} MAKE PLAYOFFS</div>`
+    + '<div style="' + mono + ';font-size:.58rem;color:var(--text3);margin-bottom:8px;letter-spacing:1px">' + SIM_N.toLocaleString() + ' SIMULATIONS · 14 WEEKS · 6 PLAYOFF SPOTS · TOP 2 BYE</div>'
     + rows.join('');
 
   btn.textContent = '▶ RUN'; btn.disabled = false;
