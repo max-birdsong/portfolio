@@ -979,7 +979,8 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
 
     ownershipCache = {};
     leagueLoaded   = true;
-    buildPickPool();
+    computeRosterProfiles(); // compute depth+window now that roster data is ready
+    buildPickPool();         // picks need roster profile fields
     if (bar) { bar.className = 'sbar ok'; bar.textContent = `✓ League loaded`; }
     renderAll();
 
@@ -1220,10 +1221,12 @@ function computeRosterProfiles() {
 
     // Contender: high-tier starters (avg ≥ 0.5 ≈ late-1 quality) AND older (≥ 26)
     // Rebuilding: low tier (< 0.3) OR young (< 24)
+    // Always assign — fall back to Mixed if data is sparse
     let window, windowColor;
     if      (avgTierVal >= 0.5 && avgAge >= 26) { window = 'Contender'; windowColor = 'var(--amber)'; }
     else if (avgTierVal <  0.3 || (avgAge > 0 && avgAge < 24)) { window = 'Rebuilding'; windowColor = 'var(--blue)'; }
     else                                         { window = 'Mixed';     windowColor = 'var(--text3)'; }
+    // Note: Mixed is a valid result — don't leave window null
 
     roster.window      = window;
     roster.windowColor = windowColor;
