@@ -777,7 +777,25 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     const rosters     = await rRes.json();
     const tradedPicks = picksRes.ok ? await picksRes.json() : [];
     const leagueInfo  = leagueRes.ok ? await leagueRes.json() : {};
-    const draftRounds = leagueInfo?.settings?.draft_rounds || 3;
+    const draftRounds     = leagueInfo?.settings?.draft_rounds || 3;
+    const scoringSettings = leagueInfo?.scoring_settings || {};
+    window._scoringSettings = scoringSettings;
+
+    // Fetch week 1 projections for PPW computation (non-blocking — best effort)
+    // Fetch projections: try current NFL state first to find the right season+week,
+    // then fall back to week 1 of the league season. Projections are weekly on Sleeper.
+    fetch(`${SLEEPER}/state/nfl`)
+      .then(r => r.ok ? r.json() : null)
+      .then(state => {
+        if (!state) return null;
+        const projSeason = state.season || document.getElementById('sleeper-season')?.value || '2026';
+        // Use display_week (upcoming) or season_start_date week; fall back to week 1
+        const projWeek   = state.display_week || state.week || 1;
+        return fetch(`${SLEEPER}/projections/nfl/${projSeason}/${projWeek}?season_type=regular`);
+      })
+      .then(r => (r?.ok ? r.json() : null))
+      .then(proj => { if (proj && Object.keys(proj).length > 0) window._sleeperProjections = proj; })
+      .catch(() => {});
 
     // Step 2: owner display names
     const ownerIds = [...new Set(rosters.map(r => r.owner_id).filter(Boolean))];
@@ -981,9 +999,10 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
         if (!name) continue;
         playerNames.add(norm(name));
         rosterPlayers.push({
-          name: norm(name),
-          pos:  (p.position || '?').toUpperCase(),
-          age:  parseFloat(p.age) || null,
+          name:     norm(name),
+          playerId: pid,
+          pos:      (p.position || '?').toUpperCase(),
+          age:      parseFloat(p.age) || null,
         });
       }
       return {
@@ -1199,12 +1218,19 @@ function buildPickPool() {
       // Only include in trade universe if we have at least FC rank
       if (fcRank == null && tatRank == null) continue;
 
-      // Derive tierVal from repTat if available, else estimate from round
-      const tierVal = repTat?.tierVal ?? (
-        pick.round === 1 ? 1.0 :
-        pick.round === 2 ? 0.33 :
-        pick.round === 3 ? 0.08 : 0.05
+      // Derive tierVal from repTat if available, capped by round ceiling
+      // A median TAT pick match can have inflated tierVal if the median falls on a
+      // high-upside prospect — cap to prevent nonsense trade valuations
+      const PICK_TIER_CAP = { 1: 2.0, 2: 0.45, 3: 0.12, 4: 0.06 };
+      const PICK_TIER_FLOOR = { 1: 0.25, 2: 0.08, 3: 0.03, 4: 0.02 };
+      const cap = PICK_TIER_CAP[pick.round] ?? 0.06;
+      const floor = PICK_TIER_FLOOR[pick.round] ?? 0.02;
+      const rawTierVal = repTat?.tierVal ?? (
+        pick.round === 1 ? 0.8 :
+        pick.round === 2 ? 0.25 :
+        pick.round === 3 ? 0.07 : 0.04
       );
+      const tierVal = Math.min(cap, Math.max(floor, rawTierVal));
 
       pickPool.push({
         name: displayName, pos: 'PICK', team: '',
@@ -1342,15 +1368,20 @@ async function runSimulator(opts = {}) {
   // redraftStrength = sum of top starters' FC redraft values
   // This is the best available proxy for who wins weeks THIS season.
   // Normalise across league so the strongest roster = 1.0, then map to mean score.
+  // Priority: Sleeper projected PPW (real scoring settings × projected stats)
+  // Fallback:  FC redraft normalised to score range
+  const projReady = computeProjectedPPW();
+  const useProjPPW = projReady && leagueRosters.some(r => (r.projectedPPW || 0) > 0);
+
   const rdStrengths = leagueRosters.map(r => r.redraftStrength || 0);
   const maxRd = Math.max(...rdStrengths, 1);
   const rdReady = rdStrengths.some(v => v > 0);
 
   const teams = leagueRosters.map((r, i) => {
-    // Normalise to 0–1 relative to league max, then scale to score range
-    const normRd       = rdStrengths[i] / maxRd;          // 0–1
-    const strengthMean = BASE_SCORE + normRd * SCORE_SCALE; // e.g. 90–150
-    const actual       = actualScores[r.rosterId] || null;
+    const strengthMean = useProjPPW
+      ? (r.projectedPPW || BASE_SCORE)
+      : BASE_SCORE + (rdStrengths[i] / maxRd) * SCORE_SCALE;
+    const actual = actualScores[r.rosterId] || null;
 
     let mean, sd;
     if (actual && actual.n >= 3) {
@@ -1368,15 +1399,15 @@ async function runSimulator(opts = {}) {
       windowColor: r.windowColor,
       rosterId:    r.rosterId,
       mean, sd,
+      projectedPPW:    r.projectedPPW || 0,
       redraftStrength: rdStrengths[i],
-      normRd,
       actualN: actual?.n || 0,
     };
   });
 
-  const strengthNote = rdReady
-    ? ''
-    : "<div style=\"font-family:'DM Mono',monospace;font-size:.6rem;color:var(--amber);margin-bottom:8px\">⚠ FC redraft values not loaded — fetch FC data first for accurate simulation.</div>";
+  const strengthNote = (!useProjPPW && !rdReady)
+    ? "<div style=\"font-family:'DM Mono',monospace;font-size:.6rem;color:var(--amber);margin-bottom:8px\">⚠ Projections unavailable — using FC redraft as strength proxy.</div>"
+    : useProjPPW ? '' : '';
 
   const numTeams = teams.length;
   const schedule = generateSchedule(numTeams, numWeeks);
@@ -1586,10 +1617,95 @@ async function runSimulator(opts = {}) {
 
   if (!silent) {
     out.innerHTML = blendNote + strengthNote
-      + '<div style="' + mono + ';font-size:.58rem;color:var(--text3);margin-bottom:8px;letter-spacing:1px">' + SIM_N.toLocaleString() + ' SIMULATIONS · 14 WEEKS · 6 PLAYOFF SPOTS · TOP 2 BYE</div>'
+      + '<div style="' + mono + ';font-size:.58rem;color:var(--text3);margin-bottom:8px;letter-spacing:1px">'
+      + SIM_N.toLocaleString() + ' SIMULATIONS · 14 WEEKS · 6 PLAYOFF SPOTS · TOP 2 BYE'
+      + (useProjPPW ? '' : ' · FC REDRAFT PROXY')
+      + '</div>'
+    + (useProjPPW
+        ? '<div style="' + mono + ';font-size:.55rem;color:var(--amber);margin-bottom:10px">⚠ Offseason estimate — using Sleeper projected PPW (QB×2 RB×2 WR×2 TE×1 + 3 FLEX). Actual lineups not available until season starts.</div>'
+        : '<div style="' + mono + ';font-size:.55rem;color:var(--amber);margin-bottom:10px">⚠ Offseason estimate — Sleeper projections unavailable, using FC redraft value as strength proxy. Relative rankings may be more reliable than absolute numbers.</div>')
       + rows.join('');
     btn.textContent = '▶ RUN'; btn.disabled = false;
   }
+}
+
+// ── PROJECTED PPW ────────────────────────────────────────────
+// Scores each roster's projected top starters using Sleeper week 1 projections
+// and the league's actual scoring settings. Falls back to FC redraft if not available.
+//
+// Scoring: sum stat * multiplier for each stat in scoring_settings.
+// Uses same STARTER_N as computeRosterProfiles.
+
+function computeProjectedPPW() {
+  const proj    = window._sleeperProjections;
+  const scoring = window._scoringSettings;
+  if (!proj || !scoring || !Object.keys(scoring).length) return false;
+
+  // Lineup: QB×2, RB×2, WR×2, TE×1, FLEX×3 (RB/WR/TE)
+  const LOCKED  = { QB:2, RB:2, WR:2, TE:1 };
+  const N_FLEX  = 3;
+
+  function scorePlayer(playerId) {
+    const entry = proj[playerId];
+    if (!entry?.stats) return 0;
+    let pts = 0;
+    for (const [stat, mult] of Object.entries(scoring)) {
+      pts += (entry.stats[stat] || 0) * mult;
+    }
+    return pts;
+  }
+
+  window._projPtsByName = {};
+
+  for (const roster of leagueRosters) {
+    const byPos = { QB:[], RB:[], WR:[], TE:[] };
+    for (const rp of (roster.rosterPlayers || [])) {
+      if (!byPos[rp.pos] || !rp.playerId) continue;
+      const pts = scorePlayer(rp.playerId);
+      byPos[rp.pos].push({ ...rp, projPts: pts });
+      window._projPtsByName[norm(rp.name)] = pts;
+    }
+
+    // Sort each position by projected pts descending
+    for (const pos of Object.keys(byPos)) {
+      byPos[pos].sort((a, b) => b.projPts - a.projPts);
+    }
+
+    // Fill locked starters first
+    let totalPPW = 0;
+    const usedByPos = { QB:0, RB:0, WR:0, TE:0 };
+    for (const [pos, n] of Object.entries(LOCKED)) {
+      for (let i = 0; i < Math.min(n, byPos[pos].length); i++) {
+        totalPPW += byPos[pos][i].projPts;
+        usedByPos[pos]++;
+      }
+    }
+
+    // Pool remaining flex-eligible players (RB/WR/TE) and fill 3 flex spots greedily
+    const flexPool = ['RB','WR','TE'].flatMap(pos =>
+      byPos[pos].slice(usedByPos[pos])
+    ).sort((a, b) => b.projPts - a.projPts);
+
+    const flexStarters = flexPool.slice(0, N_FLEX);
+    for (const p of flexStarters) totalPPW += p.projPts;
+
+    // Replacement level per position: best available after starters + flex are filled
+    // Track which players ended up starting (locked + flex)
+    const startedNames = new Set([
+      ...['QB','RB','WR','TE'].flatMap(pos => byPos[pos].slice(0, usedByPos[pos]).map(p => p.name)),
+      ...flexStarters.map(p => p.name),
+    ]);
+
+    roster.replacementLevel = {};
+    for (const pos of ['QB','RB','WR','TE']) {
+      const bench = byPos[pos].filter(p => !startedNames.has(p.name));
+      roster.replacementLevel[pos] = bench[0]?.projPts ?? 0;
+    }
+
+    roster.projectedPPW        = +totalPPW.toFixed(1);
+    roster.projLineupSize      = flexStarters.length + Object.values(usedByPos).reduce((a,b)=>a+b,0);
+  }
+  return true;
 }
 
 // ── ROSTER PROFILES (position depth + window read) ───────────
@@ -1774,6 +1890,12 @@ function renderRosterContextBanner() {
     nearCeiling       = avg >= 0.68;
   }
 
+  const offseasonNote = simReady
+    ? '<div style="' + mono + ';font-size:.5rem;color:var(--text3);margin-top:3px;line-height:1.4">'
+      + (window._sleeperProjections ? 'Projected PPW · flex filled greedily · offseason estimate' : 'FC redraft proxy · offseason estimate')
+      + '</div>'
+    : '';
+
   // ── Per-position bars: redraft strength vs league avg ───────
   // For each position, compare my starters' total redraft value to league avg
   // Uses same STARTER_N logic as computeRosterProfiles
@@ -1797,6 +1919,48 @@ function renderRosterContextBanner() {
     const sums = leagueRosters.map(r => posRdSum(r, pos, n));
     posLeagueAvg[pos] = sums.reduce((s,v) => s+v, 0) / (sums.length || 1);
   }
+
+  // ── Roster rows: top starters per position ─────────────────
+  const tatTierByName2 = {};
+  for (const p of tatData) tatTierByName2[norm(p.name)] = { tatRank: p.tatRank, tierLabel: p.tierLabel };
+
+  const rosterRows = (() => {
+    const LOCKED = { QB:2, RB:2, WR:2, TE:1 };
+    const posOrder = ['QB','RB','WR','TE'];
+    let html = '<div style="margin-top:12px;border-top:1px solid var(--border2);padding-top:10px">';
+    html += '<div style="' + mono + ';font-size:.52rem;color:var(--text3);letter-spacing:1px;margin-bottom:6px">PROJECTED STARTERS</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px 16px">';
+
+    for (const pos of posOrder) {
+      const n = STARTER_N[pos];
+      const starters = (me.rosterPlayers || [])
+        .filter(p => p.pos === pos)
+        .map(p => {
+          const nn = norm(p.name);
+          const tat = tatTierByName2[nn] || {};
+          return { name: p.name, age: p.age, tatRank: tat.tatRank || null,
+                   redraftVal: rdByName[nn] || 0, tierLabel: tat.tierLabel || '' };
+        })
+        .sort((a,b) => (a.tatRank||9999)-(b.tatRank||9999))
+        .slice(0, n);
+
+      if (!starters.length) continue;
+      html += '<div>';
+      html += '<div style="' + mono + ';font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-bottom:2px">' + pos + '</div>';
+      for (const s of starters) {
+        const rdStr = s.redraftVal > 0 ? ' <span style="color:var(--text3)">rd:' + s.redraftVal.toLocaleString() + '</span>' : '';
+        const ageStr = s.age ? ' <span style="color:var(--text3)">age ' + s.age + '</span>' : '';
+        const rankStr = s.tatRank ? ' <span style="color:var(--text3)">#' + s.tatRank + '</span>' : '';
+        html += '<div style="' + mono + ';font-size:.6rem;color:var(--text1);display:flex;align-items:baseline;gap:4px;margin-bottom:1px">'
+          + '<span>' + esc(s.name) + '</span>'
+          + rankStr + ageStr + rdStr
+          + '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div></div>';
+    return html;
+  })();
 
   const posBars = Object.entries(STARTER_N).map(([pos, n]) => {
     const myVal  = posRdSum(me, pos, n);
@@ -1854,6 +2018,7 @@ function renderRosterContextBanner() {
     +     '<div style="' + mono + ';font-size:.6rem;color:' + wCol + ';width:32px;text-align:right">' + ceilPct + '%</div>'
     +   '</div>'
     +   '<div style="' + mono + ';font-size:.54rem;color:var(--text3);margin-top:2px">' + ceilLabel + '</div>'
+    +   offseasonNote
     + '</div>'
 
     + '<div style="display:flex;flex-direction:column;gap:5px;min-width:180px">'
@@ -1861,6 +2026,7 @@ function renderRosterContextBanner() {
     + '</div>'
 
     + '</div>'
+    + rosterRows
     + warningHtml
     + '</div>';
 }
@@ -2160,6 +2326,13 @@ function renderTradesTab(maxAbs, thresh) {
 
     // Block same-round pick-for-pick trades (e.g. 3.09 for 3.04 — not meaningful)
     if (sell.isPick && recv.isPick && sell.pickRound === recv.pickRound && sell.pickSeason === recv.pickSeason) return;
+
+    // Block trades where a pick's tierVal implausibly exceeds the player it's being traded for
+    // e.g. a 2nd round pick should never be valued higher than a proven WR2
+    // Guard: if recv is a pick and sell is a player, recv.tierVal can't be > sell.tierVal * 1.5
+    // (picks carry upside but not that much over a known quantity)
+    if (recv.isPick && !sell.isPick && recv.tierVal > sell.tierVal * 1.5) return;
+    if (sell.isPick && !recv.isPick && sell.tierVal > recv.tierVal * 1.5) return;
 
     // TAT tier value gain (in 1st-pick units) — non-linear, scales correctly at top
     // Skip if either side is missing tier data — can't compute meaningful gain
@@ -2683,13 +2856,16 @@ async function computeAllTradeDeltas(trades) {
   const MINI = 500, BATCH = 5;
   const N = leagueRosters.length;
   const schedule = generateSchedule(N, 14);
-  const allRdBefore = leagueRosters.map(r => r.redraftStrength || 0);
+  const allRdBefore   = leagueRosters.map(r => r.redraftStrength || 0);
+  const allMeanBefore = leagueRosters.map(r => r._simMean || (BASE_SCORE + (r.redraftStrength||0)/Math.max(...leagueRosters.map(x=>x.redraftStrength||0),1)*SCORE_SCALE));
   const myIdx = leagueRosters.findIndex(r => r.isMe);
   if (myIdx < 0) return;
 
-  function runMini(rdStrengths) {
-    const maxRd = Math.max(...rdStrengths, 1);
-    const teams = rdStrengths.map(rd => ({ mean: BASE_SCORE + (rd/maxRd)*SCORE_SCALE, sd: BASE_SD }));
+  const rdScale = allRdBefore.some(v => v > 0)
+    ? SCORE_SCALE / Math.max(...allRdBefore, 1) : 0;
+
+  function runMini(means) {
+    const teams = means.map(m => ({ mean: m, sd: BASE_SD }));
     const champ = new Array(N).fill(0);
     function sg(a,b) { return Math.max(0,teams[a].mean+teams[a].sd*randn()) >= Math.max(0,teams[b].mean+teams[b].sd*randn()) ? a : b; }
     for (let s=0; s<MINI; s++) {
@@ -2704,22 +2880,41 @@ async function computeAllTradeDeltas(trades) {
     return champ.map(c=>c/MINI);
   }
 
-  const baseline = runMini(allRdBefore);
+  const baseline = runMini(allMeanBefore);
   const myBaseline = baseline[myIdx];
   const rdByName = {};
   for (const p of fcData) rdByName[norm(p.name)] = p.redraftValue || 0;
+
+  const projPts      = window._projPtsByName || {};
+  const useProjDelta = Object.keys(projPts).length > 0;
 
   async function processBatch(batch) {
     for (const t of batch) {
       const sendName = norm(t.sell.name), recvName = norm(t.recv.name);
       const theirIdx = leagueRosters.findIndex(r => r.ownerName === t.ownerName);
       if (theirIdx < 0) continue;
-      const sendRd = rdByName[sendName]||0, recvRd = rdByName[recvName]||0;
-      const rdAfter = allRdBefore.map((v,i) =>
-        i===myIdx    ? Math.max(0,v-sendRd+recvRd) :
-        i===theirIdx ? Math.max(0,v-recvRd+sendRd) : v
+
+      let myMeanDelta, theirMeanDelta;
+      if (useProjDelta) {
+        // Marginal: player value minus the bench player they replace
+        const myRepl   = leagueRosters[myIdx].replacementLevel?.[t.sell.pos]   ?? 0;
+        const thRepl   = leagueRosters[theirIdx].replacementLevel?.[t.recv.pos] ?? 0;
+        const sendPts  = projPts[sendName] ?? rdByName[sendName] * rdScale ?? 0;
+        const recvPts  = projPts[recvName] ?? rdByName[recvName] * rdScale ?? 0;
+        // I lose send's marginal contribution, gain recv's marginal contribution
+        myMeanDelta    = (recvPts - thRepl) - (sendPts - myRepl);
+        theirMeanDelta = -myMeanDelta;
+      } else {
+        const sendRd = rdByName[sendName]||0, recvRd = rdByName[recvName]||0;
+        myMeanDelta    = (recvRd - sendRd) * rdScale;
+        theirMeanDelta = -myMeanDelta;
+      }
+
+      const meansAfter = allMeanBefore.map((v,i) =>
+        i===myIdx    ? Math.max(BASE_SCORE * 0.5, v + myMeanDelta)    :
+        i===theirIdx ? Math.max(BASE_SCORE * 0.5, v + theirMeanDelta) : v
       );
-      const delta = (runMini(rdAfter)[myIdx] - myBaseline) * 100;
+      const delta = (runMini(meansAfter)[myIdx] - myBaseline) * 100;
       const key = sendName + '|' + recvName + '|' + norm(t.ownerName);
       window._tradeDeltas[key] = +delta.toFixed(2);
     }
@@ -2818,14 +3013,12 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
     if (r.ownerName === theirOwnerName) return theirRdAfter;
     return r.redraftStrength || 0;
   });
-  const allRdBefore = leagueRosters.map(r => r.redraftStrength || 0);
+  const allRdBefore2   = leagueRosters.map(r => r.redraftStrength || 0);
+  const allMeanBefore2 = leagueRosters.map(r => r._simMean || (BASE_SCORE + (r.redraftStrength||0)/Math.max(...leagueRosters.map(x=>x.redraftStrength||0),1)*SCORE_SCALE));
+  const rdScale2 = allRdBefore2.some(v=>v>0) ? SCORE_SCALE / Math.max(...allRdBefore2,1) : 0;
 
-  function runMiniSim(rdStrengths) {
-    const maxRd = Math.max(...rdStrengths, 1);
-    const teams = leagueRosters.map((r, i) => ({
-      mean: BASE_SCORE + (rdStrengths[i] / maxRd) * SCORE_SCALE,
-      sd:   BASE_SD,
-    }));
+  function runMiniSim(means) {
+    const teams = means.map(m => ({ mean: m, sd: BASE_SD }));
     const N = teams.length;
     const schedule = generateSchedule(N, 14);
     const champCount = new Array(N).fill(0);
@@ -2859,8 +3052,42 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
   const myIdx    = leagueRosters.findIndex(r => r.isMe);
   const theirIdx = leagueRosters.findIndex(r => r.ownerName === theirOwnerName);
 
-  const before = runMiniSim(allRdBefore);
-  const after  = runMiniSim(allRd);
+  // Marginal PPW delta: player's pts minus replacement bench player at that position
+  const _projPts2  = window._projPtsByName || {};
+  const _useProjD2 = Object.keys(_projPts2).length > 0;
+  const myRoster2   = leagueRosters.find(r => r.isMe);
+  const theirRoster2 = leagueRosters.find(r => r.ownerName === theirOwnerName);
+
+  // Direct per-player marginal computation:
+  let myMeanDelta2 = 0;
+  for (const pn of sendNames) {
+    const nn  = norm(pn);
+    const pos = (leagueRosters.flatMap(r => r.rosterPlayers||[]).find(p => norm(p.name)===nn)||{}).pos || 'WR';
+    if (_useProjD2) {
+      myMeanDelta2 -= (_projPts2[nn]??0) - (myRoster2?.replacementLevel?.[pos]??0);
+    } else {
+      myMeanDelta2 -= (rdByName2[nn]||0) * rdScale2;
+    }
+  }
+  for (const pn of recvNames) {
+    const nn  = norm(pn);
+    const pos = (leagueRosters.flatMap(r => r.rosterPlayers||[]).find(p => norm(p.name)===nn)||{}).pos || 'WR';
+    if (_useProjD2) {
+      myMeanDelta2 += (_projPts2[nn]??0) - (theirRoster2?.replacementLevel?.[pos]??0);
+    } else {
+      myMeanDelta2 += (rdByName2[nn]||0) * rdScale2;
+    }
+  }
+
+  const meansAfter2 = allMeanBefore2.map((v, i) => {
+    const r = leagueRosters[i];
+    if (r.isMe)                        return Math.max(BASE_SCORE*0.5, v + myMeanDelta2);
+    if (r.ownerName === theirOwnerName) return Math.max(BASE_SCORE*0.5, v - myMeanDelta2);
+    return v;
+  });
+
+  const before = runMiniSim(allMeanBefore2);
+  const after  = runMiniSim(meansAfter2);
 
   return {
     myChampBefore: before[myIdx],
