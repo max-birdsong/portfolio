@@ -1751,13 +1751,22 @@ function tradeSection(title, color, sub, trades) {
   </div><div class="trade-cards">${trades.map(t=>tradeCard(t)).join('')}</div>`;
 }
 
-function acceptanceMeter(sellFcVal, recvFcVal) {
+function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge) {
   // Ratio of FC values: how much more FC thinks we're giving up vs getting back
   // ratio > 1 means they win on FC (required for trade to surface at all)
   // Bands: ≥1.5 = likely (giving up 50%+ more), 1.2–1.49 = possible, <1.2 = long shot
   const s     = sellFcVal || 1;
   const r     = recvFcVal || 1;
-  const ratio = s / r;
+  let ratio   = s / r;
+
+  // Small window/age alignment boost (±15% max, never flips a band on its own)
+  // Contender receiving an older player → more likely to accept
+  // Rebuilding receiving a younger player (age < 25) → more likely to accept
+  const age = sellAge || 0;
+  if (ownerWindow === 'Contender' && age >= 28) ratio *= 1.15;
+  else if (ownerWindow === 'Rebuilding' && age > 0 && age < 24) ratio *= 1.15;
+  else if (ownerWindow === 'Contender' && age > 0 && age < 24) ratio *= 0.88;
+  else if (ownerWindow === 'Rebuilding' && age >= 28) ratio *= 0.88;
   const pct   = Math.min(100, Math.max(8, Math.round((ratio - 1) / 0.8 * 100)));
   const label = ratio >= 1.5 ? 'likely'     : ratio >= 1.2 ? 'possible'   : 'long shot';
   const color = ratio >= 1.5 ? 'var(--accent)' : ratio >= 1.2 ? 'var(--amber)' : 'var(--red)';
@@ -1810,7 +1819,7 @@ function tradeCard(t) {
       <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">TAT value gain</div>
       <div class="tcard-net up">+${t.tierGain.toFixed(2)}</div>
       <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);text-align:center">1sts equivalent</div>
-      ${acceptanceMeter(t.sell.fcValue, t.recv.fcValue)}
+      ${acceptanceMeter(t.sell.fcValue, t.recv.fcValue, t.ownerWindow, t.sell.age)}
     </div>
 
     <!-- RECEIVE -->
