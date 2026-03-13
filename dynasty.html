@@ -488,6 +488,7 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
         <span class="spinner"></span> Loading all rosters…
       </div>
       <div id="pick-debug" style="display:none;margin:12px 0;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);line-height:1.7"></div>
+<div id="roster-context-banner" style="margin-bottom:16px"></div>
 <div id="trades-inner"></div>
     </div>
   </div>
@@ -1185,7 +1186,12 @@ function buildPickPool() {
 function computeRosterProfiles() {
   if (!leagueRosters.length || !tatData.length) return;
 
-  const STARTER_N = { QB: 1, RB: 4, WR: 4, TE: 1 };
+  // 2QB / 2RB / 2WR / 1TE / 3FLEX lineup
+  // FLEX eligible: RB/WR/TE. Approximate starters by taking top-N per pos
+  // including likely flex contributors: QB×2, RB×5, WR×5, TE×2
+  const STARTER_N  = { QB: 2, RB: 5, WR: 5, TE: 2 };
+  // Locked starters (non-flex): used for thin-position calc
+  const LOCKED_N   = { QB: 2, RB: 2, WR: 2, TE: 1 };
 
   // TAT rank lookup by normalised name
   const tatRankByName = {};
@@ -1202,24 +1208,33 @@ function computeRosterProfiles() {
       if (!byPos[rp.pos]) continue;
       byPos[rp.pos].push({
         ...rp,
-        tatRank:  tatRankByName[rp.name]  ?? 9999,
-        tierVal:  tatTierByName[rp.name]  ?? 0,
+        tatRank: tatRankByName[rp.name] ?? 9999,
+        tierVal: tatTierByName[rp.name] ?? 0,
       });
     }
 
-    // Top-N starters per position by TAT rank
+    // Top-N starters per position by TAT rank (includes flex contributors)
     const posDepth = {};
     for (const [pos, n] of Object.entries(STARTER_N)) {
       posDepth[pos] = byPos[pos].sort((a, b) => a.tatRank - b.tatRank).slice(0, n);
     }
     roster.posDepth = posDepth;
 
-    // ── Window read ─────────────────────────────────────────
+    // ── Window read ──────────────────────────────────────────
     const allStarters = Object.values(posDepth).flat();
     const tierVals    = allStarters.map(p => p.tierVal).filter(v => v > 0);
     const ages        = allStarters.map(p => p.age).filter(a => a != null);
     const avgTierVal  = tierVals.length ? tierVals.reduce((s, v) => s + v, 0) / tierVals.length : 0;
     const avgAge      = ages.length     ? ages.reduce((s, a) => s + a, 0)     / ages.length     : 0;
+
+    // Per-position avg tier among locked starters (for ceiling check later)
+    const posTierAvg = {};
+    for (const [pos, n] of Object.entries(LOCKED_N)) {
+      const locked = (posDepth[pos] || []).slice(0, n);
+      const vals   = locked.map(p => p.tierVal).filter(v => v > 0);
+      posTierAvg[pos] = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
+    }
+    roster.posTierAvg = posTierAvg;
 
     // Contender: high-tier starters (avg ≥ 0.5 ≈ late-1 quality) AND older (≥ 26)
     // Rebuilding: low tier (< 0.3) OR young (< 24)
@@ -1236,16 +1251,16 @@ function computeRosterProfiles() {
     roster.avgTierVal  = +avgTierVal.toFixed(2);
   }
 
-  // ── League-average depth → thin positions ───────────────────
+  // ── League-average depth → thin positions (based on locked starters) ──
   const leagueAvgDepth = {};
-  for (const pos of Object.keys(STARTER_N)) {
-    const counts = leagueRosters.map(r => (r.posDepth[pos] || []).length);
+  for (const pos of Object.keys(LOCKED_N)) {
+    const counts = leagueRosters.map(r => (r.posDepth[pos] || []).slice(0, LOCKED_N[pos]).length);
     leagueAvgDepth[pos] = counts.reduce((s, c) => s + c, 0) / (counts.length || 1);
   }
   for (const roster of leagueRosters) {
     roster.thinPositions = new Set(
-      Object.keys(STARTER_N).filter(pos =>
-        (roster.posDepth[pos] || []).length < leagueAvgDepth[pos]
+      Object.keys(LOCKED_N).filter(pos =>
+        (roster.posDepth[pos] || []).slice(0, LOCKED_N[pos]).length < leagueAvgDepth[pos]
       )
     );
   }
@@ -1296,6 +1311,97 @@ function mergeAndRender() {
 }
 
 // ── RENDER ALL ────────────────────────────────────────────────
+function renderRosterContextBanner() {
+  const el = document.getElementById('roster-context-banner');
+  if (!el) return;
+
+  const me = leagueRosters.find(r => r.isMe);
+  if (!me || !me.window) { el.innerHTML = ''; return; }
+
+  const mono  = "font-family:'DM Mono',monospace";
+  const avg   = me.avgTierVal || 0;
+  const age   = me.avgAge     || 0;
+  const win   = me.window;
+  const wCol  = me.windowColor;
+
+  // ── Ceiling score: 0–100, how "full" the roster is ──────────
+  // Based on avgTierVal relative to a realistic contender ceiling (~0.8)
+  // At 0.8+ you're elite; at 0.3 you're rebuilding
+  const CEILING = 0.8;
+  const ceilPct = Math.min(100, Math.round((avg / CEILING) * 100));
+
+  // ── Diminishing returns warning threshold ───────────────────
+  // Above ~70% ceiling (avgTierVal ≈ 0.56), marginal upgrades have
+  // sharply diminishing impact on win probability — variance dominates
+  const inDiminishingZone = avg >= 0.56;
+  const nearCeiling       = avg >= 0.68;
+
+  // ── Per-position tier bars ───────────────────────────────────
+  const ptAvg = me.posTierAvg || {};
+  const POS_CEIL = { QB: 0.8, RB: 0.8, WR: 0.8, TE: 0.6 };
+  const posLabels = { QB: 'QB ×2', RB: 'RB locked', WR: 'WR locked', TE: 'TE' };
+
+  const posBars = Object.entries(POS_CEIL).map(([pos, ceil]) => {
+    const val  = ptAvg[pos] || 0;
+    const pct  = Math.min(100, Math.round((val / ceil) * 100));
+    const col  = pct >= 75 ? 'var(--accent)' : pct >= 45 ? 'var(--amber)' : 'var(--red)';
+    return '<div style="display:flex;align-items:center;gap:6px;min-width:120px">'
+      + '<div style="' + mono + ';font-size:.54rem;color:var(--text3);width:60px">' + posLabels[pos] + '</div>'
+      + '<div style="flex:1;background:var(--surface2);border-radius:2px;height:3px;overflow:hidden">'
+      +   '<div style="height:100%;width:' + pct + '%;background:' + col + ';border-radius:2px"></div>'
+      + '</div>'
+      + '<div style="' + mono + ';font-size:.54rem;color:' + col + ';width:28px;text-align:right">' + pct + '%</div>'
+      + '</div>';
+  }).join('');
+
+  // ── Warning message ─────────────────────────────────────────
+  let warningHtml = '';
+  if (nearCeiling) {
+    warningHtml = '<div style="margin-top:10px;padding:8px 10px;border:1px solid var(--amber);background:rgba(255,176,0,.06)">'
+      + '<div style="' + mono + ';font-size:.6rem;color:var(--amber);letter-spacing:1px;margin-bottom:3px">⚠ NEAR ROSTER CEILING</div>'
+      + '<div style="' + mono + ';font-size:.62rem;color:var(--text2);line-height:1.5">'
+      + 'Your roster is strong enough that variance dominates from here. Marginal upgrades add little to actual championship probability. '
+      + 'Only move picks for a specific positional hole — not for value alone.'
+      + '</div></div>';
+  } else if (inDiminishingZone) {
+    warningHtml = '<div style="margin-top:10px;padding:8px 10px;border:1px solid var(--border);background:var(--surface)">'
+      + '<div style="' + mono + ';font-size:.6rem;color:var(--text2);letter-spacing:1px;margin-bottom:3px">APPROACHING DIMINISHING RETURNS</div>'
+      + '<div style="' + mono + ';font-size:.62rem;color:var(--text3);line-height:1.5">'
+      + 'Roster is competitive. Be selective — prioritise trades that address a specific thin position over pure value gains.'
+      + '</div></div>';
+  }
+
+  el.innerHTML = '<div style="padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:6px">'
+    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">'
+
+    // Left: window + overall bar
+    + '<div style="flex:1;min-width:180px">'
+    +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+    +     '<div style="' + mono + ';font-size:.56rem;color:var(--text3);letter-spacing:1px">YOUR ROSTER</div>'
+    +     '<span style="' + mono + ';font-size:.6rem;padding:2px 7px;border:1px solid ' + wCol + ';color:' + wCol + '">' + win + (age ? ' · ' + age + ' avg' : '') + '</span>'
+    +   '</div>'
+    +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+    +     '<div style="' + mono + ';font-size:.54rem;color:var(--text3);width:60px">ceiling</div>'
+    +     '<div style="flex:1;background:var(--surface2);border-radius:2px;height:5px;overflow:hidden">'
+    +       '<div style="height:100%;width:' + ceilPct + '%;background:' + wCol + ';border-radius:2px;transition:width .3s"></div>'
+    +     '</div>'
+    +     '<div style="' + mono + ';font-size:.6rem;color:' + wCol + ';width:32px;text-align:right">' + ceilPct + '%</div>'
+    +   '</div>'
+    +   '<div style="' + mono + ';font-size:.54rem;color:var(--text3);margin-top:2px">'
+    +     (nearCeiling ? 'variance dominates from here' : inDiminishingZone ? 'approaching diminishing returns' : 'room to improve')
+    +   '</div>'
+    + '</div>'
+
+    // Right: per-position bars
+    + '<div style="display:flex;flex-direction:column;gap:5px;min-width:180px">'
+    +   posBars
+    + '</div>'
+
+    + '</div>'
+    + warningHtml
+    + '</div>';
+}
+
 function renderAll() {
   const wd = merged.filter(p=>p.rankDelta!==null);
   const maxAbs = wd.length ? Math.max(...wd.map(p=>Math.abs(p.rankDelta))) : 1;
@@ -1324,6 +1430,7 @@ function renderAll() {
   renderBuyTab(buys, maxAbs);
   renderSellTab(sells, maxAbs);
   renderTableTab(maxAbs);
+  renderRosterContextBanner();
 }
 
 // ── PLAYER CARD HTML ─────────────────────────────────────────
@@ -1740,9 +1847,10 @@ function renderTradesTab(maxAbs, thresh) {
   // Sort by TAT tier gain descending (1st-pick units), tiebreak by raw rank improvement
   trades.sort((a,b) => b.tierGain !== a.tierGain ? b.tierGain - a.tierGain : b.tatImprovement - a.tatImprovement);
 
-  document.getElementById('badge-trades').textContent = trades.length || '—';
+  renderRosterContextBanner();
+  document.getElementById('badge-trades').textContent = (trades.length + bundleList.length) || '—';
 
-  if (!trades.length) {
+  if (!trades.length && !bundleList.length) {
     document.getElementById('trades-inner').innerHTML = `<div class="empty">
       <div class="empty-title">No Trade Opportunities</div>
       <div class="empty-sub">No strong buy/sell mismatches found across league rosters right now.</div></div>`;
