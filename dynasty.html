@@ -628,15 +628,31 @@ async function fetchFC() {
   const qbs = document.getElementById('sel-qbs').value;
   const ppr = document.getElementById('sel-ppr').value;
   const tep = document.getElementById('sel-tep').value;
-  const url = `https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=${qbs}&ppr=${ppr}&tep=${tep}&includeAdp=false`;
+
+  const dynastyUrl  = `https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=${qbs}&ppr=${ppr}&tep=${tep}&includeAdp=false`;
+  const redraftUrl  = `https://api.fantasycalc.com/values/current?isDynasty=false&numQbs=${qbs}&ppr=${ppr}&tep=${tep}&includeAdp=false`;
+
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const raw = await res.json();
-    fcData = raw.filter(r=>r.value>0).map((r,i)=>{
+    // Fetch both dynasty (for trade signals) and redraft (for sim strength) in parallel
+    const [dynRes, rdRes] = await Promise.all([fetch(dynastyUrl), fetch(redraftUrl)]);
+    if (!dynRes.ok) throw new Error(`Dynasty HTTP ${dynRes.status}`);
+    if (!rdRes.ok)  throw new Error(`Redraft HTTP ${rdRes.status}`);
+
+    const dynRaw = await dynRes.json();
+    const rdRaw  = await rdRes.json();
+
+    // Build redraft lookup by normalised name → value
+    const rdMap = {};
+    rdRaw.filter(r => r.value > 0).forEach(r => {
+      const name = r.player?.name || 'Unknown';
+      rdMap[norm(name)] = r.value;
+    });
+
+    fcData = dynRaw.filter(r=>r.value>0).map((r,i)=>{
       const name = r.player?.name||'Unknown';
       return {
         name, fcValue:r.value, fcRank:i+1,
+        redraftValue: rdMap[norm(name)] || 0,  // 0 if not in redraft (rookies, picks)
         pos:   /\d{4}\s+pick/i.test(name)?'PICK':(r.player?.position||'?'),
         team:  r.player?.maybeTeam||'—',
         age:   r.player?.age||null,
@@ -644,8 +660,9 @@ async function fetchFC() {
         sd:    r.maybeMovingStandardDeviationPerc||0,
       };
     });
+
     bar.className='sbar ok';
-    bar.textContent=`✓ ${fcData.length} players · live values`;
+    bar.textContent=`✓ ${fcData.length} players · dynasty + redraft values`;
     document.getElementById('h-fc').innerHTML='<span class="dot live"></span>FC LIVE';
     mergeAndRender();
   } catch(e) {
@@ -1298,7 +1315,7 @@ async function runSimulator() {
 
   // ── Debug dump — remove once confirmed working ───────────────
   console.log('[SIM] leagueRosters:', leagueRosters.length, 'teams');
-  console.log('[SIM] avgTierVals:', leagueRosters.map(r => r.ownerName + ':' + (r.avgTierVal||0)));
+  console.log('[SIM] redraftStrengths:', leagueRosters.map(r => r.ownerName + ':' + (r.redraftStrength||0)));
 
   if (!leagueRosters.length) {
     out.innerHTML = '<div class="empty"><div class="empty-title">League not loaded</div><div class="empty-sub">Load your Sleeper league first</div></div>';
@@ -1314,29 +1331,18 @@ async function runSimulator() {
     actualScores = await fetchMatchupScores(window._leagueId, numWeeks);
   }
 
-  // ── Compute strength scores ─────────────────────────────────
-  // Prefer avgTierVal from TAT profiles; fall back to FC-based roster value
-  // if TAT hasn't been loaded yet (avoids all-identical means)
-  const tatReady = leagueRosters.some(r => (r.avgTierVal || 0) > 0);
+  // ── Compute strength scores from FC redraft values ──────────
+  // redraftStrength = sum of top starters' FC redraft values
+  // This is the best available proxy for who wins weeks THIS season.
+  // Normalise across league so the strongest roster = 1.0, then map to mean score.
+  const rdStrengths = leagueRosters.map(r => r.redraftStrength || 0);
+  const maxRd = Math.max(...rdStrengths, 1);
+  const rdReady = rdStrengths.some(v => v > 0);
 
-  if (!tatReady) {
-    // FC fallback: sum fcValue of each owner's players from merged
-    const fcValueByOwner = {};
-    for (const p of merged) {
-      if (!p.ownerName || p.ownerIsMe === undefined) continue;
-      if (!fcValueByOwner[p.ownerName]) fcValueByOwner[p.ownerName] = 0;
-      fcValueByOwner[p.ownerName] += (p.fcValue || 0);
-    }
-    // Normalise to 0-1 range relative to max
-    const maxFc = Math.max(...Object.values(fcValueByOwner), 1);
-    for (const r of leagueRosters) {
-      const raw = fcValueByOwner[r.ownerName] || 0;
-      r.avgTierVal = +(raw / maxFc * 0.8).toFixed(3); // scale to ~0-0.8 range
-    }
-  }
-
-  const teams = leagueRosters.map(r => {
-    const strengthMean = teamStrengthToMean(r.avgTierVal || 0);
+  const teams = leagueRosters.map((r, i) => {
+    // Normalise to 0–1 relative to league max, then scale to score range
+    const normRd       = rdStrengths[i] / maxRd;          // 0–1
+    const strengthMean = BASE_SCORE + normRd * SCORE_SCALE; // e.g. 90–150
     const actual       = actualScores[r.rosterId] || null;
 
     let mean, sd;
@@ -1349,21 +1355,21 @@ async function runSimulator() {
     }
 
     return {
-      ownerName:  r.ownerName,
-      isMe:       r.isMe,
-      window:     r.window,
+      ownerName:   r.ownerName,
+      isMe:        r.isMe,
+      window:      r.window,
       windowColor: r.windowColor,
-      rosterId:   r.rosterId,
+      rosterId:    r.rosterId,
       mean, sd,
-      avgTierVal: r.avgTierVal || 0,
-      actualN:    actual?.n || 0,
+      redraftStrength: rdStrengths[i],
+      normRd,
+      actualN: actual?.n || 0,
     };
   });
 
-  // Surface warning if using FC fallback
-  const strengthNote = tatReady
+  const strengthNote = rdReady
     ? ''
-    : "<div style=\"font-family:'DM Mono',monospace;font-size:.6rem;color:var(--amber);margin-bottom:8px\">⚠ TAT not loaded — using FC values as strength proxy. Load TAT CSV for better accuracy.</div>";
+    : "<div style=\"font-family:'DM Mono',monospace;font-size:.6rem;color:var(--amber);margin-bottom:8px\">⚠ FC redraft values not loaded — fetch FC data first for accurate simulation.</div>";
 
   const numTeams = teams.length;
   const schedule = generateSchedule(numTeams, numWeeks);
@@ -1584,6 +1590,15 @@ function computeRosterProfiles() {
     roster.windowColor = windowColor;
     roster.avgAge      = avgAge > 0 ? +avgAge.toFixed(1) : null;
     roster.avgTierVal  = +avgTierVal.toFixed(2);
+
+    // Redraft strength: sum of top starters' redraftValue from FC
+    // Used by simulator — reflects expected THIS-SEASON production, not dynasty value
+    const rdVals = allStarters
+      .map(p => fcMap[p.name] ? (fcMap[p.name].redraftValue || 0) : 0)
+      .filter(v => v > 0);
+    roster.redraftStrength = rdVals.length
+      ? rdVals.reduce((s, v) => s + v, 0)
+      : 0;
   }
 
   // ── League-average depth → thin positions (based on locked starters) ──
