@@ -1507,9 +1507,9 @@ async function runSimulator(opts = {}) {
   // ── Write sim results back onto leagueRosters ────────────────
   // Window is now derived from champ% — this is the most honest
   // signal for trade context: are they actually competing this year?
-  //   Contender:  champ% ≥ 10%  (realistic title shot)
-  //   Mixed:      champ% 3–9%   (fringe / depends on variance)
-  //   Rebuilding: champ% < 3%   (not a factor this season)
+  //   Contender:  champ% ≥ 8%   (realistic title shot)
+  //   Mixed:      champ% 2–7%   (fringe / depends on variance)
+  //   Rebuilding: champ% < 2%   (not a factor this season)
   const resultByOwner = {};
   for (const r of results) resultByOwner[r.ownerName] = r;
 
@@ -1522,8 +1522,8 @@ async function runSimulator(opts = {}) {
     roster.simMean    = sr.mean;
 
     const champ = sr.champPct * 100;
-    if      (champ >= 10) { roster.window = 'Contender'; roster.windowColor = 'var(--amber)'; }
-    else if (champ >=  3) { roster.window = 'Mixed';     roster.windowColor = 'var(--text3)'; }
+    if      (champ >=  8) { roster.window = 'Contender'; roster.windowColor = 'var(--amber)'; }
+    else if (champ >=  2) { roster.window = 'Mixed';     roster.windowColor = 'var(--text3)'; }
     else                  { roster.window = 'Rebuilding'; roster.windowColor = 'var(--blue)'; }
   }
 
