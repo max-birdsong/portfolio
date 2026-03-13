@@ -1457,6 +1457,63 @@ async function runSimulator() {
   document.getElementById('badge-sim').textContent =
     Math.round((myResult?.champPct || 0) * 100) + '%🏆';
 
+  // ── Write sim results back onto leagueRosters ────────────────
+  // Window is now derived from champ% — this is the most honest
+  // signal for trade context: are they actually competing this year?
+  //   Contender:  champ% ≥ 10%  (realistic title shot)
+  //   Mixed:      champ% 3–9%   (fringe / depends on variance)
+  //   Rebuilding: champ% < 3%   (not a factor this season)
+  const resultByOwner = {};
+  for (const r of results) resultByOwner[r.ownerName] = r;
+
+  for (const roster of leagueRosters) {
+    const sr = resultByOwner[roster.ownerName];
+    if (!sr) continue;
+    roster.champPct   = sr.champPct;
+    roster.playoffPct = sr.playoffPct;
+    roster.byePct     = sr.byePct;
+    roster.simMean    = sr.mean;
+
+    const champ = sr.champPct * 100;
+    if      (champ >= 10) { roster.window = 'Contender'; roster.windowColor = 'var(--amber)'; }
+    else if (champ >=  3) { roster.window = 'Mixed';     roster.windowColor = 'var(--text3)'; }
+    else                  { roster.window = 'Rebuilding'; roster.windowColor = 'var(--blue)'; }
+  }
+
+  // Re-propagate updated window to ownerByPlayer + merged
+  for (const roster of leagueRosters) {
+    for (const rp of (roster.rosterPlayers || [])) {
+      const key = norm(rp.name);
+      if (ownerByPlayer[key]) {
+        ownerByPlayer[key].window      = roster.window;
+        ownerByPlayer[key].windowColor = roster.windowColor;
+        ownerByPlayer[key].champPct    = roster.champPct;
+        ownerByPlayer[key].playoffPct  = roster.playoffPct;
+      }
+    }
+  }
+  for (const p of merged) {
+    const ob = ownerByPlayer[norm(p.name)];
+    if (ob) {
+      p.ownerWindow      = ob.window;
+      p.ownerWindowColor = ob.windowColor;
+    }
+  }
+  for (const p of pickPool) {
+    const roster = leagueRosters.find(r => r.ownerName === p.ownerName);
+    if (roster) {
+      p.ownerWindow      = roster.window;
+      p.ownerWindowColor = roster.windowColor;
+    }
+  }
+
+  // Refresh trade finder with updated windows (no full re-fetch needed)
+  renderTradesTab(
+    merged.filter(p=>p.rankDelta!==null).reduce((m,p)=>Math.max(m,Math.abs(p.rankDelta)),1),
+    Math.max(merged.filter(p=>p.rankDelta!==null).reduce((m,p)=>Math.max(m,Math.abs(p.rankDelta)),1)*0.1, 5)
+  );
+  renderRosterContextBanner();
+
   // ── Render ───────────────────────────────────────────────────
   const mono = "font-family:'DM Mono',monospace";
   const blendNote = useScores && Object.keys(actualScores).length
@@ -2075,6 +2132,7 @@ function renderTradesTab(maxAbs, thresh) {
       ownerWindow:      recv.ownerWindow      || null,
       ownerWindowColor: recv.ownerWindowColor || 'var(--text3)',
       ownerAvgAge:      recv.ownerAvgAge      || null,
+      champPct: (leagueRosters.find(r => r.ownerName === ownerName) || {}).champPct ?? null,
       fillsNeed,
       tierGain, tatImprovement, fcEdgeForThem, strong });
   }
@@ -2176,6 +2234,7 @@ function renderTradesTab(maxAbs, thresh) {
             ownerWindow:      theirs.ownerWindow      || null,
             ownerWindowColor: theirs.ownerWindowColor || 'var(--text3)',
             ownerAvgAge:      theirs.ownerAvgAge      || null,
+            champPct: (leagueRosters.find(r => r.ownerName === ownerName) || {}).champPct ?? null,
             fillsNeed, tierGain, tatImprovement, fcEdgeForThem,
             bundleFcValue, strong,
           });
@@ -2406,7 +2465,7 @@ function bundleCard(t) {
     +   '<div style="' + mono + ';font-size:.56rem;letter-spacing:2px;color:var(--accent);margin-bottom:4px;text-align:right">GET</div>'
     +   '<div class="tcard-pname">' + esc(t.recv.name) + (t.recv.tierLabel ? ' <span class="tier-chip" style="font-size:.6rem;vertical-align:middle;opacity:.85">' + esc(t.recv.tierLabel) + "</span>" : "") + "</div>"
     +   '<div class="tcard-pmeta" style="margin-top:3px;justify-content:flex-end;flex-wrap:wrap">'
-    +     (t.ownerWindow ? '<span style="' + mono + ';font-size:.55rem;padding:2px 6px;border:1px solid ' + t.ownerWindowColor + ";color:" + t.ownerWindowColor + '">' + esc(t.ownerWindow) + (t.ownerAvgAge ? " · " + t.ownerAvgAge : "") + "</span>" : "")
+    +     (t.ownerWindow ? '<span style="' + mono + ';font-size:.55rem;padding:2px 6px;border:1px solid ' + t.ownerWindowColor + ";color:" + t.ownerWindowColor + '">' + esc(t.ownerWindow) + (t.champPct != null ? ' · ' + Math.round(t.champPct*100) + '% 🏆' : t.ownerAvgAge ? ' · ' + t.ownerAvgAge : '') + "</span>" : "")
     +     '<span class="owner-pill">' + esc(t.ownerName) + "</span>"
     +     (t.recv.team ? '<span class="team-pip">' + esc(t.recv.team) + "</span>" : "")
     +     '<span class="pos-pip pos-' + t.recv.pos + '">' + t.recv.pos + "</span>"
@@ -2479,7 +2538,7 @@ function tradeCard(t) {
       <div style="font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:2px;color:var(--accent);margin-bottom:4px;text-align:right">GET</div>
       <div class="tcard-pname">${esc(t.recv.name)}${t.recv.tierLabel ? ` <span class="tier-chip" style="font-size:.6rem;vertical-align:middle;opacity:.85">${esc(t.recv.tierLabel)}</span>` : ''}</div>
       <div class="tcard-pmeta" style="margin-top:3px;justify-content:flex-end;flex-wrap:wrap;">
-        ${t.ownerWindow ? `<span style="font-family:'DM Mono',monospace;font-size:.55rem;padding:2px 6px;border:1px solid ${t.ownerWindowColor};color:${t.ownerWindowColor}">${esc(t.ownerWindow)}${t.ownerAvgAge ? ' · ' + t.ownerAvgAge : ''}</span>` : ''}
+        ${t.ownerWindow ? `<span style="font-family:'DM Mono',monospace;font-size:.55rem;padding:2px 6px;border:1px solid ${t.ownerWindowColor};color:${t.ownerWindowColor}">${esc(t.ownerWindow)}${t.champPct != null ? ' · ' + Math.round(t.champPct*100) + '% 🏆' : t.ownerAvgAge ? ' · ' + t.ownerAvgAge : ''}</span>` : ''}
         <span class="owner-pill">${esc(t.ownerName)}</span>
         ${t.recv.team ? `<span class="team-pip">${esc(t.recv.team)}</span>` : ''}
         <span class="pos-pip pos-${t.recv.pos}">${t.recv.pos}</span>
