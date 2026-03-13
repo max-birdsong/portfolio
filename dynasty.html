@@ -2416,6 +2416,9 @@ function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge, sellTrend) 
 }
 
 function bundleCard(t) {
+  const impactId = 'impact_bundle_' + (t.main.name + '_' + t.addon.name + '_' + t.recv.name + '_' + t.ownerName).replace(/[^a-z0-9]/gi,'_');
+  const sendJson = JSON.stringify([{name:t.main.name,pos:t.main.pos},{name:t.addon.name,pos:t.addon.pos}]).replace(/"/g,'&quot;');
+  const recvJson = JSON.stringify([{name:t.recv.name,pos:t.recv.pos}]).replace(/"/g,'&quot;');
   const ownerKey = "ownership|" + t.main.name + "|" + t.ownerName;
   const cached   = ownershipCache[ownerKey];
   const ownId    = "own_" + (t.main.name + "_" + t.ownerName).replace(/[^a-z0-9]/gi, "_");
@@ -2486,13 +2489,178 @@ function bundleCard(t) {
     +     ownSpan
     +   "</div>"
     + "</div>"
+    + (leagueRosters.some(r => r.champPct != null)
+        ? '<div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:8px">'
+          + '<div id="' + impactId + '"></div>'
+          + '<button onclick="runTradeImpact(this,' + sendJson + ',' + recvJson + ',\'' + esc(t.ownerName) + '\',\'' + impactId + '\')"'
+          + ' style="font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--text3);background:none;border:1px solid var(--border);padding:3px 10px;cursor:pointer;letter-spacing:1px;margin-top:2px">'
+          + '▶ simulate impact</button>'
+          + '</div>'
+        : '')
 
   + "</div>";
 }
 
+
+// ── TRADE IMPACT SIMULATOR ────────────────────────────────────
+// Runs a fast mini-sim (2k iterations) with rosters adjusted for the trade.
+// Returns { myChampBefore, myChampAfter, theirChampBefore, theirChampAfter,
+//           myDynBefore, myDynAfter, theirDynBefore, theirDynAfter }
+//
+// "Dynasty value" = avgTierVal of top starters (TAT-based, same as window calc)
+// "Champ%"        = simulator output using FC redraft strength
+
+function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM = 2000) {
+  if (!leagueRosters.length || !fcData.length) return null;
+
+  // Build redraft strength lookup from current fcData
+  const rdByName = {};
+  for (const p of fcData) rdByName[norm(p.name)] = p.redraftValue || 0;
+
+  // TAT tier lookup
+  const tatTierByName = {};
+  for (const p of tatData) tatTierByName[norm(p.name)] = p.tierVal || 0;
+
+  // Clone redraft strengths and dynasty values per roster
+  // Apply trade: remove send from my roster, add recv; vice versa for them
+  const sendNames = sendPlayers.map(p => norm(p.name));
+  const recvNames = recvPlayers.map(p => norm(p.name));
+
+  // Compute per-roster redraft strength adjustment
+  function adjustedStrength(roster, removeNames, addNames) {
+    // Start from current redraftStrength and adjust by player deltas
+    // This is approximate but fast — avoids full starter re-sort
+    let s = roster.redraftStrength || 0;
+    for (const n of removeNames) s -= (rdByName[n] || 0);
+    for (const n of addNames)    s += (rdByName[n] || 0);
+    return Math.max(0, s);
+  }
+
+  function adjustedDynVal(roster, removeNames, addNames) {
+    // avgTierVal of top starters after swap — approximate via delta
+    // Use sum of tierVals for top STARTER_N players as proxy
+    const STARTER_N = { QB:2, RB:5, WR:5, TE:2 };
+    const byPos = { QB:[], RB:[], WR:[], TE:[] };
+    for (const rp of (roster.rosterPlayers || [])) {
+      if (!byPos[rp.pos]) continue;
+      const n = norm(rp.name);
+      if (removeNames.includes(n)) continue; // being sent away
+      byPos[rp.pos].push({ name: n, tierVal: tatTierByName[n] || 0 });
+    }
+    // Add received players
+    for (const p of addNames) {
+      const pos = (fcData.find(f => norm(f.name) === p) || {}).pos;
+      if (pos && byPos[pos]) byPos[pos].push({ name: p, tierVal: tatTierByName[p] || 0 });
+    }
+    let sum = 0, count = 0;
+    for (const [pos, n] of Object.entries(STARTER_N)) {
+      const starters = (byPos[pos] || []).sort((a,b) => b.tierVal - a.tierVal).slice(0, n);
+      for (const s of starters) { if (s.tierVal > 0) { sum += s.tierVal; count++; } }
+    }
+    return count ? +(sum / count).toFixed(3) : 0;
+  }
+
+  const myRoster    = leagueRosters.find(r => r.isMe);
+  const theirRoster = leagueRosters.find(r => r.ownerName === theirOwnerName);
+  if (!myRoster || !theirRoster) return null;
+
+  // Before / after strengths
+  const myRdBefore    = myRoster.redraftStrength    || 0;
+  const theirRdBefore = theirRoster.redraftStrength || 0;
+  const myRdAfter     = adjustedStrength(myRoster,    sendNames, recvNames);
+  const theirRdAfter  = adjustedStrength(theirRoster, recvNames, sendNames);
+
+  // Build team array with adjusted strengths
+  const allRd = leagueRosters.map(r => {
+    if (r.isMe)                        return myRdAfter;
+    if (r.ownerName === theirOwnerName) return theirRdAfter;
+    return r.redraftStrength || 0;
+  });
+  const allRdBefore = leagueRosters.map(r => r.redraftStrength || 0);
+
+  function runMiniSim(rdStrengths) {
+    const maxRd = Math.max(...rdStrengths, 1);
+    const teams = leagueRosters.map((r, i) => ({
+      mean: BASE_SCORE + (rdStrengths[i] / maxRd) * SCORE_SCALE,
+      sd:   BASE_SD,
+    }));
+    const N = teams.length;
+    const schedule = generateSchedule(N, 14);
+    const champCount = new Array(N).fill(0);
+
+    for (let sim = 0; sim < MINI_SIM; sim++) {
+      const wins = new Array(N).fill(0), pts = new Array(N).fill(0);
+      for (const week of schedule) {
+        const scores = teams.map(t => Math.max(0, t.mean + t.sd * randn()));
+        for (const [a, b] of week) {
+          pts[a] += scores[a]; pts[b] += scores[b];
+          if (scores[a] > scores[b]) wins[a]++; else wins[b]++;
+        }
+      }
+      const seeds = teams.map((_, i) => i).sort((a, b) => wins[b]-wins[a] || pts[b]-pts[a]);
+      const s1 = seeds[0], s2 = seeds[1];
+      const w1a = _simGameInline(teams, seeds[2], seeds[5]);
+      const w1b = _simGameInline(teams, seeds[3], seeds[4]);
+      const sW1 = _simGameInline(teams, s1, w1b);
+      const sW2 = _simGameInline(teams, s2, w1a);
+      champCount[_simGameInline(teams, sW1, sW2)]++;
+    }
+    return champCount.map(c => c / MINI_SIM);
+  }
+
+  function _simGameInline(teams, a, b) {
+    const sa = Math.max(0, teams[a].mean + teams[a].sd * randn());
+    const sb = Math.max(0, teams[b].mean + teams[b].sd * randn());
+    return sa >= sb ? a : b;
+  }
+
+  const myIdx    = leagueRosters.findIndex(r => r.isMe);
+  const theirIdx = leagueRosters.findIndex(r => r.ownerName === theirOwnerName);
+
+  const before = runMiniSim(allRdBefore);
+  const after  = runMiniSim(allRd);
+
+  return {
+    myChampBefore: before[myIdx],
+    myChampAfter:  after[myIdx],
+  };
+}
+
+// Called from trade card button — runs sim and injects result into card
+function runTradeImpact(btnEl, sendPlayers, recvPlayers, theirOwner, cardId) {
+  btnEl.disabled = true;
+  btnEl.textContent = '⏳';
+
+  setTimeout(() => {
+    const r = simulateTradeDelta(sendPlayers, recvPlayers, theirOwner);
+    const out = document.getElementById(cardId);
+    if (!r || !out) { btnEl.textContent = '✗'; return; }
+
+    const delta = (r.myChampAfter - r.myChampBefore) * 100;
+    const col   = delta > 0.4 ? 'var(--accent)' : delta > 0 ? 'var(--text1)' : delta < -0.4 ? 'var(--red)' : 'var(--text2)';
+    const sign  = delta >= 0 ? '+' : '';
+    const mono  = "font-family:'DM Mono',monospace";
+
+    out.innerHTML =
+      '<div style="' + mono + ';display:flex;align-items:baseline;gap:8px;padding:8px 0 2px">'
+      + '<span style="font-size:1.1rem;color:' + col + ';font-weight:bold">' + sign + delta.toFixed(1) + '% champ</span>'
+      + '<span style="font-size:.58rem;color:var(--text3)">'
+        + (r.myChampBefore*100).toFixed(1) + '% → ' + (r.myChampAfter*100).toFixed(1) + '%'
+      + '</span>'
+      + '</div>';
+    btnEl.remove();
+  }, 20);
+}
+
+
 function tradeCard(t) {
   const sellDelta = t.sell.rankDelta;
   const recvDelta = t.recv.rankDelta;
+
+  // Impact sim vars
+  const impactId = 'impact_' + (t.sell.name + '_' + t.recv.name + '_' + t.ownerName).replace(/[^a-z0-9]/gi,'_');
+  const sendJson = JSON.stringify([{name: t.sell.name, pos: t.sell.pos}]).replace(/"/g,'&quot;');
+  const recvJson = JSON.stringify([{name: t.recv.name, pos: t.recv.pos}]).replace(/"/g,'&quot;');
 
   // Ownership line — use cache if available, otherwise placeholder
   const ownerKey = 'ownership|' + t.sell.name + '|' + t.ownerName;
@@ -2581,6 +2749,14 @@ function tradeCard(t) {
           ${ownSpan}
         </div>
       </div>
+      ${leagueRosters.some(r => r.champPct != null) ? `
+      <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:8px;">
+        <div id="${impactId}"></div>
+        <button onclick="runTradeImpact(this,[${sendJson}],[${recvJson}],'${esc(t.ownerName)}','${impactId}')"
+          style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);background:none;border:1px solid var(--border);padding:3px 10px;cursor:pointer;letter-spacing:1px;margin-top:2px">
+          ▶ simulate impact
+        </button>
+      </div>` : ''}
     </div>
   </div>`;
 }
