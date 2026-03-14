@@ -2949,6 +2949,80 @@ function renderTradesTab(maxAbs, thresh) {
 
   const _deltas = window._tradeDeltas || {};
 
+  // ── Rebuild trades: sell aging vets for picks ───────────────
+  // Targets assets where FC redraft rank >> TAT dynasty rank (market overvalues
+  // current production vs long-term dynasty value). Finds 1st/2nd round picks
+  // from contending teams willing to pay now.
+  const REBUILD_RANK_GAP  = 15;  // min fc/tat gap to flag as sell candidate
+  const REBUILD_PICK_RNDS = new Set([1, 2]); // only 1sts and 2nds
+
+  const pickSellTrades = [];
+  const pickSellSeen   = new Set();
+
+  // My sell candidates: high redraft vs dynasty gap
+  const mySellCandidates = myAssets.filter(p =>
+    !p.isPick &&
+    p.fcRank != null &&
+    p.tatRank != null &&
+    (p.tatRank - p.fcRank) >= REBUILD_RANK_GAP  // TAT ranks lower = dynasty analysts less bullish
+  );
+
+  // Their picks: 1sts and 2nds from contending teams
+  const theirPicks = pickPool.filter(p =>
+    !p.mine &&
+    REBUILD_PICK_RNDS.has(p.pickRound) &&
+    p.ownerWindow === 'Contender'
+  );
+
+  // Group picks by owner
+  const picksByOwner = {};
+  for (const pick of theirPicks) {
+    if (!picksByOwner[pick.ownerName]) picksByOwner[pick.ownerName] = [];
+    picksByOwner[pick.ownerName].push(pick);
+  }
+
+  for (const mine of mySellCandidates) {
+    for (const [ownerName, picks] of Object.entries(picksByOwner)) {
+      // Find best pick that gives me fair TAT value
+      // Sort by TAT rank (lower = better)
+      const sorted = picks.slice().sort((a, b) => (a.tatRank||999) - (b.tatRank||999));
+      for (const pick of sorted) {
+        // Pick TAT value should be >= my player's TAT value (fair or better return)
+        if ((pick.tatRank||999) > (mine.tatRank||999) * 1.3) continue; // pick too cheap
+
+        const key = norm(mine.name) + '|' + norm(pick.name) + '|' + ownerName;
+        if (pickSellSeen.has(key)) continue;
+        pickSellSeen.add(key);
+
+        const tatGain  = (mine.tierVal||0) - (pick.tierVal||0); // negative = they give more
+        const rankGap  = mine.tatRank - mine.fcRank; // how much FC overvalues
+        pickSellTrades.push({
+          sell: mine, recv: pick, ownerName,
+          ppgGain: null,
+          tierGain: (pick.tierVal||0) - (mine.tierVal||0),
+          tatImprovement: (mine.tatRank||999) - (pick.tatRank||999),
+          fcEdgeForThem:  (pick.fcRank||999) - (mine.fcRank||999),
+          tradeCount:       pick.tradeCount,
+          totalTrades:      pick.totalTrades,
+          leagueCount:      pick.leagueCount,
+          ownerWindow:      pick.ownerWindow||null,
+          ownerWindowColor: pick.ownerWindowColor||'var(--text3)',
+          ownerAvgAge:      pick.ownerAvgAge||null,
+          champPct: (leagueRosters.find(r=>r.ownerName===ownerName)||{}).champPct??null,
+          champDelta: null, theirChampDelta: null,
+          fillsTheirNeed: null,
+          strong:    rankGap >= 30,
+          motivation: 'rebuild',
+          rankGap,   // fc/tat gap — how overvalued by market
+        });
+        break; // best pick per owner only
+      }
+    }
+  }
+
+  pickSellTrades.sort((a, b) => b.rankGap - a.rankGap);
+  pickSellTrades.splice(20);
+
   // ── PPG Upgrade trades ───────────────────────────────────────
   // Two passes:
   // 1. SLOT UPGRADES: identify my weakest starter slots, find best upgrade per slot per owner
@@ -3239,6 +3313,8 @@ function renderTradesTab(maxAbs, thresh) {
     ...trades,
     ...bundleList.map(t => ({ ...t, _isBundle: true, sell: t.main, _addon: t.addon })),
     ...ppgTrades,
+    ...rebuildTrades,
+    ...pickSellTrades,
   ];
 
   // Pre-compute PPG delta and fillsTheirNeed for all trades
@@ -4195,6 +4271,7 @@ function tradeCard(t) {
         ${t.fillsTheirNeed===false ? `<span style="color:var(--red)">doesn't fill their need</span>` : ''}
         ${t.theirChampDelta!=null  ? `<span style="color:${theirChampCol2}">${t.theirChampDelta>=0?'+':''}${t.theirChampDelta.toFixed(1)}% their champ</span>` : ''}
         ${recvDelta !== null && recvDelta < -5 ? `<span style="color:var(--accent)">TAT undervalued ✓</span>` : ''}
+        ${t.motivation === 'rebuild' && t.rankGap ? `<span style="color:var(--red)">sell high · FC overvalues by ${t.rankGap} spots</span>` : ''}
 
       </div>
 
