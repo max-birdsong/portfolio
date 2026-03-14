@@ -1701,53 +1701,60 @@ async function runSimulator(opts = {}) {
   // Run 10k sim at offsets -20 to +20 PPG for my team only.
   // Stored as window._champSensTable: { offset → champPct }
   // Trade deltas then become instant table lookups — no per-trade re-sim needed.
-  if (!silent) {
-    // Build full-league PPG sensitivity tables — one per team, -20 to +20 PPG offsets.
-    // Each team gets a lookup: offset → champPct. Trade deltas become instant lookups.
-    // ~4 seconds total, only runs on manual ▶ RUN (not auto-sim).
-    const sensSchedule = generateSchedule(numTeams, numWeeks);
-    window._champSensTables = {};  // keyed by ownerName
+  // Build full-league PPG sensitivity tables — one per team, -20 to +20 PPG offsets.
+  // Runs on both manual and auto-sim (async, doesn't block UI).
+  // Build sensitivity tables asynchronously so UI isn't blocked
+  // Captures teams snapshot now, runs in background after sim completes
+  const _sensTeamsSnapshot = teams.map(t => ({ ...t }));
+  const _sensSchedule      = schedule; // already built above
+  setTimeout(async function buildSensTables() {
+    const sensTeams   = _sensTeamsSnapshot;
+    const sensN       = sensTeams.length;
+    const sensWeeks   = _sensSchedule;
+    window._champSensTables = {};
 
-    for (let teamIdx = 0; teamIdx < numTeams; teamIdx++) {
-      const ownerName = teams[teamIdx].ownerName;
+    for (let teamIdx = 0; teamIdx < sensN; teamIdx++) {
+      const ownerName = sensTeams[teamIdx].ownerName;
       const sensTable = {};
-
       for (let offset = -20; offset <= 20; offset++) {
-        const sensTeams = teams.map((t, i) => i === teamIdx
-          ? { ...t, mean: t.mean + offset }
-          : t
-        );
+        const perturbed = sensTeams.map((t, i) => i === teamIdx
+          ? { ...t, mean: t.mean + offset } : t);
         let champCount = 0;
         for (let s = 0; s < SIM_N; s++) {
-          const wins = new Array(numTeams).fill(0);
-          const pts  = new Array(numTeams).fill(0);
-          for (const wk of sensSchedule) {
-            const sc = sensTeams.map(t => Math.max(0, t.mean + t.sd * randn()));
+          const wins = new Array(sensN).fill(0);
+          const pts  = new Array(sensN).fill(0);
+          for (const wk of sensWeeks) {
+            const sc = perturbed.map(t => Math.max(0, t.mean + t.sd * randn()));
             for (const [a, b] of wk) {
               pts[a] += sc[a]; pts[b] += sc[b];
               if (sc[a] > sc[b]) wins[a]++; else wins[b]++;
             }
           }
-          const seeds = sensTeams.map((_,i2)=>i2).sort((a,b)=>wins[b]-wins[a]||pts[b]-pts[a]);
-          function sgS(a,b){ return (sensTeams[a].mean+sensTeams[a].sd*randn()) >= (sensTeams[b].mean+sensTeams[b].sd*randn()) ? a : b; }
-          const w1a = sgS(seeds[2],seeds[5]), w1b = sgS(seeds[3],seeds[4]);
-          const sw1 = sgS(seeds[0],w1b), sw2 = sgS(seeds[1],w1a);
-          const champ = sgS(sw1,sw2);
-          if (champ === teamIdx) champCount++;
+          const seeds = perturbed.map((_,i2)=>i2).sort((a,b)=>wins[b]-wins[a]||pts[b]-pts[a]);
+          function sgB(a,b){ return (perturbed[a].mean+perturbed[a].sd*randn()) >= (perturbed[b].mean+perturbed[b].sd*randn()) ? a : b; }
+          const w1a=sgB(seeds[2],seeds[5]), w1b=sgB(seeds[3],seeds[4]);
+          const sw1=sgB(seeds[0],w1b), sw2=sgB(seeds[1],w1a);
+          if (sgB(sw1,sw2) === teamIdx) champCount++;
         }
         sensTable[offset] = +(champCount / SIM_N * 100).toFixed(2);
       }
       window._champSensTables[ownerName] = sensTable;
+      // Yield between teams so UI stays responsive
+      await new Promise(r => setTimeout(r, 0));
     }
 
-    // Convenience: my table and baseline
-    const myTeam = teams.find(t => t.isMe);
-    if (myTeam) {
-      window._champSensTable = window._champSensTables[myTeam.ownerName];
+    // Set my table and kick off trade deltas with new accurate data
+    const myTeam2 = sensTeams.find(t => t.isMe);
+    if (myTeam2) {
+      window._champSensTable = window._champSensTables[myTeam2.ownerName];
       window._champSensBase  = window._champSensTable?.[0] || 0;
     }
-  }
 
+    // Re-run trade deltas now that accurate tables are available
+    window._tradeDeltas = {};
+    const allTrades = window._lastRenderedTrades || [];
+    if (allTrades.length) computeAllTradeDeltas(allTrades);
+  }, 100); // small delay so sim writeback and render complete first
   // Re-propagate updated window to ownerByPlayer + merged
   for (const roster of leagueRosters) {
     for (const rp of (roster.rosterPlayers || [])) {
