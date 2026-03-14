@@ -1249,14 +1249,15 @@ function buildPickPool() {
       // Derive tierVal from repTat if available, capped by round ceiling
       // A median TAT pick match can have inflated tierVal if the median falls on a
       // high-upside prospect — cap to prevent nonsense trade valuations
-      const PICK_TIER_CAP = { 1: 2.0, 2: 0.45, 3: 0.12, 4: 0.06 };
-      const PICK_TIER_FLOOR = { 1: 0.25, 2: 0.08, 3: 0.03, 4: 0.02 };
-      const cap = PICK_TIER_CAP[pick.round] ?? 0.06;
-      const floor = PICK_TIER_FLOOR[pick.round] ?? 0.02;
+      // tierVal is in ×100 pick-equivalent units (e.g. 75 = 0.75 1sts)
+      const PICK_TIER_CAP   = { 1: 200, 2: 45, 3: 12, 4: 6 };
+      const PICK_TIER_FLOOR = { 1: 25,  2: 8,  3: 3,  4: 2 };
+      const cap   = PICK_TIER_CAP[pick.round]   ?? 6;
+      const floor = PICK_TIER_FLOOR[pick.round]  ?? 2;
       const rawTierVal = repTat?.tierVal ?? (
-        pick.round === 1 ? 0.8 :
-        pick.round === 2 ? 0.25 :
-        pick.round === 3 ? 0.07 : 0.04
+        pick.round === 1 ? 80 :
+        pick.round === 2 ? 25 :
+        pick.round === 3 ? 7 : 4
       );
       const tierVal = Math.min(cap, Math.max(floor, rawTierVal));
 
