@@ -659,9 +659,22 @@ const NAME_ALIASES = {
 // Global PPG estimator — uses TE premium from league scoring settings if available
 function estPPGGlobal(rd, pos) {
   const sc = window._scoringSettings || {};
+
+  // TE premium: extra points per TE reception × ~2.9 rec/game
   const baseRec = sc.rec || 0;
   const teBoost = ((sc.rec_te || baseRec) - baseRec + (sc.bonus_rec_te || 0)) * 2.9;
-  return 8 + (rd || 0) / 600 + (pos === 'TE' ? teBoost : 0);
+
+  // 6PT passing TD boost for QBs: standard is 4pt, 6pt leagues add ~+3 PPG to elite QBs.
+  // Estimate: ~1.5 passing TDs/game × extra pts above 4pt standard.
+  // Scales with rd — elite QBs throw more TDs than backups.
+  // Base formula: 8 + rd/600 gives ~22 PPG for rd=8500 (Lamar), ~16 for rd=4000.
+  // Passing TD freq roughly proportional to redraft value for QBs.
+  const passTdPts = sc.pass_td || 4;
+  const passTdBoost = pos === 'QB'
+    ? Math.max(0, passTdPts - 4) * 1.5   // ~1.5 TDs/game × extra pts above 4pt
+    : 0;
+
+  return 8 + (rd || 0) / 600 + (pos === 'TE' ? teBoost : 0) + passTdBoost;
 }
 
 function norm(n) {
