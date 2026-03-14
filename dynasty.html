@@ -1702,13 +1702,18 @@ async function runSimulator(opts = {}) {
   // Stored as window._champSensTable: { offset → champPct }
   // Trade deltas then become instant table lookups — no per-trade re-sim needed.
   if (!silent) {
-    // Only build during explicit sim run, not auto-sim (keeps load fast)
-    const mySimIdx = teams.findIndex(t => t.isMe);
-    if (mySimIdx >= 0) {
+    // Build full-league PPG sensitivity tables — one per team, -20 to +20 PPG offsets.
+    // Each team gets a lookup: offset → champPct. Trade deltas become instant lookups.
+    // ~4 seconds total, only runs on manual ▶ RUN (not auto-sim).
+    const sensSchedule = generateSchedule(numTeams, numWeeks);
+    window._champSensTables = {};  // keyed by ownerName
+
+    for (let teamIdx = 0; teamIdx < numTeams; teamIdx++) {
+      const ownerName = teams[teamIdx].ownerName;
       const sensTable = {};
-      const sensSchedule = generateSchedule(numTeams, numWeeks);
+
       for (let offset = -20; offset <= 20; offset++) {
-        const sensTeams = teams.map((t, i) => i === mySimIdx
+        const sensTeams = teams.map((t, i) => i === teamIdx
           ? { ...t, mean: t.mean + offset }
           : t
         );
@@ -1723,17 +1728,23 @@ async function runSimulator(opts = {}) {
               if (sc[a] > sc[b]) wins[a]++; else wins[b]++;
             }
           }
-          const seeds = sensTeams.map((_,i)=>i).sort((a,b)=>wins[b]-wins[a]||pts[b]-pts[a]);
-          function sg(a,b){ return (sensTeams[a].mean+sensTeams[a].sd*randn()) >= (sensTeams[b].mean+sensTeams[b].sd*randn()) ? a : b; }
-          const w1a = sg(seeds[2],seeds[5]), w1b = sg(seeds[3],seeds[4]);
-          const sw1 = sg(seeds[0],w1b), sw2 = sg(seeds[1],w1a);
-          const champ = sg(sw1,sw2);
-          if (champ === mySimIdx) champCount++;
+          const seeds = sensTeams.map((_,i2)=>i2).sort((a,b)=>wins[b]-wins[a]||pts[b]-pts[a]);
+          function sgS(a,b){ return (sensTeams[a].mean+sensTeams[a].sd*randn()) >= (sensTeams[b].mean+sensTeams[b].sd*randn()) ? a : b; }
+          const w1a = sgS(seeds[2],seeds[5]), w1b = sgS(seeds[3],seeds[4]);
+          const sw1 = sgS(seeds[0],w1b), sw2 = sgS(seeds[1],w1a);
+          const champ = sgS(sw1,sw2);
+          if (champ === teamIdx) champCount++;
         }
         sensTable[offset] = +(champCount / SIM_N * 100).toFixed(2);
       }
-      window._champSensTable = sensTable;
-      window._champSensBase  = sensTable[0]; // baseline champ% from sensitivity sim
+      window._champSensTables[ownerName] = sensTable;
+    }
+
+    // Convenience: my table and baseline
+    const myTeam = teams.find(t => t.isMe);
+    if (myTeam) {
+      window._champSensTable = window._champSensTables[myTeam.ownerName];
+      window._champSensBase  = window._champSensTable?.[0] || 0;
     }
   }
 
@@ -2912,8 +2923,13 @@ function renderTradesTab(maxAbs, thresh) {
   const _deltas = window._tradeDeltas || {};
   for (const t of trades) {
     const key = norm(t.sell.name) + '|' + norm(t.recv.name) + '|' + norm(t.ownerName);
-    t.champDelta      = _deltas[key]            ?? null;
-    t.theirChampDelta = _deltas[key + '|them']  ?? null;
+    t.champDelta      = _deltas[key]           ?? null;
+    t.theirChampDelta = _deltas[key + '|them'] ?? null;
+  }
+  for (const t of bundleList) {
+    const key = norm(t.main.name) + '+' + norm(t.addon.name) + '|' + norm(t.recv.name) + '|' + norm(t.ownerName);
+    t.champDelta      = _deltas[key]           ?? null;
+    t.theirChampDelta = _deltas[key + '|them'] ?? null;
   }
   const hasDelta = trades.some(t => t.champDelta !== null);
 
@@ -2996,7 +3012,13 @@ function renderTradesTab(maxAbs, thresh) {
   }
 
   // Store for batch delta compute
-  window._lastRenderedTrades = trades.slice();
+  // Normalise bundles to same shape as trades for delta compute
+  const bundlesAsTradesForDelta = bundleList.map(b => ({
+    ...b,
+    sell: b.main, recv: b.recv,
+    _isBundle: true, _addon: b.addon,
+  }));
+  window._lastRenderedTrades = [...trades, ...bundlesAsTradesForDelta];
 
   renderRosterContextBanner();
   document.getElementById('badge-trades').textContent = (trades.length + bundleList.length + rebuildTrades.length) || '—';
@@ -3275,10 +3297,16 @@ function bundleCard(t) {
     + "</div>"
     + (leagueRosters.some(r => r.champPct != null)
         ? '<div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:8px">'
-          + '<div id="' + impactId + '"></div>'
-          + '<button onclick="runTradeImpact(this,' + sendJson + ',' + recvJson + ',\'' + esc(t.ownerName) + '\',\'' + impactId + '\')"'
-          + ' style="font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--text3);background:none;border:1px solid var(--border);padding:3px 10px;cursor:pointer;letter-spacing:1px;margin-top:2px">'
-          + '▶ simulate impact</button>'
+          + (t.champDelta !== null && t.champDelta !== undefined
+            ? '<div style="font-family:\'DM Mono\',monospace;font-size:.55rem">'
+              + '<span style="font-size:.9rem;font-weight:bold;color:' + (t.champDelta > 0.4 ? 'var(--accent)' : t.champDelta < -0.4 ? 'var(--red)' : 'var(--text2)') + '">'
+              + (t.champDelta >= 0 ? '+' : '') + t.champDelta.toFixed(1) + '% champ</span>'
+              + '<span style="color:var(--text3);margin-left:6px">'
+              + ((leagueRosters.find(r=>r.isMe)||{}).champPct*100||0).toFixed(1) + '% → '
+              + (((leagueRosters.find(r=>r.isMe)||{}).champPct||0)*100 + t.champDelta).toFixed(1) + '%'
+              + '</span></div>'
+            : '<div id="' + impactId + '"></div>'
+              + '<button onclick="runTradeImpact(this,' + sendJson + ',' + recvJson + ',\'' + esc(t.ownerName) + '\',\'' + impactId + '\')" style="font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--text3);background:none;border:1px solid var(--border);padding:3px 10px;cursor:pointer;letter-spacing:1px;margin-top:2px">▶ simulate impact</button>')
           + '</div>'
         : '')
 
@@ -3370,32 +3398,39 @@ async function computeAllTradeDeltas(trades) {
       const sendIsPick = t.sell.pos === 'PICK' || t.sell.isPick;
       const recvIsPick = t.recv.pos === 'PICK' || t.recv.isPick;
 
-      // Use getLineupDiff for my side — correctly handles cascade
-      const myDiff = getLineupDiff(t.sell.name, t.sell.pos, t.recv.name, t.recv.pos);
+      // Build send/recv lists (bundles send two players)
+      const sendList = t._isBundle
+        ? [{ name: t.sell.name, pos: t.sell.pos }, { name: t._addon.name, pos: t._addon.pos }]
+        : [{ name: t.sell.name, pos: t.sell.pos }];
+      const recvList = [{ name: t.recv.name, pos: t.recv.pos }];
+      const tradeKey = t._isBundle
+        ? norm(t.sell.name) + '+' + norm(t._addon.name) + '|' + recvName + '|' + norm(t.ownerName)
+        : sendName + '|' + recvName + '|' + norm(t.ownerName);
+
+      // Use getLineupDiff for my side — handles cascade + multi-player sends
+      const myDiff = getLineupDiff(sendList, null, recvList, null);
       myMeanDelta = myDiff ? myDiff.ppgAfter - myDiff.ppgBefore : 0;
 
-      // Fast path: if sensitivity table exists, use it for my delta (no mini-sim needed)
-      if (window._champSensTable) {
-        const clampedOffset = Math.max(-20, Math.min(20, Math.round(myMeanDelta)));
-        const delta = (window._champSensTable[clampedOffset] || window._champSensBase || 0) - (window._champSensBase || 0);
-        // Still need their delta via mini-sim — but skip my side
-        // Compute their delta only
-        const theirRosterObj2 = leagueRosters[theirIdx];
-        const theirDiff2 = getLineupDiff(t.recv.name, t.recv.pos, t.sell.name, t.sell.pos, theirRosterObj2);
-        const theirDelta2 = theirDiff2 ? theirDiff2.ppgAfter - theirDiff2.ppgBefore : 0;
-        const theirOffset = Math.max(-20, Math.min(20, Math.round(theirDelta2)));
-        // Approximate their sensitivity as similar to mine (same league, similar SD)
-        // Use ratio: their_sens ≈ my_sens × (their_champPct / my_champPct)
-        const myChamp   = window._champSensBase || 1;
-        const theirChamp = (leagueRosters[theirIdx].champPct || 0) * 100 || 1;
-        const theirSens  = myMeanDelta !== 0
-          ? Math.abs(delta / (myMeanDelta || 1)) * (theirChamp / myChamp)
-          : 0;
-        const theirDeltaChamp = theirDelta2 * theirSens;
+      // Fast path: use per-team sensitivity tables for exact lookup on both sides
+      if (window._champSensTables) {
+        const myTable    = window._champSensTables[leagueRosters[myIdx].ownerName];
+        const theirTable = window._champSensTables[leagueRosters[theirIdx].ownerName];
 
-        const key = sendName + '|' + recvName + '|' + norm(t.ownerName);
-        window._tradeDeltas[key]           = +delta.toFixed(2);
-        window._tradeDeltas[key + '|them'] = +theirDeltaChamp.toFixed(2);
+        // Their PPG delta: they lose recv, gain all send players
+        const theirRosterObj2 = leagueRosters[theirIdx];
+        const theirDiff2 = getLineupDiff(recvList, null, sendList, null, theirRosterObj2);
+        const theirMeanDelta2 = theirDiff2 ? theirDiff2.ppgAfter - theirDiff2.ppgBefore : 0;
+
+        const myOffset    = Math.max(-20, Math.min(20, Math.round(myMeanDelta)));
+        const theirOffset = Math.max(-20, Math.min(20, Math.round(theirMeanDelta2)));
+
+        const myBase    = myTable?.[0]    || 0;
+        const theirBase = theirTable?.[0] || 0;
+        const myDelta    = myTable    ? (myTable[myOffset]       || myBase)    - myBase    : 0;
+        const theirDelta = theirTable ? (theirTable[theirOffset] || theirBase) - theirBase : 0;
+
+        window._tradeDeltas[tradeKey]           = +myDelta.toFixed(2);
+        window._tradeDeltas[tradeKey + '|them'] = +theirDelta.toFixed(2);
         continue;
       }
 
@@ -3441,6 +3476,14 @@ async function computeAllTradeDeltas(trades) {
 // Shows projected starting lineup at affected positions before and after a trade.
 // Only shows positions where the lineup actually changes.
 function getLineupDiff(sendPlayer, sendPos, recvPlayer, recvPos, targetRoster) {
+  // sendPlayer/recvPlayer can be a string (single) or array of {name,pos} objects (bundle)
+  const sendList = Array.isArray(sendPlayer)
+    ? sendPlayer
+    : [{ name: sendPlayer, pos: sendPos }];
+  const recvList = Array.isArray(recvPlayer)
+    ? recvPlayer
+    : [{ name: recvPlayer, pos: recvPos }];
+
   const myRoster = targetRoster || leagueRosters.find(r => r.isMe);
   if (!myRoster) return null;
 
@@ -3488,14 +3531,13 @@ function getLineupDiff(sendPlayer, sendPos, recvPlayer, recvPos, targetRoster) {
 
   const before = projectLineup(rosterWithPPG);
 
-  // Apply trade: remove send, add recv
-  const sendNN  = norm(sendPlayer);
-  const recvRd  = recvPos && recvPos !== 'PICK' ? (fcMap[norm(recvPlayer)]?.redraftValue || 0) : 0;
-  const recvPPG = recvPos && recvPos !== 'PICK' ? estPPGGlobal(recvRd, recvPos) : 0;
-
-  const afterRoster = rosterWithPPG.filter(p => norm(p.name) !== sendNN);
-  if (recvPos && recvPos !== 'PICK') {
-    afterRoster.push({ name: recvPlayer, pos: recvPos, ppg: recvPPG });
+  // Apply trade: remove all send players, add all recv players
+  const sendNNs = new Set(sendList.map(p => norm(p.name)));
+  const afterRoster = rosterWithPPG.filter(p => !sendNNs.has(norm(p.name)));
+  for (const rp of recvList) {
+    if (!rp.pos || rp.pos === 'PICK') continue;
+    const recvRd2 = fcMap[norm(rp.name)]?.redraftValue || 0;
+    afterRoster.push({ name: rp.name, pos: rp.pos, ppg: estPPGGlobal(recvRd2, rp.pos) });
   }
   const after = projectLineup(afterRoster);
 
