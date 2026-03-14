@@ -3426,8 +3426,8 @@ function getLineupDiff(sendPlayer, sendPos, recvPlayer, recvPos, targetRoster) {
 
   // Apply trade: remove send, add recv
   const sendNN  = norm(sendPlayer);
-  const recvRd  = sendPos !== 'PICK' ? (fcMap[norm(recvPlayer)]?.redraftValue || 0) : 0;
-  const recvPPG = recvPos !== 'PICK' ? estPPGGlobal(recvRd, recvPos) : 0;
+  const recvRd  = recvPos && recvPos !== 'PICK' ? (fcMap[norm(recvPlayer)]?.redraftValue || 0) : 0;
+  const recvPPG = recvPos && recvPos !== 'PICK' ? estPPGGlobal(recvRd, recvPos) : 0;
 
   const afterRoster = rosterWithPPG.filter(p => norm(p.name) !== sendNN);
   if (recvPos && recvPos !== 'PICK') {
@@ -3442,12 +3442,11 @@ function getLineupDiff(sendPlayer, sendPos, recvPlayer, recvPos, targetRoster) {
   const added   = after.filter(p => !beforeNames.has(norm(p.name)));
   const removed = before.filter(p => !afterNames.has(norm(p.name)));
 
-  // Only return if lineup actually changed
-  if (!added.length && !removed.length) return null;
-
   const ppgBefore = before.reduce((s, p) => s + p.ppg, 0);
   const ppgAfter  = after.reduce((s, p) => s + p.ppg, 0);
 
+  // Always return — even a bench swap has a ppg delta (could be 0 or small)
+  // Caller uses null to mean "can't compute", not "no change"
   return { added, removed, ppgBefore: +ppgBefore.toFixed(1), ppgAfter: +ppgAfter.toFixed(1) };
 }
 
@@ -3779,8 +3778,8 @@ function tradeCard(t) {
             return '<div style="font-family:DM Mono,monospace;font-size:.52rem;color:' + col + ';margin-top:1px">' + (marginal >= 0 ? '+' : '') + marginal.toFixed(1) + ' est ppg/wk</div>'
             + (function(){
                 var diff = getLineupDiff(t.sell.name, t.sell.pos, t.recv.name, t.recv.pos);
-                if (!diff) {
-                  // No lineup change — just show bench note
+                var noLineupChange = !diff || (!diff.added.length && !diff.removed.length && Math.abs(diff.ppgAfter - diff.ppgBefore) < 0.1);
+                if (noLineupChange) {
                   var s = t.sell.isPick ? 0 : estPPGGlobal((fcMap[norm(t.sell.name)]||{}).redraftValue||0, t.sell.pos);
                   var g = t.recv.isPick ? 0 : estPPGGlobal((fcMap[norm(t.recv.name)]||{}).redraftValue||0, t.recv.pos);
                   return '<div style="font-family:DM Mono,monospace;font-size:.5rem;color:var(--text3);margin-top:2px">'
