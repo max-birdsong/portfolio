@@ -1728,11 +1728,12 @@ async function runSimulator(opts = {}) {
     for (let teamIdx = 0; teamIdx < sensN; teamIdx++) {
       const ownerName = sensTeams[teamIdx].ownerName;
       const sensTable = {};
-      for (let offset = -20; offset <= 20; offset++) {
+      const SENS_N = 2000;  // sensitivity tables need less precision than main sim
+      for (let offset = -15; offset <= 15; offset++) {
         const perturbed = sensTeams.map((t, i) => i === teamIdx
           ? { ...t, mean: t.mean + offset } : t);
         let champCount = 0;
-        for (let s = 0; s < SIM_N; s++) {
+        for (let s = 0; s < SENS_N; s++) {
           const wins = new Array(sensN).fill(0);
           const pts  = new Array(sensN).fill(0);
           for (const wk of sensWeeks) {
@@ -1748,7 +1749,7 @@ async function runSimulator(opts = {}) {
           const sw1=sgB(seeds[0],w1b), sw2=sgB(seeds[1],w1a);
           if (sgB(sw1,sw2) === teamIdx) champCount++;
         }
-        sensTable[offset] = +(champCount / SIM_N * 100).toFixed(2);
+        sensTable[offset] = +(champCount / SENS_N * 100).toFixed(2);
       }
       window._champSensTables[ownerName] = sensTable;
       // Yield between teams so UI stays responsive
@@ -1763,6 +1764,7 @@ async function runSimulator(opts = {}) {
     }
 
     // Re-run trade deltas now that accurate tables are available
+    console.log('[sens] tables built for all teams, trades to process:', (window._lastRenderedTrades||[]).length);
     window._tradeDeltas = {};
     const allTrades = window._lastRenderedTrades || [];
     if (allTrades.length) computeAllTradeDeltas(allTrades);
@@ -3813,7 +3815,8 @@ function compactTradeCard(t, isBundle) {
 // Pre-computes champ% delta for every trade using sensitivity tables (fast path)
 // or mini-sim fallback. Results stored in window._tradeDeltas.
 async function computeAllTradeDeltas(trades) {
-  if (!trades || !trades.length) return;
+  if (!trades || !trades.length) { console.log('[deltas] no trades to process'); return; }
+  console.log('[deltas] starting:', trades.length, 'trades, tables:', !!window._champSensTables);
   const BATCH = 5;
 
   for (let i = 0; i < trades.length; i += BATCH) {
@@ -3868,6 +3871,7 @@ async function computeAllTradeDeltas(trades) {
     }
   }
 
+  console.log('[deltas] done, re-rendering');
   // Re-render compact view with fresh deltas
   if (_tfState.compact && window._allRenderedCards?.length) {
     _applyTradeFilter();
