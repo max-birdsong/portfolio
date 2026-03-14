@@ -4102,23 +4102,22 @@ function tradeCard(t) {
     </div>
 
     <!-- VALUE ROW -->
-    <div style="display:flex;gap:20px;align-items:baseline;padding:8px 0;border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);flex-wrap:wrap">
-      <div style="display:flex;flex-direction:column;align-items:center;min-width:60px">
-        <span style="${M};font-size:.45rem;color:var(--text3);letter-spacing:1px;margin-bottom:1px">TAT VALUE</span>
-        <span style="${M};font-size:1.1rem;font-weight:700;color:${tatCol}">${tatStr}</span>
+    <div style="display:flex;gap:24px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--border2);border-bottom:1px solid var(--border2)">
+      <div style="display:flex;flex-direction:column;align-items:center;min-width:70px">
+        <span style="${M};font-size:.45rem;color:var(--text3);letter-spacing:1px;margin-bottom:2px">TAT VALUE</span>
+        <span style="${M};font-size:1.15rem;font-weight:700;color:${tatCol}">${tatStr}</span>
         <span style="${M};font-size:.42rem;color:var(--text3)">1sts equiv</span>
       </div>
-      ${ppgStr ? `<div style="display:flex;flex-direction:column;align-items:center;min-width:60px">
-        <span style="${M};font-size:.45rem;color:var(--text3);letter-spacing:1px;margin-bottom:1px">LINEUP</span>
-        <span style="${M};font-size:1.1rem;font-weight:700;color:${ppgCol}">${ppgStr}</span>
+      <div style="display:flex;flex-direction:column;align-items:center;min-width:70px">
+        <span style="${M};font-size:.45rem;color:var(--text3);letter-spacing:1px;margin-bottom:2px">LINEUP</span>
+        <span style="${M};font-size:1.15rem;font-weight:700;color:${ppgCol}">${ppgStr !== null ? ppgStr : '—'}</span>
         <span style="${M};font-size:.42rem;color:var(--text3)">ppg/wk</span>
-      </div>` : ''}
-      ${champStr ? `<div style="display:flex;flex-direction:column;align-items:center;min-width:70px">
-        <span style="${M};font-size:.45rem;color:var(--text3);letter-spacing:1px;margin-bottom:1px">CHAMP%</span>
-        <span style="${M};font-size:1.1rem;font-weight:700;color:${champCol}">${champStr}</span>
-        <span style="${M};font-size:.42rem;color:var(--text3)">${myChamp.toFixed(1)}% → ${(myChamp+(champD||0)).toFixed(1)}%</span>
-      </div>` : ''}
-
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;min-width:80px">
+        <span style="${M};font-size:.45rem;color:var(--text3);letter-spacing:1px;margin-bottom:2px">CHAMP%</span>
+        <span style="${M};font-size:1.15rem;font-weight:700;color:${champCol}">${champStr !== null ? champStr : '—'}</span>
+        <span style="${M};font-size:.42rem;color:var(--text3)">${champStr !== null ? myChamp.toFixed(1)+'% → '+(myChamp+(champD||0)).toFixed(1)+'%' : 'run sim first'}</span>
+      </div>
     </div>
 
     <!-- DETAIL ROW -->
