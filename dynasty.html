@@ -4054,14 +4054,10 @@ function tradeCard(t) {
   // ── Signals / badges ─────────────────────────────────────────
   const badge = (txt, col) => `<span style="${M};font-size:.48rem;color:${col};border:1px solid ${col};padding:1px 5px;letter-spacing:.5px">${txt}</span>`;
   const badges = [];
-  if (sendDelta !== null && sendDelta < -5) badges.push(badge('SELL HIGH','var(--red)'));
-  else if (sendDelta !== null && sendDelta > 5) badges.push(badge('BUY TARGET','var(--accent)'));
   if (t.recv?.onBlock) badges.push(badge('ON BLOCK','var(--accent)'));
 
   // ── Acceptance ────────────────────────────────────────────────
-  const acceptHtml = acceptanceMeter(sendFcVal, recvFcVal, t.ownerWindow,
-    isBundle?t.main?.age:t.sell?.age, isBundle?t.main?.trend:t.sell?.trend,
-    t.theirChampDelta??null, t.recv?.onBlock, t.fillsTheirNeed);
+
 
   const ownerCol = t.ownerWindowColor||'var(--text3)';
   const theirChampCol2 = t.theirChampDelta==null?'var(--text3)':t.theirChampDelta>0.3?'var(--accent)':t.theirChampDelta<-0.3?'var(--red)':'var(--text3)';
@@ -4122,7 +4118,7 @@ function tradeCard(t) {
         <span style="${M};font-size:1.1rem;font-weight:700;color:${champCol}">${champStr}</span>
         <span style="${M};font-size:.42rem;color:var(--text3)">${myChamp.toFixed(1)}% → ${(myChamp+(champD||0)).toFixed(1)}%</span>
       </div>` : ''}
-      <div style="margin-left:auto">${acceptHtml}</div>
+
     </div>
 
     <!-- DETAIL ROW -->
@@ -4135,9 +4131,9 @@ function tradeCard(t) {
         ${t.fillsTheirNeed===false ? `<span style="color:var(--red)">doesn't fill their need</span>` : ''}
         ${t.theirChampDelta!=null  ? `<span style="color:${theirChampCol2}">${t.theirChampDelta>=0?'+':''}${t.theirChampDelta.toFixed(1)}% their champ</span>` : ''}
         ${recvDelta !== null && recvDelta < -5 ? `<span style="color:var(--accent)">TAT undervalued ✓</span>` : ''}
-        <span style="margin-left:auto">${t.leagueCount!=null?t.leagueCount+' league'+(t.leagueCount!==1?'s':''):''}</span>
+
       </div>
-      <div style="margin-top:3px;color:var(--text3)">Message <span style="color:var(--accent)">${esc2(t.ownerName||'')}</span> · offer <span style="color:var(--text2)">${esc2(sendName)}</span> for <span style="color:var(--text2)">${esc2(recvName)}</span></div>
+
     </div>
 
   </div>`;
