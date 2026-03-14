@@ -4307,9 +4307,11 @@ function tradeCard(t) {
         <span>TAT <span style="color:var(--text2)">${t.sell.tatRank ? '#' + t.sell.tatRank : '—'}</span></span>
         <span>FC <span style="color:var(--text2)">${t.sell.fcRank ? '#' + t.sell.fcRank : '—'}</span></span>
       </div>
-      <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red);margin-top:4px">
-        FC ranks ${Math.abs(sellDelta)} spots higher than TAT → sell high
-      </div>
+      ${sellDelta !== null && sellDelta < -5 ? `<div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red);margin-top:4px">
+        FC overvalues vs TAT by ${Math.abs(sellDelta)} spots → sell high
+      </div>` : sellDelta !== null && sellDelta > 5 ? `<div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--accent);margin-top:4px">
+        TAT overvalues vs FC by ${sellDelta} spots → buy target
+      </div>` : ''}
       ${t.fillsNeed ? `<div style="margin-top:4px;display:inline-block;font-family:'DM Mono',monospace;font-size:.57rem;color:var(--accent);border:1px solid var(--accent);padding:1px 6px">✓ fills their ${esc(t.sell.pos)} need</div>` : ''}
       ${trendBadge(t.sell.trend)}
     </div>
@@ -4340,7 +4342,7 @@ function tradeCard(t) {
         <span>FC <span style="color:var(--text2)">${t.recv.fcRank ? '#' + t.recv.fcRank : '—'}</span></span>
       </div>
       <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--accent);margin-top:4px;text-align:right">
-        TAT ranks ${recvDelta} spots higher than FC → owner may sell cheap
+        TAT overvalues vs FC by ${recvDelta} spots → owner may sell cheap
       </div>
       <div style="display:flex;justify-content:flex-end;margin-top:2px">${sdBadge(t.recv.sd)}</div>
     </div>
