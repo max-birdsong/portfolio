@@ -2236,16 +2236,18 @@ function renderRosterContextBanner() {
     const flexPool2 = flexElig2.flatMap(pos => (byPos2[pos]||[]).filter(p => !usedNames.has(norm(p.name))))
       .sort((a,b) => b.ppg - a.ppg);
 
-    // Regular flex slots first (FLX1/2/3), then SFLX last
+    // Flex slots — label shows actual position of whoever fills the slot
+    // TE filling a flex slot gets labelled FLEX/TE to make it visible
     const regularFlexN = isSF2 ? 3 : 3;
     for (let i = 0; i < regularFlexN; i++) {
       const p = flexPool2[i] || null;
-      lineupSlots.push({ slotLabel: 'FLX' + (i+1), player: p });
+      const label = p ? 'FLX/' + p.pos : 'FLX' + (i+1);
+      lineupSlots.push({ slotLabel: label, player: p });
       if (p) usedNames.add(norm(p.name));
     }
     if (isSF2) {
       const sfp = flexPool2[3] || null;
-      lineupSlots.push({ slotLabel: 'SFLX', player: sfp, isSuperFlex: true });
+      lineupSlots.push({ slotLabel: sfp ? 'SFLX/' + sfp.pos : 'SFLX', player: sfp, isSuperFlex: true });
       if (sfp) usedNames.add(norm(sfp.name));
     }
 
@@ -3276,19 +3278,15 @@ async function computeAllTradeDeltas(trades) {
       // Picks have zero marginal PPW — they don't play, skip replacement level entirely
       const sendIsPick = t.sell.pos === 'PICK' || t.sell.isPick;
       const recvIsPick = t.recv.pos === 'PICK' || t.recv.isPick;
-      if (useProjDelta) {
-        const myRepl   = sendIsPick ? 0 : (leagueRosters[myIdx].replacementLevel?.[t.sell.pos]   ?? 0);
-        const thRepl   = recvIsPick ? 0 : (leagueRosters[theirIdx].replacementLevel?.[t.recv.pos] ?? 0);
-        const sendPts  = sendIsPick ? 0 : (projPts[sendName] ?? rdByName[sendName] * rdScale ?? 0);
-        const recvPts  = recvIsPick ? 0 : (projPts[recvName] ?? rdByName[recvName] * rdScale ?? 0);
-        myMeanDelta    = (recvPts - thRepl) - (sendPts - myRepl);
-        theirMeanDelta = -myMeanDelta;
-      } else {
-        const sendRd = sendIsPick ? 0 : (rdByName[sendName]||0);
-        const recvRd = recvIsPick ? 0 : (rdByName[recvName]||0);
-        myMeanDelta    = (recvRd - sendRd) * rdScale;
-        theirMeanDelta = -myMeanDelta;
-      }
+      // Use estPPGGlobal for position-aware PPG (TE premium, 6PT TDs, etc.)
+      const sendRd2 = sendIsPick ? 0 : (rdByName[sendName]||0);
+      const recvRd2 = recvIsPick ? 0 : (rdByName[recvName]||0);
+      const sendPPG = sendIsPick ? 0 : (projPts[sendName] ?? estPPGGlobal(sendRd2, t.sell.pos));
+      const recvPPG = recvIsPick ? 0 : (projPts[recvName] ?? estPPGGlobal(recvRd2, t.recv.pos));
+      const myReplPPG   = sendIsPick ? 0 : (leagueRosters[myIdx].replacementLevelPPG?.[t.sell.pos] ?? estPPGGlobal(leagueRosters[myIdx].replacementLevel?.[t.sell.pos]||0, t.sell.pos));
+      const thReplPPG   = recvIsPick ? 0 : (leagueRosters[theirIdx].replacementLevelPPG?.[t.recv.pos] ?? estPPGGlobal(leagueRosters[theirIdx].replacementLevel?.[t.recv.pos]||0, t.recv.pos));
+      myMeanDelta    = (recvPPG - thReplPPG) - (sendPPG - myReplPPG);
+      theirMeanDelta = -myMeanDelta;
 
       const meansAfter = allMeanBefore.map((v,i) =>
         i===myIdx    ? Math.max(BASE_SCORE * 0.5, v + myMeanDelta)    :
@@ -3541,36 +3539,31 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
   const myRoster2   = leagueRosters.find(r => r.isMe);
   const theirRoster2 = leagueRosters.find(r => r.ownerName === theirOwnerName);
 
-  // Direct per-player marginal computation.
-  // Picks have zero marginal PPW impact — they don't play, so skip replacement level logic.
+  // Direct per-player marginal computation using position-aware PPG estimates.
   const rosterPlayerMap = {};
   for (const r of leagueRosters) {
     for (const p of (r.rosterPlayers||[])) rosterPlayerMap[norm(p.name)] = p;
   }
-  function isPick(nn) { return !rosterPlayerMap[nn] && (nn.includes('pick') || nn.match(/^\d{4}/)); }
+  function isPick2(nn) { return !rosterPlayerMap[nn] && (nn.includes('pick') || nn.match(/^\d{4}/)); }
 
   let myMeanDelta2 = 0;
   for (const pn of sendNames) {
-    const nn = norm(pn);
-    if (isPick(nn)) continue; // picks don't affect weekly scoring
-    const rp  = rosterPlayerMap[nn];
-    const pos = rp?.pos || 'WR';
-    if (_useProjD2) {
-      myMeanDelta2 -= (_projPts2[nn]??0) - (myRoster2?.replacementLevel?.[pos]??0);
-    } else {
-      myMeanDelta2 -= (rdByName2[nn]||0) * rdScale2;
-    }
+    const nn  = norm(pn);
+    if (isPick2(nn)) continue;
+    const pos = rosterPlayerMap[nn]?.pos || 'WR';
+    const rd  = rdByName2[nn] || 0;
+    const pts = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
+    const repl = myRoster2?.replacementLevelPPG?.[pos] ?? estPPGGlobal(myRoster2?.replacementLevel?.[pos]||0, pos);
+    myMeanDelta2 -= pts - repl;
   }
   for (const pn of recvNames) {
-    const nn = norm(pn);
-    if (isPick(nn)) continue; // picks don't affect weekly scoring
-    const rp  = rosterPlayerMap[nn];
-    const pos = rp?.pos || 'WR';
-    if (_useProjD2) {
-      myMeanDelta2 += (_projPts2[nn]??0) - (theirRoster2?.replacementLevel?.[pos]??0);
-    } else {
-      myMeanDelta2 += (rdByName2[nn]||0) * rdScale2;
-    }
+    const nn  = norm(pn);
+    if (isPick2(nn)) continue;
+    const pos = rosterPlayerMap[nn]?.pos || (sendNames.length ? (rosterPlayerMap[norm(sendNames[0])]?.pos || 'WR') : 'WR');
+    const rd  = rdByName2[nn] || 0;
+    const pts = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
+    const repl = theirRoster2?.replacementLevelPPG?.[pos] ?? estPPGGlobal(theirRoster2?.replacementLevel?.[pos]||0, pos);
+    myMeanDelta2 += pts - repl;
   }
 
   const meansAfter2 = allMeanBefore2.map((v, i) => {
