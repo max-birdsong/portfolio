@@ -495,6 +495,32 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
       </div>
       <div id="pick-debug" style="display:none;margin:12px 0;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);line-height:1.7"></div>
 <div id="roster-context-banner" style="margin-bottom:16px"></div>
+
+<!-- Trade finder filter/sort bar -->
+<div id="trades-filter-bar" style="display:none;margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+  <!-- Position filter -->
+  <div style="display:flex;gap:4px;align-items:center">
+    <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-right:2px">POS</span>
+    ${['ALL','QB','RB','WR','TE','PICK'].map(p => `
+      <button onclick="setTradeFilter('pos','${p}')" id="tf-pos-${p}"
+        style="font-family:'DM Mono',monospace;font-size:.55rem;padding:3px 8px;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text3);letter-spacing:.5px"
+        class="tf-pos-btn">${p}</button>`).join('')}
+  </div>
+  <!-- Sort -->
+  <div style="display:flex;gap:4px;align-items:center;margin-left:auto">
+    <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-right:2px">SORT</span>
+    ${[['champ','Champ%'],['ppg','PPG'],['tat','TAT'],['accept','Accept']].map(([v,l]) => `
+      <button onclick="setTradeSort('${v}')" id="tf-sort-${v}"
+        style="font-family:'DM Mono',monospace;font-size:.55rem;padding:3px 8px;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text3);letter-spacing:.5px"
+        class="tf-sort-btn">${l}</button>`).join('')}
+  </div>
+  <!-- Compact toggle -->
+  <button onclick="toggleCompactTrades()" id="tf-compact-btn"
+    style="font-family:'DM Mono',monospace;font-size:.55rem;padding:3px 10px;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text3);letter-spacing:.5px;margin-left:4px">
+    COMPACT
+  </button>
+</div>
+
 <div id="trades-inner"></div>
     </div>
   </div>
@@ -3328,6 +3354,63 @@ function renderTradesTab(maxAbs, thresh) {
   }
 
   html += `<div class="tfoot" style="margin-top:12px">Rank gap = FC rank − TAT rank · Positive = TAT values higher · Rebuild mode: sell FC-overvalued assets for TAT dynasty value</div>`;
+  // Build _allRenderedCards for filter/sort — store each trade with its section, html, and data
+  window._allRenderedCards = [];
+  const _sectionColors = {
+    'Dynasty Value Gains': 'var(--blue)', 'Moves the Needle': 'var(--accent)',
+    'Filling Roster Holes': 'var(--amber)', 'Also Consider': 'var(--text2)',
+    'Sell Win-Now Assets': 'var(--blue)', 'Bundle Offers': 'var(--amber)',
+    'Slot Upgrades': 'var(--blue)', 'PPG Upgrades': 'var(--blue)',
+  };
+
+  // Parse html into sections+cards
+  let _curSection = '', _curColor = 'var(--text2)';
+  // Re-collect all trades into _allRenderedCards with section context
+  const _allSectionedTrades = [
+    ...trades.map(t => ({ t, section: _getSectionLabel(t, tradeMode, hasDelta, isBigTAT), isBundle: false })),
+    ...rebuildTrades.map(t => ({ t, section: 'Sell Win-Now Assets', isBundle: false })),
+    ...bundleList.map(t => ({ t, section: 'Bundle Offers', isBundle: true })),
+    ...ppgTrades.map(t => ({ t, section: t.slotUpgrade ? 'Slot Upgrades' : 'PPG Upgrades', isBundle: false })),
+  ];
+
+  for (const item of _allSectionedTrades) {
+    const sectionColor = _sectionColors[item.section] || 'var(--text2)';
+    window._allRenderedCards.push({
+      t: item.t,
+      section: item.section,
+      sectionColor,
+      isBundle: item.isBundle,
+      html: item.isBundle ? bundleCard(item.t) : tradeCard(item.t),
+    });
+  }
+
+  // Compute PPG delta for cards that don't have ppgGain
+  for (const c of window._allRenderedCards) {
+    if (c.t.ppgGain == null && !c.isBundle) {
+      const diff = getLineupDiff(c.t.sell?.name, c.t.sell?.pos, c.t.recv?.name, c.t.recv?.pos);
+      c.t._ppgDelta = diff ? +(diff.ppgAfter - diff.ppgBefore).toFixed(1) : null;
+    }
+  }
+
+  // Show filter bar
+  const filterBar = document.getElementById('trades-filter-bar');
+  if (filterBar) {
+    filterBar.style.display = 'flex';
+    // Set default active states
+    document.querySelectorAll('.tf-pos-btn').forEach(b => {
+      b.style.background = b.id === 'tf-pos-ALL' ? 'var(--accent)' : 'none';
+      b.style.color      = b.id === 'tf-pos-ALL' ? '#000' : 'var(--text3)';
+    });
+    document.querySelectorAll('.tf-sort-btn').forEach(b => {
+      const activeSort = 'tf-sort-' + _tfState.sort;
+      b.style.background = b.id === activeSort ? 'var(--accent)' : 'none';
+      b.style.color      = b.id === activeSort ? '#000' : 'var(--text3)';
+    });
+  }
+
+  // Reset filter state pos to ALL on fresh render
+  _tfState.pos = 'ALL';
+
   document.getElementById('trades-inner').innerHTML = html;
 
   // Async: check how many leagues each target owner has the sell player in
@@ -3853,6 +3936,141 @@ function pickRangeHtml(ownerName, round) {
     + `top 6: <span style="color:var(--text2)">${(top6*100).toFixed(0)}%</span> · `
     + `avg: <span style="color:var(--text2)">${avgPick.toFixed(1)}</span>`
     + `</div>`;
+}
+
+
+
+function _getSectionLabel(t, tradeMode, hasDelta, isBigTAT) {
+  if (t.motivation === 'rebuild') return 'Sell Win-Now Assets';
+  if (tradeMode === 'rebuild') return (t.tierGain/100) >= 0.5 ? 'Dynasty Value Gains' : 'Also Consider';
+  if (tradeMode === 'mixed') return (t.fillsNeed || isBigTAT(t)) ? 'Filling Roster Holes' : 'Also Consider';
+  // contend
+  return ((t.champDelta??-999) > 1.5 || isBigTAT(t)) ? 'Moves the Needle' : 'Also Consider';
+}
+
+// ── TRADE FINDER FILTER / SORT / COMPACT ─────────────────────
+const _tfState = { pos: 'ALL', sort: 'champ', compact: false };
+
+function setTradeFilter(key, val) {
+  _tfState[key] = val;
+  document.querySelectorAll('.tf-pos-btn').forEach(b => {
+    b.style.background = b.id === 'tf-pos-' + val ? 'var(--accent)' : 'none';
+    b.style.color      = b.id === 'tf-pos-' + val ? '#000' : 'var(--text3)';
+  });
+  _applyTradeFilter();
+}
+
+function setTradeSort(val) {
+  _tfState.sort = val;
+  document.querySelectorAll('.tf-sort-btn').forEach(b => {
+    b.style.background = b.id === 'tf-sort-' + val ? 'var(--accent)' : 'none';
+    b.style.color      = b.id === 'tf-sort-' + val ? '#000' : 'var(--text3)';
+  });
+  _applyTradeFilter();
+}
+
+function toggleCompactTrades() {
+  _tfState.compact = !_tfState.compact;
+  const btn = document.getElementById('tf-compact-btn');
+  if (btn) {
+    btn.style.background = _tfState.compact ? 'var(--accent)' : 'none';
+    btn.style.color      = _tfState.compact ? '#000' : 'var(--text3)';
+  }
+  _applyTradeFilter();
+}
+
+function _tfSortScore(t) {
+  if (_tfState.sort === 'champ')  return t.champDelta ?? -999;
+  if (_tfState.sort === 'ppg')    return t.ppgGain ?? (t._ppgDelta || 0);
+  if (_tfState.sort === 'tat')    return (t.tierGain || 0) / 100;
+  if (_tfState.sort === 'accept') {
+    // Re-compute ratio proxy from fcValue
+    const s = t.sell?.fcValue || t.main?.fcValue || 1;
+    const r = t.recv?.fcValue || 1;
+    return s / Math.max(r, 1);
+  }
+  return 0;
+}
+
+function _applyTradeFilter() {
+  const inner = document.getElementById('trades-inner');
+  if (!inner || !window._allRenderedCards) return;
+
+  let cards = window._allRenderedCards.slice();
+
+  // Position filter
+  if (_tfState.pos !== 'ALL') {
+    cards = cards.filter(c => {
+      const sendPos = c.t.sell?.pos || c.t.main?.pos || '';
+      const recvPos = c.t.recv?.pos || '';
+      return sendPos === _tfState.pos || recvPos === _tfState.pos;
+    });
+  }
+
+  // Sort
+  cards.sort((a, b) => _tfSortScore(b.t) - _tfSortScore(a.t));
+
+  // Render
+  if (_tfState.compact) {
+    inner.innerHTML = cards.map(c => compactTradeCard(c.t, c.isBundle)).join('');
+  } else {
+    // Re-group into sections by section label
+    let html = '';
+    let lastSection = null;
+    for (const c of cards) {
+      if (c.section !== lastSection) {
+        if (lastSection !== null) html += '</div>';
+        html += `<div class="trade-section-head" style="margin-top:${lastSection===null?'0':'24px'}">
+          <div class="trade-section-title" style="color:${c.sectionColor||'var(--text2)'}">` + (c.section||'') + `</div>
+        </div><div class="trade-cards">`;
+        lastSection = c.section;
+      }
+      html += c.html;
+    }
+    if (lastSection !== null) html += '</div>';
+    inner.innerHTML = html;
+  }
+}
+
+// Compact trade card — single row
+function compactTradeCard(t, isBundle) {
+  const mono = "font-family:'DM Mono',monospace";
+  const send = isBundle ? (t.main?.name + ' + ' + t.addon?.name) : (t.sell?.name || '');
+  const sendPos = isBundle ? (t.main?.pos || '') : (t.sell?.pos || '');
+  const sendFcRank = isBundle ? (t.main?.fcRank||'') : (t.sell?.fcRank||'');
+  const sendTatRank = isBundle ? (t.main?.tatRank||'') : (t.sell?.tatRank||'');
+  const recvName = t.recv?.name || '';
+  const recvPos  = t.recv?.pos  || '';
+  const recvFcRank  = t.recv?.fcRank  || '';
+  const recvTatRank = t.recv?.tatRank || '';
+
+  const champStr = t.champDelta !== null && t.champDelta !== undefined
+    ? (t.champDelta >= 0 ? '+' : '') + t.champDelta.toFixed(1) + '%'
+    : '—';
+  const champCol = !t.champDelta ? 'var(--text3)'
+    : t.champDelta > 0.4 ? 'var(--accent)' : t.champDelta < -0.4 ? 'var(--red)' : 'var(--text2)';
+
+  const ppgStr = t.ppgGain != null ? (t.ppgGain >= 0 ? '+' : '') + t.ppgGain.toFixed(1) + ' ppg'
+    : t._ppgDelta != null ? (t._ppgDelta >= 0 ? '+' : '') + t._ppgDelta.toFixed(1) + ' ppg' : '';
+  const ppgCol = !ppgStr ? 'var(--text3)'
+    : parseFloat(ppgStr) > 0 ? 'var(--accent)' : parseFloat(ppgStr) < 0 ? 'var(--red)' : 'var(--text2)';
+
+  const tatStr = t.tierGain ? (t.tierGain > 0 ? '+' : '') + (t.tierGain/100).toFixed(2) : '';
+
+  const onBlock = t.recv?.onBlock ? ' <span style="color:var(--accent);font-size:.45rem">●</span>' : '';
+  const ownerCol = t.ownerWindowColor || 'var(--text3)';
+
+  return `<div onclick="this.nextElementSibling&&(this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none')"
+    style="${mono};font-size:.58rem;padding:7px 10px;border-bottom:1px solid var(--border2);cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface)">
+    <span style="color:var(--text3);min-width:20px">${esc(sendPos)}</span>
+    <span style="color:var(--text1);flex:1;min-width:120px">${esc(send)} <span style="color:var(--text3);font-size:.5rem">#${sendFcRank}FC #${sendTatRank}TAT</span></span>
+    <span style="color:var(--text3)">→</span>
+    <span style="color:var(--text1);flex:1;min-width:120px">${esc(recvName)}${onBlock} <span style="color:var(--text3);font-size:.5rem">#${recvFcRank}FC #${recvTatRank}TAT</span></span>
+    <span style="color:${ownerCol};min-width:80px">${esc(t.ownerName||'')}</span>
+    ${ppgStr ? `<span style="color:${ppgCol};min-width:60px">${esc(ppgStr)}</span>` : '<span style="min-width:60px"></span>'}
+    ${tatStr ? `<span style="color:var(--text3);min-width:50px">${esc(tatStr)} 1sts</span>` : '<span style="min-width:50px"></span>'}
+    <span style="color:${champCol};min-width:52px;text-align:right">${esc(champStr)} 🏆</span>
+  </div>`;
 }
 
 // ── TRADE IMPACT SIMULATOR ────────────────────────────────────
