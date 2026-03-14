@@ -3095,6 +3095,15 @@ function renderTradesTab(maxAbs, thresh) {
     const key = norm(t.sell.name) + '|' + norm(t.recv.name) + '|' + norm(t.ownerName);
     t.champDelta      = _deltas[key]           ?? null;
     t.theirChampDelta = _deltas[key + '|them'] ?? null;
+
+    // Pre-compute whether sent player fills a need on their roster
+    if (!t.sell.isPick && !t._theirNeedChecked) {
+      const theirR = leagueRosters.find(r => r.ownerName === t.ownerName);
+      const theirD = theirR ? getLineupDiff(t.recv.name, t.recv.pos, t.sell.name, t.sell.pos, theirR) : null;
+      t.theirLineupDelta   = theirD ? +(theirD.ppgAfter - theirD.ppgBefore).toFixed(1) : 0;
+      t.fillsTheirNeed     = t.theirLineupDelta > 0.5; // send player meaningfully improves their lineup
+      t._theirNeedChecked  = true;
+    }
   }
   for (const t of bundleList) {
     const key = norm(t.main.name) + '+' + norm(t.addon.name) + '|' + norm(t.recv.name) + '|' + norm(t.ownerName);
@@ -3488,7 +3497,7 @@ function sdBadge(sd) {
   return '';
 }
 
-function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge, sellTrend, theirChampDelta, onBlock) {
+function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge, sellTrend, theirChampDelta, onBlock, fillsTheirNeed) {
   // Base: FC value ratio (they win on FC by construction, so ratio > 1)
   const s   = sellFcVal || 1;
   const r   = recvFcVal || 1;
@@ -3504,6 +3513,11 @@ function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge, sellTrend, 
   // On block: owner has explicitly flagged this player available — meaningful boost
   if (onBlock) ratio *= 1.35;
 
+  // Roster need: if sent player doesn't improve their lineup, they have less reason to accept
+  // If it does fill a need, boost acceptance
+  if (fillsTheirNeed === false) ratio *= 0.75;  // no need — long shot regardless of FC
+  else if (fillsTheirNeed === true) ratio *= 1.20; // fills a real need — more motivated
+
   // Trend nudge
   const trend = sellTrend || 0;
   if (trend < -200)      ratio *= 1.08;
@@ -3514,6 +3528,12 @@ function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge, sellTrend, 
   // If they lose champ%, penalise regardless of FC optics.
   // Only applied when sim has run (theirChampDelta is not null).
   let simNote = '';
+  // Need indicator shown below acceptance bar
+  if (fillsTheirNeed === false && !onBlock) {
+    simNote += '<div style="font-family:\'DM Mono\',monospace;font-size:.48rem;color:var(--red);margin-top:2px">doesn\'t fill their lineup need</div>';
+  } else if (fillsTheirNeed === true) {
+    simNote += '<div style="font-family:\'DM Mono\',monospace;font-size:.48rem;color:var(--accent);margin-top:2px">fills their lineup need ✓</div>';
+  }
   if (theirChampDelta !== null && theirChampDelta !== undefined) {
     // Map their delta to a ratio modifier:
     //   +3%+ gain  → ×1.3  (they're meaningfully better off)
@@ -4307,7 +4327,7 @@ function tradeCard(t) {
       <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">${t.motivation === 'ppg' ? 'PPG upgrade' : 'TAT value gain'}</div>
       <div class="tcard-net up">${t.motivation === 'ppg' ? '+' + t.ppgGain.toFixed(1) : '+' + (t.tierGain/100).toFixed(2)}</div>
       <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);text-align:center">${t.motivation === 'ppg' ? 'est ppg/wk' : '1sts equivalent'}</div>
-      ${acceptanceMeter(t.sell.fcValue, t.recv.fcValue, t.ownerWindow, t.sell.age, t.sell.trend, t.theirChampDelta ?? null, t.recv.onBlock)}
+      ${acceptanceMeter(t.sell.fcValue, t.recv.fcValue, t.ownerWindow, t.sell.age, t.sell.trend, t.theirChampDelta ?? null, t.recv.onBlock, t.fillsTheirNeed)}
     </div>
 
     <!-- RECEIVE -->
