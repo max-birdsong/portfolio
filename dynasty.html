@@ -2946,13 +2946,16 @@ function renderTradesTab(maxAbs, thresh) {
   const _deltas = window._tradeDeltas || {};
 
   // ── PPG Upgrade trades ───────────────────────────────────────
-  // Surfaces trades where YOU gain meaningful PPG from your lineup,
-  // counterparty wins on FC value. Independent of dynasty TAT signal.
-  const PPG_UPGRADE_MIN  = 1.5;  // minimum PPG improvement to surface
+  // Two passes:
+  // 1. SLOT UPGRADES: identify my weakest starter slots, find best upgrade per slot per owner
+  // 2. GENERAL PPG: any trade that improves overall lineup PPG
+  // Counterparty must win on FC value.
+  // TAT upgrades (tier gain > threshold) always shown regardless of mode.
+
+  const PPG_UPGRADE_MIN = 1.5;
   const ppgTrades = [];
   const ppgSeen   = new Set();
 
-  // All their players that would improve my lineup (no TAT requirement)
   const theirAllAssets = universe.filter(p => !p.ownerIsMe && p.ownerName && p.fcRank != null);
   const theirAllByOwner = {};
   for (const p of theirAllAssets) {
@@ -2960,64 +2963,120 @@ function renderTradesTab(maxAbs, thresh) {
     theirAllByOwner[p.ownerName].push(p);
   }
 
-  // For each of my assets, find the best PPG upgrade available per owner
+  // ── Pass 1: Slot-specific upgrades ──────────────────────────
+  // Find my projected lineup slots, identify weak ones, target upgrades
+  const myRosterForPPG = leagueRosters.find(r => r.isMe);
+  if (myRosterForPPG) {
+    const isSFppg = (window._rosterPositions || []).includes('SUPER_FLEX');
+    const lockedNppg = isSFppg ? { QB:1, RB:2, WR:2, TE:1 } : { QB:2, RB:2, WR:2, TE:1 };
+    const flexN = isSFppg ? 4 : 3;
+
+    // Build my current starters with PPG
+    const myStartersByPos = {};
+    for (const [pos, n] of Object.entries(lockedNppg)) {
+      const sorted = (myRosterForPPG.rosterPlayers || [])
+        .filter(p => p.pos === pos)
+        .map(p => ({ name: p.name, pos, ppg: estPPGGlobal(fcMap[norm(p.name)]?.redraftValue||0, pos) }))
+        .sort((a,b) => b.ppg - a.ppg);
+      myStartersByPos[pos] = sorted.slice(0, n);
+    }
+
+    // For each weak starter slot (bottom half of lineup by PPG), find upgrades
+    const allMyStarters = Object.values(myStartersByPos).flat()
+      .sort((a,b) => a.ppg - b.ppg); // weakest first
+
+    for (const weakSlot of allMyStarters) {
+      for (const [ownerName, theirList] of Object.entries(theirAllByOwner)) {
+        let best = null, bestGain = PPG_UPGRADE_MIN;
+
+        for (const theirs of theirList) {
+          if (theirs.isPick || theirs.pos !== weakSlot.pos) continue;
+          if ((fcMap[norm(weakSlot.name)]?.fcValue||0) <= (theirs.fcValue||0)) continue; // I must give more FC
+
+          const theirPPG = estPPGGlobal(theirs.redraftValue||0, theirs.pos);
+          const gain = theirPPG - weakSlot.ppg;
+          if (gain <= bestGain) continue;
+
+          best = theirs;
+          bestGain = gain;
+        }
+
+        if (!best) continue;
+        const key = norm(weakSlot.name) + '|' + norm(best.name) + '|' + ownerName;
+        if (ppgSeen.has(key)) continue;
+        ppgSeen.add(key);
+
+        const alreadySurfaced = trades.some(t => norm(t.sell.name)===norm(weakSlot.name) && norm(t.recv.name)===norm(best.name));
+        if (alreadySurfaced) continue;
+
+        const tierGain = (best.tierVal||0) - ((merged.find(p=>norm(p.name)===norm(weakSlot.name))||{}).tierVal||0);
+        ppgTrades.push({
+          sell: merged.find(p=>norm(p.name)===norm(weakSlot.name)) || { name:weakSlot.name, pos:weakSlot.pos, fcValue:fcMap[norm(weakSlot.name)]?.fcValue||0, tierVal:0 },
+          recv: best, ownerName,
+          ppgGain: +bestGain.toFixed(1),
+          slotUpgrade: weakSlot.pos, // which slot this targets
+          tierGain,
+          tatImprovement: ((merged.find(p=>norm(p.name)===norm(weakSlot.name))||{}).tatRank||999) - (best.tatRank||999),
+          fcEdgeForThem: (best.fcRank||999) - ((merged.find(p=>norm(p.name)===norm(weakSlot.name))||{}).fcRank||999),
+          tradeCount: best.tradeCount, totalTrades: best.totalTrades, leagueCount: best.leagueCount,
+          ownerWindow: best.ownerWindow||null, ownerWindowColor: best.ownerWindowColor||'var(--text3)',
+          ownerAvgAge: best.ownerAvgAge||null,
+          champPct: (leagueRosters.find(r=>r.ownerName===ownerName)||{}).champPct??null,
+          champDelta: null, theirChampDelta: null,
+          fillsNeed: (myRosterForPPG.thinPositions||new Set()).has(weakSlot.pos),
+          strong: bestGain >= 4.0,
+          motivation: 'ppg',
+        });
+      }
+    }
+  }
+
+  // ── Pass 2: General PPG improvement (non-slot-specific) ─────
   const myAllAssets = universe.filter(p => p.mine && !p.isPick);
   for (const mine of myAllAssets) {
     for (const [ownerName, theirList] of Object.entries(theirAllByOwner)) {
       let best = null, bestPPGGain = PPG_UPGRADE_MIN;
-
       for (const theirs of theirList) {
         if (theirs.isPick) continue;
-        // They must win on FC value
-        if ((mine.fcValue || 0) <= (theirs.fcValue || 0)) continue;
-
-        // Compute actual lineup impact
+        if ((mine.fcValue||0) <= (theirs.fcValue||0)) continue;
         const diff = getLineupDiff(mine.name, mine.pos, theirs.name, theirs.pos);
         if (!diff) continue;
-        const ppgGain = diff.ppgAfter - diff.ppgBefore;
-        if (ppgGain <= bestPPGGain) continue;
-
-        best = theirs;
-        bestPPGGain = ppgGain;
+        const gain = diff.ppgAfter - diff.ppgBefore;
+        if (gain <= bestPPGGain) continue;
+        best = theirs; bestPPGGain = gain;
       }
-
       if (!best) continue;
       const key = norm(mine.name) + '|' + norm(best.name) + '|' + ownerName;
       if (ppgSeen.has(key)) continue;
       ppgSeen.add(key);
-
-      // Skip if already in main trades (same pair)
-      const alreadySurfaced = trades.some(t => norm(t.sell.name) === norm(mine.name) && norm(t.recv.name) === norm(best.name));
+      const alreadySurfaced = trades.some(t => norm(t.sell.name)===norm(mine.name) && norm(t.recv.name)===norm(best.name));
       if (alreadySurfaced) continue;
-
-      const tierGain = (best.tierVal || 0) - (mine.tierVal || 0);
+      const tierGain = (best.tierVal||0) - (mine.tierVal||0);
       ppgTrades.push({
         sell: mine, recv: best, ownerName,
         ppgGain: +bestPPGGain.toFixed(1),
-        tierGain,
-        tatImprovement: (mine.tatRank || 999) - (best.tatRank || 999),
-        fcEdgeForThem:  (best.fcRank || 999) - (mine.fcRank || 999),
-        tradeCount:       best.tradeCount,
-        totalTrades:      best.totalTrades,
-        leagueCount:      best.leagueCount,
-        ownerWindow:      best.ownerWindow      || null,
-        ownerWindowColor: best.ownerWindowColor || 'var(--text3)',
-        ownerAvgAge:      best.ownerAvgAge      || null,
-        champPct: (leagueRosters.find(r => r.ownerName === ownerName) || {}).champPct ?? null,
-        champDelta:      null,
-        theirChampDelta: null,
-        fillsNeed:       (best.ownerThinPos || new Set()).has(mine.pos),
-        strong:          bestPPGGain >= 4.0,
-        motivation:      'ppg',
+        tierGain, tatImprovement: (mine.tatRank||999)-(best.tatRank||999),
+        fcEdgeForThem: (best.fcRank||999)-(mine.fcRank||999),
+        tradeCount: best.tradeCount, totalTrades: best.totalTrades, leagueCount: best.leagueCount,
+        ownerWindow: best.ownerWindow||null, ownerWindowColor: best.ownerWindowColor||'var(--text3)',
+        ownerAvgAge: best.ownerAvgAge||null,
+        champPct: (leagueRosters.find(r=>r.ownerName===ownerName)||{}).champPct??null,
+        champDelta: null, theirChampDelta: null,
+        fillsNeed: (best.ownerThinPos||new Set()).has(mine.pos),
+        strong: bestPPGGain >= 4.0, motivation: 'ppg',
       });
     }
   }
 
-  // Sort by PPG gain descending, cap at 20
-  ppgTrades.sort((a, b) => b.ppgGain - a.ppgGain);
-  ppgTrades.splice(20);
+  // Sort: slot upgrades first (they're more targeted), then by PPG gain
+  ppgTrades.sort((a, b) => {
+    const aSlot = a.slotUpgrade ? 1 : 0, bSlot = b.slotUpgrade ? 1 : 0;
+    if (bSlot !== aSlot) return bSlot - aSlot;
+    return b.ppgGain - a.ppgGain;
+  });
+  ppgTrades.splice(25);
 
-  // Attach deltas from sensitivity table
+  // Attach deltas
   for (const t of ppgTrades) {
     const key = norm(t.sell.name) + '|' + norm(t.recv.name) + '|' + norm(t.ownerName);
     t.champDelta      = _deltas[key]           ?? null;
@@ -3108,18 +3167,39 @@ function renderTradesTab(maxAbs, thresh) {
     if (needDelta.length) computeAllTradeDeltas([...trades, ...needDelta]);
   }
 
-  // ── Sort ──────────────────────────────────────────────────────
-  if (hasDelta) {
+  // ── Mode-aware sort and render ─────────────────────────────
+  // Mode is based on champ%:
+  //   Rebuild  < 2%  → prioritise TAT dynasty value, hide PPG section
+  //   Mixed   2–8%  → show hole-filling trades first, then TAT upgrades
+  //   Contend  > 8%  → lead with champ% delta, PPG secondary
+
+  const champPctVal = myChampPct !== null ? myChampPct * 100 : null;
+  const tradeMode   = champPctVal === null ? 'unknown'
+    : champPctVal < 2  ? 'rebuild'
+    : champPctVal < 8  ? 'mixed'
+    : 'contend';
+
+  // Sort trades by mode
+  if (tradeMode === 'rebuild') {
+    // TAT value only — champ% is noise
+    trades.sort((a, b) => b.tierGain !== a.tierGain ? b.tierGain - a.tierGain : b.tatImprovement - a.tatImprovement);
+  } else if (tradeMode === 'contend') {
+    // Champ% first, TAT tiebreak
     trades.sort((a, b) => {
       const da = a.champDelta ?? -999, db = b.champDelta ?? -999;
       return db !== da ? db - da : b.tierGain - a.tierGain;
     });
   } else {
-    trades.sort((a, b) => b.tierGain !== a.tierGain ? b.tierGain - a.tierGain : b.tatImprovement - a.tatImprovement);
+    // Mixed: hole-filling champ% trades first, then rest by champ%, then TAT
+    trades.sort((a, b) => {
+      const aHole = a.fillsNeed ? 1 : 0, bHole = b.fillsNeed ? 1 : 0;
+      if (bHole !== aHole) return bHole - aHole;
+      const da = a.champDelta ?? -999, db = b.champDelta ?? -999;
+      return db !== da ? db - da : b.tierGain - a.tierGain;
+    });
   }
 
   // Store for batch delta compute
-  // Normalise bundles to same shape as trades for delta compute
   const bundlesAsTradesForDelta = bundleList.map(b => ({
     ...b,
     sell: b.main, recv: b.recv,
@@ -3128,31 +3208,31 @@ function renderTradesTab(maxAbs, thresh) {
   window._lastRenderedTrades = [...trades, ...bundlesAsTradesForDelta];
 
   renderRosterContextBanner();
-  document.getElementById('badge-trades').textContent = (trades.length + bundleList.length + rebuildTrades.length) || '—';
+  document.getElementById('badge-trades').textContent = (trades.length + bundleList.length + rebuildTrades.length + ppgTrades.length) || '—';
 
-  if (!trades.length && !bundleList.length && !rebuildTrades.length) {
+  if (!trades.length && !bundleList.length && !rebuildTrades.length && !ppgTrades.length) {
     document.getElementById('trades-inner').innerHTML = `<div class="empty">
       <div class="empty-title">No Trade Opportunities</div>
       <div class="empty-sub">No strong buy/sell mismatches found across league rosters right now.</div></div>`;
     return;
   }
 
-  // ── Section labels adapt to mode ─────────────────────────────
-  const strongLabel   = hasDelta ? '⚡ Moves the Needle' : '⚡ Act Now';
-  const strongSub     = hasDelta ? 'Best champ% uplift available' : 'Strong signals on both sides';
-  const regularLabel  = 'Recommended';
-  const regularSub    = hasDelta ? 'Positive champ% impact' : 'Worth exploring at the right terms';
-
-  const strong  = trades.filter(t => hasDelta ? (t.champDelta !== null ? t.champDelta > 1.5 : t.strong) : t.strong);
-  const regular = trades.filter(t => hasDelta ? (t.champDelta !== null ? t.champDelta <= 1.5 : !t.strong) : !t.strong);
-  const bStrong = bundleList.filter(t => t.strong);
-  const bReg    = bundleList.filter(t => !t.strong);
-
-  document.getElementById('badge-trades').textContent = (trades.length + bundleList.length + rebuildTrades.length) || '—';
-
+  // Section labels adapt to mode
   let html = '';
 
-  // Rebuild mode banner
+  // Mode banner (non-rebuild modes get a subtle indicator)
+  if (tradeMode !== 'unknown') {
+    const mono2 = "font-family:'DM Mono',monospace";
+    const modeColor = tradeMode === 'rebuild' ? 'var(--blue)' : tradeMode === 'contend' ? 'var(--amber)' : 'var(--text3)';
+    const modeLabel = tradeMode === 'rebuild'
+      ? '🔄 REBUILD — prioritising dynasty value · win later'
+      : tradeMode === 'mixed'
+      ? '⚖️ MIXED — filling roster holes first · balancing now vs later'
+      : '🏆 CONTENDING — prioritising champ% impact · win now';
+    html += '<div style="' + mono2 + ';font-size:.55rem;color:' + modeColor + ';margin-bottom:12px;padding:6px 10px;border-left:2px solid ' + modeColor + '">' + modeLabel + '</div>';
+  }
+
+  // Rebuild mode sell banner
   if (rebuildMode) {
     const mono2 = "font-family:'DM Mono',monospace";
     html += '<div style="margin-bottom:16px;padding:10px 14px;border:1px solid var(--blue);background:rgba(96,165,250,.06)">'
@@ -3163,9 +3243,45 @@ function renderTradesTab(maxAbs, thresh) {
       + '</div></div>';
   }
 
-  if (strong.length)  html += tradeSection(strongLabel, 'var(--accent)', strongSub, strong, false);
-  if (regular.length) html += tradeSection(regularLabel, 'var(--text2)', regularSub, regular, false);
+  // Main trades
+  if (trades.length) {
+    const topLabel = tradeMode === 'rebuild'  ? '📈 Dynasty Value Gains'
+      : tradeMode === 'contend' ? '⚡ Moves the Needle'
+      : '🕳️ Filling Roster Holes';
+    const topSub   = tradeMode === 'rebuild'  ? 'Best TAT value acquisitions available'
+      : tradeMode === 'contend' ? 'Best champ% uplift available'
+      : 'Hole-filling trades with champ% upside — sorted by impact';
 
+    const topColor = tradeMode === 'rebuild' ? 'var(--blue)' : tradeMode === 'contend' ? 'var(--accent)' : 'var(--amber)';
+
+    // Split at natural break point
+    const splitAt = tradeMode === 'rebuild' ? 0.5   // TAT tier gain threshold
+      : tradeMode === 'contend' ? 1.5              // champ% delta threshold
+      : null;                                       // mixed: holes vs non-holes
+
+    // Big TAT upgrades always shown prominently regardless of mode
+    const bigTATThresh = 75; // tierGain units = 0.75 1sts
+    const isBigTAT = t => (t.tierGain || 0) >= bigTATThresh;
+
+    let topTrades, restTrades;
+    if (tradeMode === 'rebuild') {
+      topTrades  = trades.filter(t => (t.tierGain / 100) >= 0.5);
+      restTrades = trades.filter(t => (t.tierGain / 100) < 0.5);
+    } else if (tradeMode === 'mixed') {
+      // Hole-filling + big TAT upgrades first, then champ% movers, then rest
+      topTrades  = trades.filter(t => t.fillsNeed || isBigTAT(t));
+      restTrades = trades.filter(t => !t.fillsNeed && !isBigTAT(t));
+    } else {
+      // Contend: champ% first, but big TAT upgrades always in top section
+      topTrades  = trades.filter(t => (t.champDelta ?? -999) > 1.5 || isBigTAT(t));
+      restTrades = trades.filter(t => (t.champDelta ?? -999) <= 1.5 && !isBigTAT(t));
+    }
+
+    if (topTrades.length)  html += tradeSection(topLabel, topColor, topSub, topTrades, false);
+    if (restTrades.length) html += tradeSection('Also Consider', 'var(--text2)', 'Worth exploring at the right terms', restTrades, false);
+  }
+
+  // Rebuild sell trades
   if (rebuildTrades.length) {
     html += '<div class="trade-section-head" style="margin-top:24px">'
       + '<div class="trade-section-title" style="color:var(--blue)">📉 Sell Win-Now Assets</div>'
@@ -3175,6 +3291,7 @@ function renderTradesTab(maxAbs, thresh) {
       + '</div>';
   }
 
+  // Bundle offers
   if (bStrong.length || bReg.length) {
     html += `<div class="trade-section-head" style="margin-top:24px">
       <div class="trade-section-title" style="color:var(--amber)">📦 Bundle Offers</div>
@@ -3184,17 +3301,30 @@ function renderTradesTab(maxAbs, thresh) {
     if (bReg.length)    html += bReg.map(t => bundleCard(t)).join('');
     html += '</div>';
   }
-  // ── PPG Upgrades section ─────────────────────────────────────
-  if (ppgTrades.length) {
+
+  // PPG Upgrades — only show for non-rebuild teams
+  if (ppgTrades.length && tradeMode !== 'rebuild') {
     const ppgStrong = ppgTrades.filter(t => t.strong);
     const ppgReg    = ppgTrades.filter(t => !t.strong);
-    html += '<div class="trade-section-head" style="margin-top:24px">'
-      + '<div class="trade-section-title" style="color:var(--blue)">⚡ PPG Upgrades</div>'
-      + '<div class="trade-section-sub">Trades that improve your lineup this season · counterparty wins on FC value</div>'
-      + '</div><div class="trade-cards">';
-    if (ppgStrong.length) html += ppgStrong.map(t => tradeCard(t)).join('');
-    if (ppgReg.length)    html += ppgReg.map(t => tradeCard(t)).join('');
-    html += '</div>';
+    const slotTrades = ppgTrades.filter(t => t.slotUpgrade);
+    const genTrades  = ppgTrades.filter(t => !t.slotUpgrade);
+    if (slotTrades.length) {
+      html += '<div class="trade-section-head" style="margin-top:24px">'
+        + '<div class="trade-section-title" style="color:var(--blue)">🕳️ Slot Upgrades</div>'
+        + '<div class="trade-section-sub">Targets your weakest starter slots · counterparty wins on FC value</div>'
+        + '</div><div class="trade-cards">'
+        + slotTrades.map(t => tradeCard(t)).join('')
+        + '</div>';
+    }
+    if (genTrades.length) {
+      html += '<div class="trade-section-head" style="margin-top:24px">'
+        + '<div class="trade-section-title" style="color:var(--blue)">⚡ PPG Upgrades</div>'
+        + '<div class="trade-section-sub">General lineup improvement · counterparty wins on FC value</div>'
+        + '</div><div class="trade-cards">';
+    if (genTrades.filter(t=>t.strong).length) html += genTrades.filter(t=>t.strong).map(t => tradeCard(t)).join('');
+    if (genTrades.filter(t=>!t.strong).length) html += genTrades.filter(t=>!t.strong).map(t => tradeCard(t)).join('');
+    if (genTrades.length) html += '</div>';
+    }  // close if (genTrades.length)
   }
 
   html += `<div class="tfoot" style="margin-top:12px">Rank gap = FC rank − TAT rank · Positive = TAT values higher · Rebuild mode: sell FC-overvalued assets for TAT dynasty value</div>`;
