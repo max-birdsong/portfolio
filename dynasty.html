@@ -3329,23 +3329,23 @@ async function computeAllTradeDeltas(trades) {
       // Picks have zero marginal PPW — they don't play, skip replacement level entirely
       const sendIsPick = t.sell.pos === 'PICK' || t.sell.isPick;
       const recvIsPick = t.recv.pos === 'PICK' || t.recv.isPick;
-      // Use estPPGGlobal for position-aware PPG (TE premium, 6PT TDs, etc.)
+
+      // Use getLineupDiff for my side — correctly handles cascade (e.g. flex player
+      // stepping up when starter leaves), which replacement level alone misses.
+      const myDiff = getLineupDiff(t.sell.name, t.sell.pos, t.recv.name, t.recv.pos);
+      myMeanDelta = myDiff ? myDiff.ppgAfter - myDiff.ppgBefore : 0;
+
+      // Their side: use the same approach from their roster's perspective
+      // Build a temporary swap: they lose recv, gain send
+      const theirRoster = leagueRosters[theirIdx];
       const sendRd2 = sendIsPick ? 0 : (rdByName[sendName]||0);
       const recvRd2 = recvIsPick ? 0 : (rdByName[recvName]||0);
       const sendPPG = sendIsPick ? 0 : (projPts[sendName] ?? estPPGGlobal(sendRd2, t.sell.pos));
       const recvPPG = recvIsPick ? 0 : (projPts[recvName] ?? estPPGGlobal(recvRd2, t.recv.pos));
-      const myReplPPG   = sendIsPick ? 0 : (leagueRosters[myIdx].replacementLevelPPG?.[t.sell.pos] ?? estPPGGlobal(leagueRosters[myIdx].replacementLevel?.[t.sell.pos]||0, t.sell.pos));
-      const thReplPPG   = recvIsPick ? 0 : (leagueRosters[theirIdx].replacementLevelPPG?.[t.recv.pos] ?? estPPGGlobal(leagueRosters[theirIdx].replacementLevel?.[t.recv.pos]||0, t.recv.pos));
-      // Marginal PPG = player PPG - replacement level, but only if player actually starts.
-      // If player PPG <= replacement level they don't crack the lineup → 0 marginal.
-      const myRecvMarginal  = recvIsPick  ? 0 : Math.max(0, recvPPG - thReplPPG);
-      const mySendMarginal  = sendIsPick  ? 0 : Math.max(0, sendPPG - myReplPPG);
-      myMeanDelta = myRecvMarginal - mySendMarginal;
-
-      // Their side: independently computed, also clamped to 0 if player doesn't start
-      const theirThRepl  = sendIsPick ? 0 : (leagueRosters[theirIdx].replacementLevelPPG?.[t.sell.pos] ?? estPPGGlobal(leagueRosters[theirIdx].replacementLevel?.[t.sell.pos]||0, t.sell.pos));
-      const theirRecvMarginal = sendIsPick  ? 0 : Math.max(0, sendPPG - theirThRepl);
-      const theirSendMarginal = recvIsPick  ? 0 : Math.max(0, recvPPG - thReplPPG);
+      const thReplPPG = recvIsPick ? 0 : (theirRoster.replacementLevelPPG?.[t.recv.pos] ?? estPPGGlobal(theirRoster.replacementLevel?.[t.recv.pos]||0, t.recv.pos));
+      const theirThRepl = sendIsPick ? 0 : (theirRoster.replacementLevelPPG?.[t.sell.pos] ?? estPPGGlobal(theirRoster.replacementLevel?.[t.sell.pos]||0, t.sell.pos));
+      const theirRecvMarginal = sendIsPick ? 0 : Math.max(0, sendPPG - theirThRepl);
+      const theirSendMarginal = recvIsPick ? 0 : Math.max(0, recvPPG - thReplPPG);
       theirMeanDelta = theirRecvMarginal - theirSendMarginal;
 
       const meansAfter = allMeanBefore.map((v,i) =>
@@ -3611,25 +3611,13 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
   }
   function isPick2(nn) { return !rosterPlayerMap[nn] && (nn.includes('pick') || nn.match(/^\d{4}/)); }
 
-  let myMeanDelta2 = 0;
-  for (const pn of sendNames) {
-    const nn  = norm(pn);
-    if (isPick2(nn)) continue;
-    const pos  = rosterPlayerMap[nn]?.pos || 'WR';
-    const rd   = rdByName2[nn] || 0;
-    const pts  = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
-    const repl = myRoster2?.replacementLevelPPG?.[pos] ?? estPPGGlobal(myRoster2?.replacementLevel?.[pos]||0, pos);
-    myMeanDelta2 -= Math.max(0, pts - repl); // clamp: only hurts if player was actually starting
-  }
-  for (const pn of recvNames) {
-    const nn  = norm(pn);
-    if (isPick2(nn)) continue;
-    const pos  = rosterPlayerMap[nn]?.pos || 'WR';
-    const rd   = rdByName2[nn] || 0;
-    const pts  = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
-    const repl = theirRoster2?.replacementLevelPPG?.[pos] ?? estPPGGlobal(theirRoster2?.replacementLevel?.[pos]||0, pos);
-    myMeanDelta2 += Math.max(0, pts - repl); // clamp: only helps if player would actually start
-  }
+  // Use getLineupDiff for accurate cascade-aware lineup delta
+  const sendName2 = sendPlayers.length ? sendPlayers[0].name : '';
+  const sendPos2  = sendPlayers.length ? sendPlayers[0].pos  : 'WR';
+  const recvName2 = recvPlayers.length ? recvPlayers[0].name : '';
+  const recvPos2  = recvPlayers.length ? recvPlayers[0].pos  : 'WR';
+  const myDiff2   = getLineupDiff(sendName2, sendPos2, recvName2, recvPos2);
+  const myMeanDelta2 = myDiff2 ? myDiff2.ppgAfter - myDiff2.ppgBefore : 0;
 
   // Compute their delta independently — not just -myDelta (asymmetric for pick trades)
   let theirMeanDelta2 = 0;
