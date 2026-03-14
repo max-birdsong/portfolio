@@ -679,21 +679,15 @@ function estPPGGlobal(rd, pos) {
   // who contributes near-zero fantasy points if not starting.
   // Smooth transition: full value above 4000, tapers to floor below 2000.
   if (pos === 'QB') {
-    const QB_STARTER_THRESHOLD = 4000;
-    const QB_BACKUP_FLOOR      = 1500; // below this = essentially zero
-    const QB_PPG_FLOOR         = 1.0;  // benched QB minimum (bye week insurance only)
-    if ((rd || 0) < QB_BACKUP_FLOOR) return QB_PPG_FLOOR;
-    if ((rd || 0) < QB_STARTER_THRESHOLD) {
-      // Linear taper from floor to full value
-      const t = ((rd || 0) - QB_BACKUP_FLOOR) / (QB_STARTER_THRESHOLD - QB_BACKUP_FLOOR);
-      const rdV = rd || 0;
-      const PPG_KNEE2 = 400, PPG_AT_KNEE2 = 9.5, PPG_TOP_RD2 = 9000, PPG_AT_TOP2 = 22.0;
-      const qbBase = rdV <= PPG_KNEE2
-        ? 4.0 + (PPG_AT_KNEE2 - 4.0) * Math.sqrt(rdV / PPG_KNEE2)
-        : PPG_AT_KNEE2 + (PPG_AT_TOP2 - PPG_AT_KNEE2) / (PPG_TOP_RD2 - PPG_KNEE2) * (rdV - PPG_KNEE2);
-      const fullPPG = qbBase + passTdBoost;
-      return +(QB_PPG_FLOOR + t * (fullPPG - QB_PPG_FLOOR)).toFixed(1);
-    }
+    // Taper: rd>=2000 = likely starter (full formula), 500-2000 = fringe (linear), <500 = floor
+    const rdV2 = rd || 0;
+    const qbBase2 = rdV2 <= 400
+      ? 4.0 + 5.5 * Math.sqrt(rdV2 / 400)
+      : 9.5 + (22.0 - 9.5) / (9000 - 400) * (rdV2 - 400);
+    const fullPPG2 = qbBase2 + passTdBoost;
+    if (rdV2 < 500)  return 1.0;
+    if (rdV2 < 2000) { const tp = (rdV2 - 500) / 1500; return +(1.0 + tp * (fullPPG2 - 1.0)).toFixed(1); }
+    return fullPPG2;
   }
 
   // Piecewise curve: steep sqrt below knee (captures Reed/Downs ~8 ppg),
@@ -3087,8 +3081,7 @@ function renderTradesTab(maxAbs, thresh) {
     t.theirChampDelta = _deltas[key + '|them'] ?? null;
   }
 
-  // Add to _lastRenderedTrades for delta compute
-  window._lastRenderedTrades = [...(window._lastRenderedTrades || []), ...ppgTrades];
+  // (ppgTrades included in _lastRenderedTrades below after bundlesAsTradesForDelta)
 
   // ── Attach champ% deltas + determine mode ─────────────────
   for (const t of trades) {
@@ -3218,7 +3211,7 @@ function renderTradesTab(maxAbs, thresh) {
     sell: b.main, recv: b.recv,
     _isBundle: true, _addon: b.addon,
   }));
-  window._lastRenderedTrades = [...trades, ...bundlesAsTradesForDelta];
+  window._lastRenderedTrades = [...trades, ...bundlesAsTradesForDelta, ...ppgTrades];
 
   renderRosterContextBanner();
   document.getElementById('badge-trades').textContent = (trades.length + bundleList.length + rebuildTrades.length + ppgTrades.length) || '—';
