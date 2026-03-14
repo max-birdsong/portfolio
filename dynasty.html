@@ -664,15 +664,28 @@ function estPPGGlobal(rd, pos) {
   const baseRec = sc.rec || 0;
   const teBoost = ((sc.rec_te || baseRec) - baseRec + (sc.bonus_rec_te || 0)) * 2.9;
 
-  // 6PT passing TD boost for QBs: standard is 4pt, 6pt leagues add ~+3 PPG to elite QBs.
-  // Estimate: ~1.5 passing TDs/game × extra pts above 4pt standard.
-  // Scales with rd — elite QBs throw more TDs than backups.
-  // Base formula: 8 + rd/600 gives ~22 PPG for rd=8500 (Lamar), ~16 for rd=4000.
-  // Passing TD freq roughly proportional to redraft value for QBs.
+  // 6PT passing TD boost
   const passTdPts = sc.pass_td || 4;
   const passTdBoost = pos === 'QB'
-    ? Math.max(0, passTdPts - 4) * 1.5   // ~1.5 TDs/game × extra pts above 4pt
+    ? Math.max(0, passTdPts - 4) * 1.5
     : 0;
+
+  // QB all-or-nothing: redraft value for backup QBs is dynasty/upside value, not current output.
+  // An NFL starting QB has redraft value ~3500+. Below that they're likely a backup
+  // who contributes near-zero fantasy points if not starting.
+  // Smooth transition: full value above 4000, tapers to floor below 2000.
+  if (pos === 'QB') {
+    const QB_STARTER_THRESHOLD = 4000;
+    const QB_BACKUP_FLOOR      = 1500; // below this = essentially zero
+    const QB_PPG_FLOOR         = 1.0;  // benched QB minimum (bye week insurance only)
+    if ((rd || 0) < QB_BACKUP_FLOOR) return QB_PPG_FLOOR;
+    if ((rd || 0) < QB_STARTER_THRESHOLD) {
+      // Linear taper from floor to full value
+      const t = ((rd || 0) - QB_BACKUP_FLOOR) / (QB_STARTER_THRESHOLD - QB_BACKUP_FLOOR);
+      const fullPPG = 8 + rd / 600 + passTdBoost;
+      return +(QB_PPG_FLOOR + t * (fullPPG - QB_PPG_FLOOR)).toFixed(1);
+    }
+  }
 
   return 8 + (rd || 0) / 600 + (pos === 'TE' ? teBoost : 0) + passTdBoost;
 }
@@ -1973,15 +1986,25 @@ function computeRosterProfiles() {
 
     // Flex: pool remaining RB/WR/TE by rd, take top 3
     // Flex pool: RB/WR/TE always eligible; QB eligible in superflex (beyond locked QB1)
-    const flexPositions = isSuperFlex ? ['QB','RB','WR','TE'] : ['RB','WR','TE'];
-    const flexCands = flexPositions.flatMap(p2 => {
+    // Regular flex: RB/WR/TE only, top 3 slots
+    const regFlexCands2 = ['RB','WR','TE'].flatMap(p2 => {
       const n = LOCKED_N[p2] || 0;
       return (byPos[p2] || [])
-        .map(p => ({ rd: fcMap[p.name]?.redraftValue || 0, pos: p2 }))
-        .sort((a, b) => b.rd - a.rd)
-        .slice(n);
+        .map(p => ({ name: p.name, rd: fcMap[p.name]?.redraftValue || 0, pos: p2 }))
+        .sort((a, b) => b.rd - a.rd).slice(n);
     }).sort((a, b) => b.rd - a.rd);
-    for (let i = 0; i < N_FLEX_SPOTS; i++) ppgSum += estPPG((flexCands[i] || {}).rd || 0, (flexCands[i] || {}).pos || 'WR');
+    for (let i = 0; i < 3; i++) ppgSum += estPPG((regFlexCands2[i]||{}).rd||0, (regFlexCands2[i]||{}).pos||'WR');
+
+    // Superflex slot: best remaining at any position (QB eligible here only)
+    if (isSuperFlex) {
+      const regNames = new Set(regFlexCands2.slice(0,3).map(p => p.name));
+      const sfBest = ['QB','RB','WR','TE'].flatMap(p2 => {
+        const n = LOCKED_N[p2] || 0;
+        return (byPos[p2]||[]).map(p => ({ name: p.name, rd: fcMap[p.name]?.redraftValue||0, pos: p2 }))
+          .sort((a,b) => b.rd-a.rd).slice(n);
+      }).filter(p => !regNames.has(p.name)).sort((a,b) => b.rd-a.rd)[0];
+      if (sfBest) ppgSum += estPPG(sfBest.rd, sfBest.pos);
+    }
 
     roster.redraftStrength = +ppgSum.toFixed(1);  // now in estimated PPG units
 
@@ -2230,23 +2253,22 @@ function renderRosterContextBanner() {
     fillLocked('WR', lockedN2.WR, ['WR1','WR2']);
     fillLocked('TE', lockedN2.TE, ['TE']);
 
-    // Flex pool: remaining eligible players sorted by PPG
-    // In SF: QB2 slot becomes SFLX — best remaining player at any position wins it
-    const flexElig2 = isSF2 ? ['QB','RB','WR','TE'] : ['RB','WR','TE'];
-    const flexPool2 = flexElig2.flatMap(pos => (byPos2[pos]||[]).filter(p => !usedNames.has(norm(p.name))))
+    // Regular FLEX pool: RB/WR/TE only (QBs never go in regular flex slots)
+    const regFlexPool = ['RB','WR','TE'].flatMap(pos => (byPos2[pos]||[]).filter(p => !usedNames.has(norm(p.name))))
       .sort((a,b) => b.ppg - a.ppg);
 
-    // Flex slots — label shows actual position of whoever fills the slot
-    // TE filling a flex slot gets labelled FLEX/TE to make it visible
-    const regularFlexN = isSF2 ? 3 : 3;
-    for (let i = 0; i < regularFlexN; i++) {
-      const p = flexPool2[i] || null;
+    for (let i = 0; i < 3; i++) {
+      const p = regFlexPool[i] || null;
       const label = p ? 'FLX/' + p.pos : 'FLX' + (i+1);
       lineupSlots.push({ slotLabel: label, player: p });
       if (p) usedNames.add(norm(p.name));
     }
+
+    // SUPERFLEX slot: best remaining player at ANY position (QB eligible here only)
     if (isSF2) {
-      const sfp = flexPool2[3] || null;
+      const sfPool = ['QB','RB','WR','TE'].flatMap(pos => (byPos2[pos]||[]).filter(p => !usedNames.has(norm(p.name))))
+        .sort((a,b) => b.ppg - a.ppg);
+      const sfp = sfPool[0] || null;
       lineupSlots.push({ slotLabel: sfp ? 'SFLX/' + sfp.pos : 'SFLX', player: sfp, isSuperFlex: true });
       if (sfp) usedNames.add(norm(sfp.name));
     }
@@ -3356,11 +3378,16 @@ function getLineupDiff(sendPlayer, sendPos, recvPlayer, recvPos) {
       }
     }
     // Fill flex greedily
-    const flexElig = isSF ? ['QB','RB','WR','TE'] : ['RB','WR','TE'];
-    const flexPool = flexElig.flatMap(pos => byPos[pos].filter(p => !used.has(p.name)))
-      .sort((a, b) => b.ppg - a.ppg)
-      .slice(0, N_FLEX);
-    for (const p of flexPool) { starters.push(p); used.add(p.name); }
+    // Regular flex: RB/WR/TE only
+    const regFlex = ['RB','WR','TE'].flatMap(pos => byPos[pos].filter(p => !used.has(p.name)))
+      .sort((a, b) => b.ppg - a.ppg).slice(0, 3);
+    for (const p of regFlex) { starters.push(p); used.add(p.name); }
+    // Superflex: best remaining at any position
+    if (isSF) {
+      const sfCand = ['QB','RB','WR','TE'].flatMap(pos => byPos[pos].filter(p => !used.has(p.name)))
+        .sort((a, b) => b.ppg - a.ppg)[0];
+      if (sfCand) { starters.push(sfCand); used.add(sfCand.name); }
+    }
     return starters;
   }
 
