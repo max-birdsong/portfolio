@@ -496,30 +496,8 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
       <div id="pick-debug" style="display:none;margin:12px 0;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);line-height:1.7"></div>
 <div id="roster-context-banner" style="margin-bottom:16px"></div>
 
-<!-- Trade finder filter/sort bar -->
-<div id="trades-filter-bar" style="display:none;margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-  <!-- Position filter -->
-  <div style="display:flex;gap:4px;align-items:center">
-    <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-right:2px">POS</span>
-    ${['ALL','QB','RB','WR','TE','PICK'].map(p => `
-      <button onclick="setTradeFilter('pos','${p}')" id="tf-pos-${p}"
-        style="font-family:'DM Mono',monospace;font-size:.55rem;padding:3px 8px;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text3);letter-spacing:.5px"
-        class="tf-pos-btn">${p}</button>`).join('')}
-  </div>
-  <!-- Sort -->
-  <div style="display:flex;gap:4px;align-items:center;margin-left:auto">
-    <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-right:2px">SORT</span>
-    ${[['champ','Champ%'],['ppg','PPG'],['tat','TAT'],['accept','Accept']].map(([v,l]) => `
-      <button onclick="setTradeSort('${v}')" id="tf-sort-${v}"
-        style="font-family:'DM Mono',monospace;font-size:.55rem;padding:3px 8px;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text3);letter-spacing:.5px"
-        class="tf-sort-btn">${l}</button>`).join('')}
-  </div>
-  <!-- Compact toggle -->
-  <button onclick="toggleCompactTrades()" id="tf-compact-btn"
-    style="font-family:'DM Mono',monospace;font-size:.55rem;padding:3px 10px;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text3);letter-spacing:.5px;margin-left:4px">
-    COMPACT
-  </button>
-</div>
+<!-- Trade finder filter/sort bar — populated by JS -->
+<div id="trades-filter-bar" style="display:none;margin-bottom:14px"></div>
 
 <div id="trades-inner"></div>
     </div>
@@ -3394,24 +3372,27 @@ function renderTradesTab(maxAbs, thresh) {
     }
   }
 
-  // Show filter bar
+  // Build and show filter bar via JS
+  _tfState.pos = 'ALL';
   const filterBar = document.getElementById('trades-filter-bar');
   if (filterBar) {
-    filterBar.style.display = 'flex';
-    // Set default active states
-    document.querySelectorAll('.tf-pos-btn').forEach(b => {
-      b.style.background = b.id === 'tf-pos-ALL' ? 'var(--accent)' : 'none';
-      b.style.color      = b.id === 'tf-pos-ALL' ? '#000' : 'var(--text3)';
-    });
-    document.querySelectorAll('.tf-sort-btn').forEach(b => {
-      const activeSort = 'tf-sort-' + _tfState.sort;
-      b.style.background = b.id === activeSort ? 'var(--accent)' : 'none';
-      b.style.color      = b.id === activeSort ? '#000' : 'var(--text3)';
-    });
-  }
+    const m = "font-family:'DM Mono',monospace";
+    const btnStyle = (active) => `${m};font-size:.55rem;padding:3px 9px;cursor:pointer;border:1px solid var(--border);letter-spacing:.5px;` + (active ? 'background:var(--accent);color:#000' : 'background:none;color:var(--text3)');
 
-  // Reset filter state pos to ALL on fresh render
-  _tfState.pos = 'ALL';
+    let fb = `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">`;
+    fb += `<span style="${m};font-size:.48rem;color:var(--text3);letter-spacing:1px">POS</span>`;
+    for (const p of ['ALL','QB','RB','WR','TE','PICK']) {
+      fb += `<button id="tf-pos-${p}" onclick="setTradeFilter('pos','${p}')" style="${btnStyle(p==='ALL')}">${p}</button>`;
+    }
+    fb += `<span style="${m};font-size:.48rem;color:var(--text3);letter-spacing:1px;margin-left:12px">SORT</span>`;
+    for (const [v,l] of [['champ','Champ%'],['ppg','PPG'],['tat','TAT Value'],['accept','Acceptance']]) {
+      fb += `<button id="tf-sort-${v}" onclick="setTradeSort('${v}')" style="${btnStyle(v===_tfState.sort)}">${l}</button>`;
+    }
+    fb += `<button id="tf-compact-btn" onclick="toggleCompactTrades()" style="${btnStyle(_tfState.compact)};margin-left:8px">COMPACT</button>`;
+    fb += `</div>`;
+    filterBar.innerHTML = fb;
+    filterBar.style.display = 'block';
+  }
 
   document.getElementById('trades-inner').innerHTML = html;
 
@@ -3956,31 +3937,42 @@ function _getSectionLabel(t, tradeMode, hasDelta, isBigTAT) {
 // ── TRADE FINDER FILTER / SORT / COMPACT ─────────────────────
 const _tfState = { pos: 'ALL', sort: 'champ', compact: false };
 
+function tfToggleExpand(el) {
+  const id = el.getAttribute('data-expid');
+  const exp = document.getElementById(id);
+  if (exp) exp.style.display = exp.style.display === 'none' ? 'block' : 'none';
+}
+
+function _updateFilterBtns() {
+  const m = "font-family:'DM Mono',monospace";
+  const btnStyle = (active) => `${m};font-size:.55rem;padding:3px 9px;cursor:pointer;border:1px solid var(--border);letter-spacing:.5px;` + (active ? 'background:var(--accent);color:#000' : 'background:none;color:var(--text3)');
+  for (const p of ['ALL','QB','RB','WR','TE','PICK']) {
+    const b = document.getElementById('tf-pos-' + p);
+    if (b) b.style.cssText = btnStyle(p === _tfState.pos);
+  }
+  for (const v of ['champ','ppg','tat','accept']) {
+    const b = document.getElementById('tf-sort-' + v);
+    if (b) b.style.cssText = btnStyle(v === _tfState.sort);
+  }
+  const cb = document.getElementById('tf-compact-btn');
+  if (cb) cb.style.cssText = btnStyle(_tfState.compact) + ';margin-left:8px';
+}
+
 function setTradeFilter(key, val) {
   _tfState[key] = val;
-  document.querySelectorAll('.tf-pos-btn').forEach(b => {
-    b.style.background = b.id === 'tf-pos-' + val ? 'var(--accent)' : 'none';
-    b.style.color      = b.id === 'tf-pos-' + val ? '#000' : 'var(--text3)';
-  });
+  _updateFilterBtns();
   _applyTradeFilter();
 }
 
 function setTradeSort(val) {
   _tfState.sort = val;
-  document.querySelectorAll('.tf-sort-btn').forEach(b => {
-    b.style.background = b.id === 'tf-sort-' + val ? 'var(--accent)' : 'none';
-    b.style.color      = b.id === 'tf-sort-' + val ? '#000' : 'var(--text3)';
-  });
+  _updateFilterBtns();
   _applyTradeFilter();
 }
 
 function toggleCompactTrades() {
   _tfState.compact = !_tfState.compact;
-  const btn = document.getElementById('tf-compact-btn');
-  if (btn) {
-    btn.style.background = _tfState.compact ? 'var(--accent)' : 'none';
-    btn.style.color      = _tfState.compact ? '#000' : 'var(--text3)';
-  }
+  _updateFilterBtns();
   _applyTradeFilter();
 }
 
@@ -4037,45 +4029,56 @@ function _applyTradeFilter() {
   }
 }
 
-// Compact trade card — single row
+// Compact trade card — two-line skimmable format
 function compactTradeCard(t, isBundle) {
-  const mono = "font-family:'DM Mono',monospace";
-  const send = isBundle ? (t.main?.name + ' + ' + t.addon?.name) : (t.sell?.name || '');
-  const sendPos = isBundle ? (t.main?.pos || '') : (t.sell?.pos || '');
-  const sendFcRank = isBundle ? (t.main?.fcRank||'') : (t.sell?.fcRank||'');
-  const sendTatRank = isBundle ? (t.main?.tatRank||'') : (t.sell?.tatRank||'');
+  const m = "font-family:'DM Mono',monospace";
+  const sendName = isBundle ? (t.main?.name + ' + ' + t.addon?.name) : (t.sell?.name || '');
+  const sendPos  = isBundle ? (t.main?.pos || '') : (t.sell?.pos || '');
+  const sendFC   = isBundle ? (t.main?.fcRank||'—') : (t.sell?.fcRank||'—');
+  const sendTAT  = isBundle ? (t.main?.tatRank||'—') : (t.sell?.tatRank||'—');
   const recvName = t.recv?.name || '';
   const recvPos  = t.recv?.pos  || '';
-  const recvFcRank  = t.recv?.fcRank  || '';
-  const recvTatRank = t.recv?.tatRank || '';
+  const recvFC   = t.recv?.fcRank  || '—';
+  const recvTAT  = t.recv?.tatRank || '—';
 
-  const champStr = t.champDelta !== null && t.champDelta !== undefined
-    ? (t.champDelta >= 0 ? '+' : '') + t.champDelta.toFixed(1) + '%'
-    : '—';
-  const champCol = !t.champDelta ? 'var(--text3)'
-    : t.champDelta > 0.4 ? 'var(--accent)' : t.champDelta < -0.4 ? 'var(--red)' : 'var(--text2)';
+  const champVal = t.champDelta ?? null;
+  const champStr = champVal !== null ? (champVal >= 0 ? '+' : '') + champVal.toFixed(1) + '%' : '—';
+  const champCol = champVal === null ? 'var(--text3)' : champVal > 0.5 ? 'var(--accent)' : champVal < -0.5 ? 'var(--red)' : 'var(--text2)';
 
-  const ppgStr = t.ppgGain != null ? (t.ppgGain >= 0 ? '+' : '') + t.ppgGain.toFixed(1) + ' ppg'
-    : t._ppgDelta != null ? (t._ppgDelta >= 0 ? '+' : '') + t._ppgDelta.toFixed(1) + ' ppg' : '';
-  const ppgCol = !ppgStr ? 'var(--text3)'
-    : parseFloat(ppgStr) > 0 ? 'var(--accent)' : parseFloat(ppgStr) < 0 ? 'var(--red)' : 'var(--text2)';
+  const ppgVal = t.ppgGain ?? t._ppgDelta ?? null;
+  const ppgStr = ppgVal !== null ? (ppgVal >= 0 ? '+' : '') + ppgVal.toFixed(1) : '—';
+  const ppgCol = ppgVal === null ? 'var(--text3)' : ppgVal > 1 ? 'var(--accent)' : ppgVal < -1 ? 'var(--red)' : 'var(--text2)';
 
-  const tatStr = t.tierGain ? (t.tierGain > 0 ? '+' : '') + (t.tierGain/100).toFixed(2) : '';
+  const tatStr = t.tierGain ? (t.tierGain > 0 ? '+' : '') + (t.tierGain/100).toFixed(2) + ' 1sts' : '—';
+  const tatCol = t.tierGain > 50 ? 'var(--accent)' : t.tierGain < -50 ? 'var(--red)' : 'var(--text3)';
 
-  const onBlock = t.recv?.onBlock ? ' <span style="color:var(--accent);font-size:.45rem">●</span>' : '';
-  const ownerCol = t.ownerWindowColor || 'var(--text3)';
+  const ownerCol  = t.ownerWindowColor || 'var(--text3)';
+  const onBlock   = t.recv?.onBlock ? ' ●' : '';
+  const posColor  = { QB:'var(--amber)', RB:'var(--accent)', WR:'#60a5fa', TE:'#c084fc', PICK:'var(--text3)' };
 
-  return `<div onclick="this.nextElementSibling&&(this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none')"
-    style="${mono};font-size:.58rem;padding:7px 10px;border-bottom:1px solid var(--border2);cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface)">
-    <span style="color:var(--text3);min-width:20px">${esc(sendPos)}</span>
-    <span style="color:var(--text1);flex:1;min-width:120px">${esc(send)} <span style="color:var(--text3);font-size:.5rem">#${sendFcRank}FC #${sendTatRank}TAT</span></span>
-    <span style="color:var(--text3)">→</span>
-    <span style="color:var(--text1);flex:1;min-width:120px">${esc(recvName)}${onBlock} <span style="color:var(--text3);font-size:.5rem">#${recvFcRank}FC #${recvTatRank}TAT</span></span>
-    <span style="color:${ownerCol};min-width:80px">${esc(t.ownerName||'')}</span>
-    ${ppgStr ? `<span style="color:${ppgCol};min-width:60px">${esc(ppgStr)}</span>` : '<span style="min-width:60px"></span>'}
-    ${tatStr ? `<span style="color:var(--text3);min-width:50px">${esc(tatStr)} 1sts</span>` : '<span style="min-width:50px"></span>'}
-    <span style="color:${champCol};min-width:52px;text-align:right">${esc(champStr)} 🏆</span>
-  </div>`;
+  // Find card data for expand
+  const cardData = (window._allRenderedCards||[]).find(c =>
+    norm((c.t.sell||c.t.main||{}).name||'') === norm((t.sell||t.main||{}).name||'') &&
+    norm((c.t.recv||{}).name||'') === norm((t.recv||{}).name||'')
+  );
+
+  const id = 'cexp_' + Math.random().toString(36).slice(2,8);
+
+  return '<div style="border-bottom:1px solid var(--border2)">'
+    + '<div onclick="tfToggleExpand(this)" data-expid="' + id + '" style="' + m + ';font-size:.6rem;padding:8px 10px;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto 1fr auto auto auto auto;gap:0 10px;align-items:center;background:var(--surface)">' 
+    + '<span style="color:' + (posColor[sendPos]||'var(--text3)') + ';font-size:.5rem;font-weight:bold">' + esc(sendPos) + '</span>'
+    + '<span style="color:var(--text1)">' + esc(sendName) + ' <span style="color:var(--text3);font-size:.48rem">#' + sendFC + 'FC #' + sendTAT + 'TAT</span></span>'
+    + '<span style="color:var(--text3);padding:0 2px">→</span>'
+    + '<span style="color:var(--text1)">' + esc(recvName) + esc(onBlock) + ' <span style="color:var(--text3);font-size:.48rem">#' + recvFC + 'FC #' + recvTAT + 'TAT</span></span>'
+    + '<span style="color:' + ownerCol + ';font-size:.55rem">' + esc(t.ownerName||'') + '</span>'
+    + '<span style="color:' + ppgCol  + ';text-align:right;font-size:.62rem;font-weight:bold">' + esc(ppgStr) + '<span style="font-size:.45rem;color:var(--text3)"> ppg</span></span>'
+    + '<span style="color:' + tatCol  + ';text-align:right;font-size:.55rem">' + esc(tatStr) + '</span>'
+    + '<span style="color:' + champCol + ';text-align:right;font-size:.62rem;font-weight:bold">' + esc(champStr) + '<span style="font-size:.45rem"> 🏆</span></span>'
+    + '</div>'
+    + '<div id="' + id + '" style="display:none">'
+    + (cardData ? cardData.html : '')
+    + '</div>'
+    + '</div>';
 }
 
 // ── TRADE IMPACT SIMULATOR ────────────────────────────────────
