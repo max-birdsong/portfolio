@@ -3281,7 +3281,7 @@ async function checkHistoricalSD() {
 async function computeAllTradeDeltas(trades) {
   if (!leagueRosters.length || !fcData.some(p => p.redraftValue > 0)) return;
   window._tradeDeltas = window._tradeDeltas || {};
-  const MINI = 500, BATCH = 5;
+  const MINI = 2000, BATCH = 5;
   const N = leagueRosters.length;
   const schedule = generateSchedule(N, 14);
   const allRdBefore   = leagueRosters.map(r => r.redraftStrength || 0);
@@ -3767,42 +3767,29 @@ function tradeCard(t) {
             </span>
           </div>
           ${(function(){
-            var sendPts = (window._projPtsByName && window._projPtsByName[norm(t.sell.name)] != null) ? window._projPtsByName[norm(t.sell.name)] : (t.sell.isPick ? 0 : estPPGGlobal(t.sell.fcValue||0, t.sell.pos || 'WR'));
-            var recvPts = (window._projPtsByName && window._projPtsByName[norm(t.recv.name)] != null) ? window._projPtsByName[norm(t.recv.name)] : (t.recv.isPick ? 0 : estPPGGlobal(t.recv.fcValue||0, t.recv.pos || 'WR'));
-            var myMe = leagueRosters.find(function(r){return r.isMe;});
-            var them = leagueRosters.find(function(r){return r.ownerName===t.ownerName;});
-            var sendRepl = t.sell.isPick ? 0 : ((myMe && myMe.replacementLevel && myMe.replacementLevel[t.sell.pos]) || 0);
-            var recvRepl = t.recv.isPick ? 0 : ((them && them.replacementLevel && them.replacementLevel[t.recv.pos]) || 0);
-            var marginal = (recvPts - recvRepl) - (sendPts - sendRepl);
-            var col = marginal > 1 ? 'var(--accent)' : marginal > 0 ? 'var(--text2)' : marginal < -1 ? 'var(--red)' : 'var(--text3)';
-            return '<div style="font-family:DM Mono,monospace;font-size:.52rem;color:' + col + ';margin-top:1px">' + (marginal >= 0 ? '+' : '') + marginal.toFixed(1) + ' est ppg/wk</div>'
-            + (function(){
-                var diff = getLineupDiff(t.sell.name, t.sell.pos, t.recv.name, t.recv.pos);
-                var noLineupChange = !diff || (!diff.added.length && !diff.removed.length && Math.abs(diff.ppgAfter - diff.ppgBefore) < 0.1);
-                if (noLineupChange) {
-                  var s = t.sell.isPick ? 0 : estPPGGlobal((fcMap[norm(t.sell.name)]||{}).redraftValue||0, t.sell.pos);
-                  var g = t.recv.isPick ? 0 : estPPGGlobal((fcMap[norm(t.recv.name)]||{}).redraftValue||0, t.recv.pos);
-                  return '<div style="font-family:DM Mono,monospace;font-size:.5rem;color:var(--text3);margin-top:2px">'
-                    + 'lineup unchanged · bench swap (' + s.toFixed(1) + ' ppg → ' + g.toFixed(1) + ' ppg depth)</div>';
-                }
-                // Gross delta: raw lineup PPG change
-                var grossDelta = diff.ppgAfter - diff.ppgBefore;
-                // getLineupDiff already handles cascade correctly — use it directly
-                // No separate "marginal" calculation needed
-                var dcol  = grossDelta > 1 ? 'var(--accent)' : grossDelta < -1 ? 'var(--red)' : 'var(--text2)';
-var out   = '<div style="font-family:DM Mono,monospace;font-size:.5rem;margin-top:2px">';
-                if (diff.removed.length) {
-                  out += '<span style="color:var(--text3)">out: </span>'
-                    + diff.removed.map(function(p){ return '<span style="color:var(--text3)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ') + '  ';
-                }
-                if (diff.added.length) {
-                  out += '<span style="color:var(--text3)">in: </span>'
-                    + diff.added.map(function(p){ return '<span style="color:var(--text2)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ');
-                }
-                out += '  <span style="color:' + dcol + '">' + (grossDelta >= 0 ? '+' : '') + grossDelta.toFixed(1) + ' ppg/wk</span>';
-                out += '</div>';
-                return out;
-              })();
+            // Lineup diff — cascade-aware PPG change using full greedy projection
+            var diff = getLineupDiff(t.sell.name, t.sell.pos, t.recv.name, t.recv.pos);
+            var noLineupChange = !diff || (!diff.added.length && !diff.removed.length && Math.abs(diff.ppgAfter - diff.ppgBefore) < 0.1);
+            if (noLineupChange) {
+              var s = t.sell.isPick ? 0 : estPPGGlobal((fcMap[norm(t.sell.name)]||{}).redraftValue||0, t.sell.pos);
+              var g = t.recv.isPick ? 0 : estPPGGlobal((fcMap[norm(t.recv.name)]||{}).redraftValue||0, t.recv.pos);
+              return '<div style="font-family:DM Mono,monospace;font-size:.5rem;color:var(--text3);margin-top:4px">'
+                + 'lineup unchanged · bench swap (' + s.toFixed(1) + ' → ' + g.toFixed(1) + ' ppg depth)</div>';
+            }
+            var grossDelta = diff.ppgAfter - diff.ppgBefore;
+            var dcol = grossDelta > 1 ? 'var(--accent)' : grossDelta < -1 ? 'var(--red)' : 'var(--text2)';
+            var out = '<div style="font-family:DM Mono,monospace;font-size:.5rem;margin-top:4px">';
+            if (diff.removed.length) {
+              out += '<span style="color:var(--text3)">out: </span>'
+                + diff.removed.map(function(p){ return '<span style="color:var(--text3)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ') + '  ';
+            }
+            if (diff.added.length) {
+              out += '<span style="color:var(--text3)">in: </span>'
+                + diff.added.map(function(p){ return '<span style="color:var(--text2)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ');
+            }
+            out += '  <span style="color:' + dcol + '">' + (grossDelta >= 0 ? '+' : '') + grossDelta.toFixed(1) + ' ppg/wk</span>';
+            out += '</div>';
+            return out;
           })()}` : `
           <div id="${impactId}"></div>
           <button onclick="runTradeImpact(this,[${sendJson}],[${recvJson}],'${esc(t.ownerName)}','${impactId}')"
