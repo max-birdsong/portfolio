@@ -3217,7 +3217,7 @@ function renderTradesTab(maxAbs, thresh) {
     sell: b.main, recv: b.recv,
     _isBundle: true, _addon: b.addon,
   }));
-  window._lastRenderedTrades = [...trades, ...bundlesAsTradesForDelta, ...ppgTrades];
+  // _lastRenderedTrades set below after allTrades + _allRenderedCards built
 
   renderRosterContextBanner();
   document.getElementById('badge-trades').textContent = (trades.length + bundleList.length + rebuildTrades.length + ppgTrades.length) || '—';
@@ -3237,7 +3237,7 @@ function renderTradesTab(maxAbs, thresh) {
 
   const allTrades = [
     ...trades,
-    ...bundleList.map(t => ({ ...t, _isBundle: true })),
+    ...bundleList.map(t => ({ ...t, _isBundle: true, sell: t.main, _addon: t.addon })),
     ...ppgTrades,
   ];
 
@@ -3268,7 +3268,8 @@ function renderTradesTab(maxAbs, thresh) {
   // Sort by current filter state
   allTrades.sort((a, b) => _tfSortScore(b) - _tfSortScore(a));
 
-  // Build _allRenderedCards for filter re-apply
+  // Build _allRenderedCards — use same objects as _lastRenderedTrades so
+  // delta writebacks on t.champDelta are visible when re-rendering
   window._allRenderedCards = allTrades.map(t => ({
     t,
     section: '',
@@ -3276,6 +3277,9 @@ function renderTradesTab(maxAbs, thresh) {
     isBundle: t._isBundle || false,
     html: tradeCard(t),
   }));
+
+  // Sync _lastRenderedTrades to same objects so computeAllTradeDeltas writes to same refs
+  window._lastRenderedTrades = allTrades;
 
   // Compute PPG delta for compact card display
   for (const c of window._allRenderedCards) {
