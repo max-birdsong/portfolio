@@ -3289,8 +3289,7 @@ function renderTradesTab(maxAbs, thresh) {
       : null;                                       // mixed: holes vs non-holes
 
     // Big TAT upgrades always shown prominently regardless of mode
-    const bigTATThresh = 75; // tierGain units = 0.75 1sts
-    const isBigTAT = t => (t.tierGain || 0) >= bigTATThresh;
+    // (bigTATThresh and isBigTAT defined at module scope)
 
     let topTrades, restTrades;
     if (tradeMode === 'rebuild') {
@@ -3942,6 +3941,9 @@ function pickRangeHtml(ownerName, round) {
 }
 
 
+
+const bigTATThresh = 75; // tierGain units = 0.75 1sts — big TAT upgrade threshold
+const isBigTAT = t => (t.tierGain || 0) >= bigTATThresh;
 
 function _getSectionLabel(t, tradeMode, hasDelta, isBigTAT) {
   if (t.motivation === 'rebuild') return 'Sell Win-Now Assets';
