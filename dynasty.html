@@ -2943,6 +2943,8 @@ function renderTradesTab(maxAbs, thresh) {
     .sort((a, b) => b.tierGain - a.tierGain)
     .slice(0, 20); // cap at 20 bundle suggestions
 
+  const _deltas = window._tradeDeltas || {};
+
   // ── PPG Upgrade trades ───────────────────────────────────────
   // Surfaces trades where YOU gain meaningful PPG from your lineup,
   // counterparty wins on FC value. Independent of dynasty TAT signal.
@@ -3026,7 +3028,6 @@ function renderTradesTab(maxAbs, thresh) {
   window._lastRenderedTrades = [...(window._lastRenderedTrades || []), ...ppgTrades];
 
   // ── Attach champ% deltas + determine mode ─────────────────
-  const _deltas = window._tradeDeltas || {};
   for (const t of trades) {
     const key = norm(t.sell.name) + '|' + norm(t.recv.name) + '|' + norm(t.ownerName);
     t.champDelta      = _deltas[key]           ?? null;
