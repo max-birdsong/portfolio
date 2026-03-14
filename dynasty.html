@@ -3335,8 +3335,15 @@ async function computeAllTradeDeltas(trades) {
       const recvPPG = recvIsPick ? 0 : (projPts[recvName] ?? estPPGGlobal(recvRd2, t.recv.pos));
       const myReplPPG   = sendIsPick ? 0 : (leagueRosters[myIdx].replacementLevelPPG?.[t.sell.pos] ?? estPPGGlobal(leagueRosters[myIdx].replacementLevel?.[t.sell.pos]||0, t.sell.pos));
       const thReplPPG   = recvIsPick ? 0 : (leagueRosters[theirIdx].replacementLevelPPG?.[t.recv.pos] ?? estPPGGlobal(leagueRosters[theirIdx].replacementLevel?.[t.recv.pos]||0, t.recv.pos));
-      myMeanDelta    = (recvPPG - thReplPPG) - (sendPPG - myReplPPG);
-      theirMeanDelta = -myMeanDelta;
+      // My delta: I gain recv marginal, lose send marginal
+      myMeanDelta = (recvPPG - thReplPPG) - (sendPPG - myReplPPG);
+      // Their delta: they gain send marginal (what I sent them), lose recv marginal (what they sent me)
+      // Computed independently — NOT just -myDelta, since pick sides are asymmetric
+      const theirSendPPG = recvIsPick ? 0 : recvPPG;  // what they're sending me (recv side)
+      const theirRecvPPG = sendIsPick ? 0 : sendPPG;  // what they're receiving (send side)
+      const theirMyRepl  = recvIsPick ? 0 : thReplPPG;
+      const theirThRepl  = sendIsPick ? 0 : (leagueRosters[theirIdx].replacementLevelPPG?.[t.sell.pos] ?? estPPGGlobal(leagueRosters[theirIdx].replacementLevel?.[t.sell.pos]||0, t.sell.pos));
+      theirMeanDelta = (theirRecvPPG - theirThRepl) - (theirSendPPG - theirMyRepl);
 
       const meansAfter = allMeanBefore.map((v,i) =>
         i===myIdx    ? Math.max(BASE_SCORE * 0.5, v + myMeanDelta)    :
@@ -3621,10 +3628,31 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
     myMeanDelta2 += pts - repl;
   }
 
+  // Compute their delta independently — not just -myDelta (asymmetric for pick trades)
+  let theirMeanDelta2 = 0;
+  for (const pn of recvNames) {  // what they're sending me
+    const nn  = norm(pn);
+    if (isPick2(nn)) continue;
+    const pos = rosterPlayerMap[nn]?.pos || 'WR';
+    const rd  = rdByName2[nn] || 0;
+    const pts = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
+    const repl = theirRoster2?.replacementLevelPPG?.[pos] ?? estPPGGlobal(theirRoster2?.replacementLevel?.[pos]||0, pos);
+    theirMeanDelta2 -= pts - repl;  // they lose what they sent
+  }
+  for (const pn of sendNames) {  // what they're receiving from me
+    const nn  = norm(pn);
+    if (isPick2(nn)) continue;
+    const pos = rosterPlayerMap[nn]?.pos || 'WR';
+    const rd  = rdByName2[nn] || 0;
+    const pts = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
+    const repl = theirRoster2?.replacementLevelPPG?.[pos] ?? estPPGGlobal(theirRoster2?.replacementLevel?.[pos]||0, pos);
+    theirMeanDelta2 += pts - repl;  // they gain what I sent
+  }
+
   const meansAfter2 = allMeanBefore2.map((v, i) => {
     const r = leagueRosters[i];
     if (r.isMe)                        return Math.max(BASE_SCORE*0.5, v + myMeanDelta2);
-    if (r.ownerName === theirOwnerName) return Math.max(BASE_SCORE*0.5, v - myMeanDelta2);
+    if (r.ownerName === theirOwnerName) return Math.max(BASE_SCORE*0.5, v + theirMeanDelta2);
     return v;
   });
 
