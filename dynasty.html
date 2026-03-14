@@ -525,6 +525,8 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
         Blend with actual scores (if available)
       </label>
       <button onclick="runSimulator()" style="background:var(--accent);color:#000;border:none;font-family:'DM Mono',monospace;font-size:.7rem;padding:5px 14px;cursor:pointer;letter-spacing:1px">▶ RUN</button>
+      <button onclick="checkHistoricalSD()" style="font-family:'DM Mono',monospace;font-size:.65rem;background:none;border:1px solid var(--border);color:var(--text3);padding:6px 14px;cursor:pointer;letter-spacing:1px">CHECK HISTORICAL SD</button>
+      <span id="sd-check-result" style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text2)"></span>
     </div>
     <div id="sim-output"></div>
   </div>
@@ -1590,9 +1592,14 @@ async function runSimulator(opts = {}) {
 
   // ── Render ───────────────────────────────────────────────────
   const mono = "font-family:'DM Mono',monospace";
+  // Compute league-wide empirical SD from actual scores if available
+  const allActualSDs = Object.values(actualScores).filter(s => s.n >= 4).map(s => s.sd);
+  const empiricalSD  = allActualSDs.length
+    ? +(allActualSDs.reduce((a, b) => a + b, 0) / allActualSDs.length).toFixed(1)
+    : null;
   const blendNote = useScores && Object.keys(actualScores).length
-    ? `<div style="${mono};font-size:.6rem;color:var(--text3);margin-bottom:14px">Blending roster strength with actual scores (${Object.values(actualScores)[0]?.n || 0} weeks of data)</div>`
-    : `<div style="${mono};font-size:.6rem;color:var(--text3);margin-bottom:14px">Roster strength only · load actual scores by checking the blend option</div>`;
+    ? `<div style="${mono};font-size:.6rem;color:var(--text3);margin-bottom:14px">Blending roster strength with actual scores (${Object.values(actualScores)[0]?.n || 0} weeks of data)${empiricalSD !== null ? ` · historical SD ${empiricalSD}` : ''}</div>`
+    : `<div style="${mono};font-size:.6rem;color:var(--text3);margin-bottom:14px">Roster strength only · load actual scores by checking the blend option${empiricalSD !== null ? ` · historical SD ${empiricalSD}` : ''}</div>`;
 
   // Find bye cutline index (top 2 after sorting by playoff%)
   const byeCutline = 2;
@@ -2971,6 +2978,31 @@ function bundleCard(t) {
   + "</div>";
 }
 
+
+// ── HISTORICAL SD CHECK ──────────────────────────────────────
+async function checkHistoricalSD() {
+  const el = document.getElementById('sd-check-result');
+  if (!window._leagueId) { el.textContent = 'load a league first'; return; }
+  el.textContent = 'fetching…';
+
+  const scores = [];
+  for (let w = 1; w <= 17; w++) {
+    const d = await fetch(`${SLEEPER}/league/${window._leagueId}/matchups/${w}`)
+      .then(r => r.ok ? r.json() : []).catch(() => []);
+    for (const e of d) if (e.points > 5) scores.push(e.points);
+    if (w <= 14 && d.every(e => !e.points)) break; // stop at first empty week
+  }
+
+  if (!scores.length) { el.textContent = 'no score data found'; return; }
+
+  const n    = scores.length;
+  const mean = scores.reduce((a, b) => a + b, 0) / n;
+  const sd   = Math.sqrt(scores.reduce((a, b) => a + (b - mean) ** 2, 0) / n);
+  const min  = Math.min(...scores);
+  const max  = Math.max(...scores);
+
+  el.textContent = `n=${n}  mean=${mean.toFixed(1)}  sd=${sd.toFixed(1)}  range ${min.toFixed(0)}–${max.toFixed(0)}`;
+}
 
 // ── BATCH TRADE DELTA COMPUTE ────────────────────────────────
 // Pre-computes champ% delta for every trade candidate after sim runs.
