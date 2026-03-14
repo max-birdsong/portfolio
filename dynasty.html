@@ -682,12 +682,12 @@ function estPPGGlobal(rd, pos) {
     if ((rd || 0) < QB_STARTER_THRESHOLD) {
       // Linear taper from floor to full value
       const t = ((rd || 0) - QB_BACKUP_FLOOR) / (QB_STARTER_THRESHOLD - QB_BACKUP_FLOOR);
-      const fullPPG = 8 + rd / 600 + passTdBoost;
+      const fullPPG = 4 + rd / 450 + passTdBoost;
       return +(QB_PPG_FLOOR + t * (fullPPG - QB_PPG_FLOOR)).toFixed(1);
     }
   }
 
-  return 8 + (rd || 0) / 600 + (pos === 'TE' ? teBoost : 0) + passTdBoost;
+  return 4 + (rd || 0) / 450 + (pos === 'TE' ? teBoost : 0) + passTdBoost;
 }
 
 function norm(n) {
@@ -1386,7 +1386,7 @@ function buildPickPool() {
 //   top N teams by wins (tiebreak: total points) make playoffs.
 
 const SIM_N         = 10000;
-const BASE_SCORE    = 90;   // baseline weekly score for an avg roster
+const BASE_SCORE    = 103;  // baseline weekly score for avg roster (floor=4 scale=450)
 const SCORE_SCALE   = 60;   // avgTierVal 0→1 maps to +0→+60 points above base
 const BASE_SD       = 34;   // weekly SD — calibrated from historical Sleeper scores (2QB half-PPR)ic for dynasty scoring variance
 const BLEND_WEIGHT  = 0.55; // weight on actual scores vs roster strength (when available)
@@ -1954,7 +1954,7 @@ function computeRosterProfiles() {
     // SCALE=600 calibrated so elite lineup ≈ 170, average ≈ 127, weak ≈ 101.
     // This naturally weights positions: a 5000-rd TE adds 16 PPG, a 500-rd TE adds 9.
     // Picks/zeros contribute only the floor — handled as unfilled slots below.
-    const PPG_FLOOR = 8, PPG_SCALE = 600;
+    const PPG_FLOOR = 4, PPG_SCALE = 450;
 
     // TE premium: if league awards extra points per TE reception, boost TE redraft values.
     // Sleeper stores this as bonus_rec_te (flat bonus per catch) or a higher rec_te vs rec rate.
@@ -3263,7 +3263,7 @@ async function computeAllTradeDeltas(trades) {
 
   // PPG per unit of FC redraft value (matches PPG_FLOOR=8, PPG_SCALE=600 in computeRosterProfiles)
   // Delta for a player: 1/600 PPG per redraft point (floor already counted in baseline)
-  const PPG_SCALE_DELTA = 600;
+  const PPG_SCALE_DELTA = 450;
   const rdScale = 1 / PPG_SCALE_DELTA;
 
   function runMini(means) {
@@ -3523,7 +3523,7 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
   });
   const allRdBefore2   = leagueRosters.map(r => r.redraftStrength || 0);
   const allMeanBefore2 = leagueRosters.map(r => r._simMean || r.redraftStrength || BASE_SCORE);
-  const rdScale2 = 1 / 600; // PPG per unit of FC redraft value
+  const rdScale2 = 1 / 450; // PPG per unit of FC redraft value
 
   function runMiniSim(means) {
     const teams = means.map(m => ({ mean: m, sd: BASE_SD }));
