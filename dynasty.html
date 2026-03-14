@@ -813,6 +813,7 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     const draftRounds     = leagueInfo?.settings?.draft_rounds || 3;
     const scoringSettings = leagueInfo?.scoring_settings || {};
     window._scoringSettings = scoringSettings;
+    window._prevLeagueId = leagueInfo?.previous_league_id || null;
 
     // Fetch week 1 projections for PPW computation (non-blocking — best effort)
     // Fetch projections: try current NFL state first to find the right season+week,
@@ -2985,15 +2986,18 @@ async function checkHistoricalSD() {
   if (!window._leagueId) { el.textContent = 'load a league first'; return; }
   el.textContent = 'fetching…';
 
+  // Try current league first, fall back to previous season if no scores yet
+  const leagueToCheck = window._prevLeagueId || window._leagueId;
   const scores = [];
   for (let w = 1; w <= 17; w++) {
-    const d = await fetch(`${SLEEPER}/league/${window._leagueId}/matchups/${w}`)
+    const d = await fetch(`${SLEEPER}/league/${leagueToCheck}/matchups/${w}`)
       .then(r => r.ok ? r.json() : []).catch(() => []);
     for (const e of d) if (e.points > 5) scores.push(e.points);
-    if (w <= 14 && d.every(e => !e.points)) break; // stop at first empty week
+    if (d.length && d.every(e => !e.points || e.points === 0)) break; // empty week = season ended
   }
 
-  if (!scores.length) { el.textContent = 'no score data found'; return; }
+  if (!scores.length) { el.textContent = 'no score data found (no prev season linked?)'; return; }
+  const seasonNote = window._prevLeagueId ? ' (prev season)' : ''
 
   const n    = scores.length;
   const mean = scores.reduce((a, b) => a + b, 0) / n;
@@ -3001,7 +3005,7 @@ async function checkHistoricalSD() {
   const min  = Math.min(...scores);
   const max  = Math.max(...scores);
 
-  el.textContent = `n=${n}  mean=${mean.toFixed(1)}  sd=${sd.toFixed(1)}  range ${min.toFixed(0)}–${max.toFixed(0)}`;
+  el.textContent = `n=${n}  mean=${mean.toFixed(1)}  sd=${sd.toFixed(1)}  range ${min.toFixed(0)}–${max.toFixed(0)}${seasonNote}`;
 }
 
 // ── BATCH TRADE DELTA COMPUTE ────────────────────────────────
