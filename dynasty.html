@@ -4002,11 +4002,11 @@ function tradeCard(t) {
   const posColor = { QB:'var(--amber)', RB:'var(--accent)', WR:'#60a5fa', TE:'#c084fc', PICK:'var(--text3)' };
   const pc = s => posColor[s] || 'var(--text3)';
 
-  // ── Players ───────────────────────────────────────────────────
+  // ── Normalise ─────────────────────────────────────────────────
   const sendName  = isBundle ? t.main.name + ' + ' + t.addon.name : (t.sell?.name||'');
   const sendPos   = isBundle ? t.main.pos  : (t.sell?.pos||'');
-  const sendFC    = isBundle ? t.main.fcRank  : (t.sell?.fcRank||null);
-  const sendTAT   = isBundle ? t.main.tatRank : (t.sell?.tatRank||null);
+  const sendFC    = isBundle ? t.main.fcRank   : (t.sell?.fcRank||null);
+  const sendTAT   = isBundle ? t.main.tatRank  : (t.sell?.tatRank||null);
   const sendDelta = isBundle ? (t.main.rankDelta||null) : (t.sell?.rankDelta??null);
   const sendFcVal = isBundle ? (t.bundleFcValue||0) : (t.sell?.fcValue||0);
   const recvName  = t.recv?.name||'';
@@ -4016,26 +4016,19 @@ function tradeCard(t) {
   const recvDelta = t.recv?.rankDelta??null;
   const recvFcVal = t.recv?.fcValue||0;
 
-  // ── Key numbers ───────────────────────────────────────────────
-  const tatGain   = t.tierGain||0;
-  const tatStr    = (tatGain>=0?'+':'') + (tatGain/100).toFixed(2) + ' 1sts';
-  const tatCol    = tatGain > 25 ? 'var(--accent)' : tatGain < -25 ? 'var(--red)' : 'var(--text3)';
+  // ── Value numbers ─────────────────────────────────────────────
+  const tatGain  = t.tierGain||0;
+  const tatStr   = (tatGain>=0?'+':'') + (tatGain/100).toFixed(2);
+  const tatCol   = tatGain > 25 ? 'var(--accent)' : tatGain < -25 ? 'var(--red)' : 'var(--text3)';
 
-  const ppgDelta  = t._ppgDelta ?? t.ppgGain ?? null;
-  const ppgStr    = ppgDelta !== null ? (ppgDelta>=0?'+':'') + ppgDelta.toFixed(1) + ' ppg' : null;
-  const ppgCol    = ppgDelta===null ? 'var(--text3)' : ppgDelta>1?'var(--accent)':ppgDelta<-1?'var(--red)':'var(--text2)';
+  const ppgDelta = t._ppgDelta ?? t.ppgGain ?? null;
+  const ppgStr   = ppgDelta !== null ? (ppgDelta>=0?'+':'') + ppgDelta.toFixed(1) : null;
+  const ppgCol   = ppgDelta===null?'var(--text3)':ppgDelta>1?'var(--accent)':ppgDelta<-1?'var(--red)':'var(--text2)';
 
-  const champD    = t.champDelta??null;
-  const champStr  = champD !== null ? (champD>=0?'+':'') + champD.toFixed(1) + '% 🏆' : null;
-  const champCol  = champD===null?'var(--text3)':champD>0.5?'var(--accent)':champD<-0.5?'var(--red)':'var(--text2)';
-  const myChamp   = ((leagueRosters.find(r=>r.isMe)||{}).champPct||0)*100;
-
-  // ── Signals ───────────────────────────────────────────────────
-  const signals = [];
-  if (sendDelta !== null && sendDelta < -5) signals.push(`<span style="color:var(--red);border:1px solid var(--red);padding:1px 4px;font-size:.45rem">SELL HIGH</span>`);
-  else if (sendDelta !== null && sendDelta > 5) signals.push(`<span style="color:var(--accent);border:1px solid var(--accent);padding:1px 4px;font-size:.45rem">BUY TARGET</span>`);
-  if (t.recv?.onBlock) signals.push(`<span style="color:var(--accent);border:1px solid var(--accent);padding:1px 4px;font-size:.45rem">ON BLOCK</span>`);
-  if (recvDelta !== null && recvDelta < -5) signals.push(`<span style="color:var(--accent);font-size:.45rem">TAT undervalued ✓</span>`);
+  const champD   = t.champDelta??null;
+  const champStr = champD !== null ? (champD>=0?'+':'') + champD.toFixed(1)+'%' : null;
+  const champCol = champD===null?'var(--text3)':champD>0.5?'var(--accent)':champD<-0.5?'var(--red)':'var(--text2)';
+  const myChamp  = ((leagueRosters.find(r=>r.isMe)||{}).champPct||0)*100;
 
   // ── Lineup impact ─────────────────────────────────────────────
   const sendArr = isBundle
@@ -4043,92 +4036,108 @@ function tradeCard(t) {
     : [{name:t.sell?.name||'',pos:t.sell?.pos||''}];
   const recvArr = [{name:recvName,pos:recvPos}];
   const diff = getLineupDiff(sendArr, null, recvArr, null);
+  const theirRoster5 = leagueRosters.find(r => r.ownerName === t.ownerName);
+  const theirDiff5   = theirRoster5 ? getLineupDiff(recvArr, null, sendArr, null, theirRoster5) : null;
 
-  function lineupLine(d, prefix) {
+  function lineupLine(d, label) {
     if (!d) return '';
     const delta = d.ppgAfter - d.ppgBefore;
     if (!d.added.length && !d.removed.length && Math.abs(delta) < 0.1) return '';
     const dc = delta>1?'var(--accent)':delta<-1?'var(--red)':'var(--text2)';
-    let s = prefix ? `<span style="color:var(--text3)">${prefix} </span>` : '';
-    if (d.removed.length) s += d.removed.map(p=>`<span style="color:var(--text3)">${esc2(p.name)} ${p.ppg.toFixed(1)}</span>`).join(', ') + ' → ';
-    if (d.added.length)   s += d.added.map(p=>`<span style="color:var(--text2)">${esc2(p.name)} ${p.ppg.toFixed(1)}</span>`).join(', ');
-    s += ` <span style="color:${dc};font-weight:600">${delta>=0?'+':''}${delta.toFixed(1)}</span>`;
-    return s;
+    const parts = [];
+    if (d.removed.length) parts.push('out: ' + d.removed.map(p=>`${esc2(p.name)} ${p.ppg.toFixed(1)}`).join(', '));
+    if (d.added.length)   parts.push('in: '  + d.added.map(p=>`${esc2(p.name)} ${p.ppg.toFixed(1)}`).join(', '));
+    const deltaSpan = `<span style="color:${dc};font-weight:600">${delta>=0?'+':''}${delta.toFixed(1)} ppg</span>`;
+    return `<div style="margin-top:2px">${label?`<span style="color:var(--text3)">${label} </span>`:''}${parts.join(' · ')} ${deltaSpan}</div>`;
   }
 
-  const theirRoster5 = leagueRosters.find(r => r.ownerName === t.ownerName);
-  const theirDiff5   = theirRoster5 ? getLineupDiff(recvArr, null, sendArr, null, theirRoster5) : null;
-  const myLine       = lineupLine(diff, '');
-  const theirLine    = lineupLine(theirDiff5, 'their:');
+  // ── Signals / badges ─────────────────────────────────────────
+  const badge = (txt, col) => `<span style="${M};font-size:.48rem;color:${col};border:1px solid ${col};padding:1px 5px;letter-spacing:.5px">${txt}</span>`;
+  const badges = [];
+  if (sendDelta !== null && sendDelta < -5) badges.push(badge('SELL HIGH','var(--red)'));
+  else if (sendDelta !== null && sendDelta > 5) badges.push(badge('BUY TARGET','var(--accent)'));
+  if (t.recv?.onBlock) badges.push(badge('ON BLOCK','var(--accent)'));
 
-  // ── Need + acceptance ─────────────────────────────────────────
-  const needStr = t.fillsTheirNeed === true  ? `<span style="color:var(--accent);font-size:.48rem">fills their need ✓</span>`
-                : t.fillsTheirNeed === false ? `<span style="color:var(--red);font-size:.48rem">doesn't fill their need</span>`
-                : '';
-  const theirChampLine = t.theirChampDelta != null
-    ? `<span style="color:${t.theirChampDelta>0.3?'var(--accent)':t.theirChampDelta<-0.3?'var(--red)':'var(--text3)'};font-size:.48rem">${t.theirChampDelta>=0?'+':''}${t.theirChampDelta.toFixed(1)}% their champ</span>`
-    : '';
+  // ── Acceptance ────────────────────────────────────────────────
+  const acceptHtml = acceptanceMeter(sendFcVal, recvFcVal, t.ownerWindow,
+    isBundle?t.main?.age:t.sell?.age, isBundle?t.main?.trend:t.sell?.trend,
+    t.theirChampDelta??null, t.recv?.onBlock, t.fillsTheirNeed);
 
   const ownerCol = t.ownerWindowColor||'var(--text3)';
-  const ownerChampPct = t.champPct != null ? ` · ${(t.champPct*100).toFixed(0)}% 🏆` : '';
-
+  const theirChampCol2 = t.theirChampDelta==null?'var(--text3)':t.theirChampDelta>0.3?'var(--accent)':t.theirChampDelta<-0.3?'var(--red)':'var(--text3)';
   const _bFcCol  = sendFcVal > recvFcVal ? 'var(--accent)' : 'var(--red)';
   const _bFcSign = sendFcVal > recvFcVal ? '+' : '';
-  const bundleNote = isBundle
-    ? `<div style="${M};font-size:.48rem;color:var(--text3);margin-top:2px">bundle: adj FC <span style="color:var(--text2)">${Math.round(sendFcVal)}</span> (−500) vs <span style="color:var(--text2)">${Math.round(recvFcVal)}</span> · <span style="color:${_bFcCol}">${_bFcSign}${Math.round(sendFcVal-recvFcVal)} FC</span></div>`
-    : '';
-  return `<div class="tcard">
 
-    <!-- ROW 1: Players -->
-    <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-      <span style="font-size:1.05rem;font-weight:700;color:var(--text1)">${esc2(sendName)}</span>
-      <span style="${M};font-size:.6rem;color:${pc(sendPos)}">${sendPos}</span>
-      <span style="${M};font-size:.52rem;color:var(--text3)">${sendFC?'#'+sendFC+'FC ':''} ${sendTAT?'#'+sendTAT+'TAT':''}</span>
-      <span style="color:var(--text3);padding:0 4px">→</span>
-      <span style="font-size:1.05rem;font-weight:700;color:var(--text1)">${esc2(recvName)}</span>
-      <span style="${M};font-size:.6rem;color:${pc(recvPos)}">${recvPos}</span>
-      <span style="${M};font-size:.52rem;color:var(--text3)">${recvFC?'#'+recvFC+'FC ':''} ${recvTAT?'#'+recvTAT+'TAT':''}</span>
-    </div>
+  return `<div class="tcard" style="padding:14px 16px">
 
-    <!-- ROW 2: Owner + signals -->
-    <div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">
-      <span style="${M};font-size:.58rem;color:${ownerCol}">${esc2(t.ownerWindow||'')}${ownerChampPct}</span>
-      <span class="owner-pill">${esc2(t.ownerName||'')}</span>
-      ${signals.map(s=>`<span style="${M}">${s}</span>`).join('')}
-      ${needStr}
-    </div>
+    <!-- PLAYER ROW -->
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:10px">
 
-    <!-- ROW 3: Key numbers -->
-    <div style="display:flex;gap:16px;align-items:baseline;margin-top:8px;flex-wrap:wrap">
+      <!-- SEND -->
       <div>
-        <span style="${M};font-size:.9rem;font-weight:700;color:${tatCol}">${tatStr}</span>
-        <span style="${M};font-size:.45rem;color:var(--text3);margin-left:2px">TAT</span>
+        <div style="${M};font-size:.48rem;color:var(--text3);letter-spacing:1px;margin-bottom:3px">SEND</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text1);line-height:1.2">${esc2(sendName)}</div>
+        ${isBundle ? `<div style="${M};font-size:.5rem;color:var(--text3);margin-top:1px">+ ${esc2(t.addon?.name||'')} <span style="color:${pc(t.addon?.pos||'')}"> ${t.addon?.pos||''}</span></div>` : ''}
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap">
+          <span style="${M};font-size:.62rem;font-weight:600;color:${pc(sendPos)}">${sendPos}</span>
+          <span style="${M};font-size:.52rem;color:var(--text3)">${sendFC?'#'+sendFC+' FC':''}</span>
+          <span style="${M};font-size:.52rem;color:var(--text3)">${sendTAT?'#'+sendTAT+' TAT':''}</span>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">${badges.join('')}</div>
       </div>
-      ${ppgStr ? `<div>
-        <span style="${M};font-size:.9rem;font-weight:700;color:${ppgCol}">${ppgStr}</span>
-        <span style="${M};font-size:.45rem;color:var(--text3);margin-left:2px">lineup</span>
-      </div>` : ''}
-      ${champStr ? `<div>
-        <span style="${M};font-size:.9rem;font-weight:700;color:${champCol}">${champStr}</span>
-        <span style="${M};font-size:.45rem;color:var(--text3);margin-left:3px">${myChamp.toFixed(1)}%→${(myChamp+(champD||0)).toFixed(1)}%</span>
-      </div>` : ''}
-      ${theirChampLine}
+
+      <!-- CENTER arrow -->
+      <div style="text-align:center;color:var(--text3);font-size:1.2rem;padding:0 4px">⇄</div>
+
+      <!-- RECV -->
+      <div>
+        <div style="${M};font-size:.48rem;color:var(--text3);letter-spacing:1px;margin-bottom:3px">GET</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text1);line-height:1.2">${esc2(recvName)}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap">
+          <span style="${M};font-size:.62rem;font-weight:600;color:${pc(recvPos)}">${recvPos}</span>
+          <span style="${M};font-size:.52rem;color:var(--text3)">${recvFC?'#'+recvFC+' FC':''}</span>
+          <span style="${M};font-size:.52rem;color:var(--text3)">${recvTAT?'#'+recvTAT+' TAT':''}</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap">
+          <span style="${M};font-size:.55rem;color:${ownerCol}">${esc2(t.ownerWindow||'')}${t.champPct!=null?' · '+(t.champPct*100).toFixed(0)+'% 🏆':''}</span>
+          <span class="owner-pill">${esc2(t.ownerName||'')}</span>
+        </div>
+      </div>
     </div>
 
-    <!-- ROW 4: Lineup detail + acceptance -->
-    <div style="border-top:1px solid var(--border2);margin-top:8px;padding-top:6px">
-      ${myLine || theirLine ? `<div style="${M};font-size:.5rem;color:var(--text3);margin-bottom:4px;line-height:1.8">
-        ${myLine ? `<div>${myLine}</div>` : ''}
-        ${theirLine ? `<div>${theirLine}</div>` : ''}
+    <!-- VALUE ROW -->
+    <div style="display:flex;gap:20px;align-items:baseline;padding:8px 0;border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;align-items:center;min-width:60px">
+        <span style="${M};font-size:.45rem;color:var(--text3);letter-spacing:1px;margin-bottom:1px">TAT VALUE</span>
+        <span style="${M};font-size:1.1rem;font-weight:700;color:${tatCol}">${tatStr}</span>
+        <span style="${M};font-size:.42rem;color:var(--text3)">1sts equiv</span>
+      </div>
+      ${ppgStr ? `<div style="display:flex;flex-direction:column;align-items:center;min-width:60px">
+        <span style="${M};font-size:.45rem;color:var(--text3);letter-spacing:1px;margin-bottom:1px">LINEUP</span>
+        <span style="${M};font-size:1.1rem;font-weight:700;color:${ppgCol}">${ppgStr}</span>
+        <span style="${M};font-size:.42rem;color:var(--text3)">ppg/wk</span>
       </div>` : ''}
-      ${bundleNote}
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-top:4px">
-        ${acceptanceMeter(sendFcVal, recvFcVal, t.ownerWindow, isBundle?t.main?.age:t.sell?.age, isBundle?t.main?.trend:t.sell?.trend, t.theirChampDelta??null, t.recv?.onBlock, t.fillsTheirNeed)}
-        <span style="${M};font-size:.48rem;color:var(--text3)">${t.leagueCount != null ? t.leagueCount+' league'+(t.leagueCount!==1?'s':'') : ''}</span>
+      ${champStr ? `<div style="display:flex;flex-direction:column;align-items:center;min-width:70px">
+        <span style="${M};font-size:.45rem;color:var(--text3);letter-spacing:1px;margin-bottom:1px">CHAMP%</span>
+        <span style="${M};font-size:1.1rem;font-weight:700;color:${champCol}">${champStr}</span>
+        <span style="${M};font-size:.42rem;color:var(--text3)">${myChamp.toFixed(1)}% → ${(myChamp+(champD||0)).toFixed(1)}%</span>
+      </div>` : ''}
+      <div style="margin-left:auto">${acceptHtml}</div>
+    </div>
+
+    <!-- DETAIL ROW -->
+    <div style="${M};font-size:.5rem;color:var(--text3);margin-top:8px;line-height:1.9">
+      ${lineupLine(diff,'')}
+      ${lineupLine(theirDiff5,'their:')}
+      ${isBundle ? `<div>bundle FC <span style="color:var(--text2)">${Math.round(sendFcVal)}</span> (−500 adj) vs <span style="color:var(--text2)">${Math.round(recvFcVal)}</span> · <span style="color:${_bFcCol}">${_bFcSign}${Math.round(sendFcVal-recvFcVal)} FC</span></div>` : ''}
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap">
+        ${t.fillsTheirNeed===true  ? `<span style="color:var(--accent)">fills their need ✓</span>` : ''}
+        ${t.fillsTheirNeed===false ? `<span style="color:var(--red)">doesn't fill their need</span>` : ''}
+        ${t.theirChampDelta!=null  ? `<span style="color:${theirChampCol2}">${t.theirChampDelta>=0?'+':''}${t.theirChampDelta.toFixed(1)}% their champ</span>` : ''}
+        ${recvDelta !== null && recvDelta < -5 ? `<span style="color:var(--accent)">TAT undervalued ✓</span>` : ''}
+        <span style="margin-left:auto">${t.leagueCount!=null?t.leagueCount+' league'+(t.leagueCount!==1?'s':''):''}</span>
       </div>
-      <div style="${M};font-size:.48rem;color:var(--text3);margin-top:4px">
-        Message <span style="color:var(--accent)">${esc2(t.ownerName||'')}</span> · offer <span style="color:var(--text2)">${esc2(sendName)}</span> for <span style="color:var(--text2)">${esc2(recvName)}</span>
-      </div>
+      <div style="margin-top:3px;color:var(--text3)">Message <span style="color:var(--accent)">${esc2(t.ownerName||'')}</span> · offer <span style="color:var(--text2)">${esc2(sendName)}</span> for <span style="color:var(--text2)">${esc2(recvName)}</span></div>
     </div>
 
   </div>`;
