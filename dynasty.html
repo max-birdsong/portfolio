@@ -3336,15 +3336,17 @@ async function computeAllTradeDeltas(trades) {
       const recvPPG = recvIsPick ? 0 : (projPts[recvName] ?? estPPGGlobal(recvRd2, t.recv.pos));
       const myReplPPG   = sendIsPick ? 0 : (leagueRosters[myIdx].replacementLevelPPG?.[t.sell.pos] ?? estPPGGlobal(leagueRosters[myIdx].replacementLevel?.[t.sell.pos]||0, t.sell.pos));
       const thReplPPG   = recvIsPick ? 0 : (leagueRosters[theirIdx].replacementLevelPPG?.[t.recv.pos] ?? estPPGGlobal(leagueRosters[theirIdx].replacementLevel?.[t.recv.pos]||0, t.recv.pos));
-      // My delta: I gain recv marginal, lose send marginal
-      myMeanDelta = (recvPPG - thReplPPG) - (sendPPG - myReplPPG);
-      // Their delta: they gain send marginal (what I sent them), lose recv marginal (what they sent me)
-      // Computed independently — NOT just -myDelta, since pick sides are asymmetric
-      const theirSendPPG = recvIsPick ? 0 : recvPPG;  // what they're sending me (recv side)
-      const theirRecvPPG = sendIsPick ? 0 : sendPPG;  // what they're receiving (send side)
-      const theirMyRepl  = recvIsPick ? 0 : thReplPPG;
+      // Marginal PPG = player PPG - replacement level, but only if player actually starts.
+      // If player PPG <= replacement level they don't crack the lineup → 0 marginal.
+      const myRecvMarginal  = recvIsPick  ? 0 : Math.max(0, recvPPG - thReplPPG);
+      const mySendMarginal  = sendIsPick  ? 0 : Math.max(0, sendPPG - myReplPPG);
+      myMeanDelta = myRecvMarginal - mySendMarginal;
+
+      // Their side: independently computed, also clamped to 0 if player doesn't start
       const theirThRepl  = sendIsPick ? 0 : (leagueRosters[theirIdx].replacementLevelPPG?.[t.sell.pos] ?? estPPGGlobal(leagueRosters[theirIdx].replacementLevel?.[t.sell.pos]||0, t.sell.pos));
-      theirMeanDelta = (theirRecvPPG - theirThRepl) - (theirSendPPG - theirMyRepl);
+      const theirRecvMarginal = sendIsPick  ? 0 : Math.max(0, sendPPG - theirThRepl);
+      const theirSendMarginal = recvIsPick  ? 0 : Math.max(0, recvPPG - thReplPPG);
+      theirMeanDelta = theirRecvMarginal - theirSendMarginal;
 
       const meansAfter = allMeanBefore.map((v,i) =>
         i===myIdx    ? Math.max(BASE_SCORE * 0.5, v + myMeanDelta)    :
@@ -3613,20 +3615,20 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
   for (const pn of sendNames) {
     const nn  = norm(pn);
     if (isPick2(nn)) continue;
-    const pos = rosterPlayerMap[nn]?.pos || 'WR';
-    const rd  = rdByName2[nn] || 0;
-    const pts = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
+    const pos  = rosterPlayerMap[nn]?.pos || 'WR';
+    const rd   = rdByName2[nn] || 0;
+    const pts  = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
     const repl = myRoster2?.replacementLevelPPG?.[pos] ?? estPPGGlobal(myRoster2?.replacementLevel?.[pos]||0, pos);
-    myMeanDelta2 -= pts - repl;
+    myMeanDelta2 -= Math.max(0, pts - repl); // clamp: only hurts if player was actually starting
   }
   for (const pn of recvNames) {
     const nn  = norm(pn);
     if (isPick2(nn)) continue;
-    const pos = rosterPlayerMap[nn]?.pos || (sendNames.length ? (rosterPlayerMap[norm(sendNames[0])]?.pos || 'WR') : 'WR');
-    const rd  = rdByName2[nn] || 0;
-    const pts = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
+    const pos  = rosterPlayerMap[nn]?.pos || 'WR';
+    const rd   = rdByName2[nn] || 0;
+    const pts  = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
     const repl = theirRoster2?.replacementLevelPPG?.[pos] ?? estPPGGlobal(theirRoster2?.replacementLevel?.[pos]||0, pos);
-    myMeanDelta2 += pts - repl;
+    myMeanDelta2 += Math.max(0, pts - repl); // clamp: only helps if player would actually start
   }
 
   // Compute their delta independently — not just -myDelta (asymmetric for pick trades)
