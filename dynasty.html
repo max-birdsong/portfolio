@@ -3335,18 +3335,11 @@ async function computeAllTradeDeltas(trades) {
       const myDiff = getLineupDiff(t.sell.name, t.sell.pos, t.recv.name, t.recv.pos);
       myMeanDelta = myDiff ? myDiff.ppgAfter - myDiff.ppgBefore : 0;
 
-      // Their side: use the same approach from their roster's perspective
-      // Build a temporary swap: they lose recv, gain send
-      const theirRoster = leagueRosters[theirIdx];
-      const sendRd2 = sendIsPick ? 0 : (rdByName[sendName]||0);
-      const recvRd2 = recvIsPick ? 0 : (rdByName[recvName]||0);
-      const sendPPG = sendIsPick ? 0 : (projPts[sendName] ?? estPPGGlobal(sendRd2, t.sell.pos));
-      const recvPPG = recvIsPick ? 0 : (projPts[recvName] ?? estPPGGlobal(recvRd2, t.recv.pos));
-      const thReplPPG = recvIsPick ? 0 : (theirRoster.replacementLevelPPG?.[t.recv.pos] ?? estPPGGlobal(theirRoster.replacementLevel?.[t.recv.pos]||0, t.recv.pos));
-      const theirThRepl = sendIsPick ? 0 : (theirRoster.replacementLevelPPG?.[t.sell.pos] ?? estPPGGlobal(theirRoster.replacementLevel?.[t.sell.pos]||0, t.sell.pos));
-      const theirRecvMarginal = sendIsPick ? 0 : Math.max(0, sendPPG - theirThRepl);
-      const theirSendMarginal = recvIsPick ? 0 : Math.max(0, recvPPG - thReplPPG);
-      theirMeanDelta = theirRecvMarginal - theirSendMarginal;
+      // Their side: they lose recv (what they sent me), gain send (what I sent them)
+      // Use getLineupDiff from their roster's perspective for cascade-aware calc
+      const theirRosterObj = leagueRosters[theirIdx];
+      const theirDiff = getLineupDiff(t.recv.name, t.recv.pos, t.sell.name, t.sell.pos, theirRosterObj);
+      theirMeanDelta = theirDiff ? theirDiff.ppgAfter - theirDiff.ppgBefore : 0;
 
       const meansAfter = allMeanBefore.map((v,i) =>
         i===myIdx    ? Math.max(BASE_SCORE * 0.5, v + myMeanDelta)    :
@@ -3383,8 +3376,8 @@ async function computeAllTradeDeltas(trades) {
 // ── LINEUP DIFF PREVIEW ─────────────────────────────────────
 // Shows projected starting lineup at affected positions before and after a trade.
 // Only shows positions where the lineup actually changes.
-function getLineupDiff(sendPlayer, sendPos, recvPlayer, recvPos) {
-  const myRoster = leagueRosters.find(r => r.isMe);
+function getLineupDiff(sendPlayer, sendPos, recvPlayer, recvPos, targetRoster) {
+  const myRoster = targetRoster || leagueRosters.find(r => r.isMe);
   if (!myRoster) return null;
 
   const isSF    = (window._rosterPositions || []).includes('SUPER_FLEX');
@@ -3619,26 +3612,9 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
   const myDiff2   = getLineupDiff(sendName2, sendPos2, recvName2, recvPos2);
   const myMeanDelta2 = myDiff2 ? myDiff2.ppgAfter - myDiff2.ppgBefore : 0;
 
-  // Compute their delta independently — not just -myDelta (asymmetric for pick trades)
-  let theirMeanDelta2 = 0;
-  for (const pn of recvNames) {  // what they're sending me
-    const nn  = norm(pn);
-    if (isPick2(nn)) continue;
-    const pos = rosterPlayerMap[nn]?.pos || 'WR';
-    const rd  = rdByName2[nn] || 0;
-    const pts = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
-    const repl = theirRoster2?.replacementLevelPPG?.[pos] ?? estPPGGlobal(theirRoster2?.replacementLevel?.[pos]||0, pos);
-    theirMeanDelta2 -= pts - repl;  // they lose what they sent
-  }
-  for (const pn of sendNames) {  // what they're receiving from me
-    const nn  = norm(pn);
-    if (isPick2(nn)) continue;
-    const pos = rosterPlayerMap[nn]?.pos || 'WR';
-    const rd  = rdByName2[nn] || 0;
-    const pts = (_projPts2[nn] != null) ? _projPts2[nn] : estPPGGlobal(rd, pos);
-    const repl = theirRoster2?.replacementLevelPPG?.[pos] ?? estPPGGlobal(theirRoster2?.replacementLevel?.[pos]||0, pos);
-    theirMeanDelta2 += pts - repl;  // they gain what I sent
-  }
+  // Their side: they lose recvNames (sent to me), gain sendNames (received from me)
+  const theirDiff2 = getLineupDiff(recvName2, recvPos2, sendName2, sendPos2, theirRoster2);
+  const theirMeanDelta2 = theirDiff2 ? theirDiff2.ppgAfter - theirDiff2.ppgBefore : 0;
 
   const meansAfter2 = allMeanBefore2.map((v, i) => {
     const r = leagueRosters[i];
