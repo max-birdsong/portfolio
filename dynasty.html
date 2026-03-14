@@ -1816,7 +1816,6 @@ function computeRosterProfiles() {
     const PPG_FLOOR = 8, PPG_SCALE = 600;
     const estPPG = rd => PPG_FLOOR + rd / PPG_SCALE;
 
-    const LOCKED_N = { QB:2, RB:2, WR:2, TE:1 };
     let ppgSum = 0;
     roster._lockedSlotsFilled = {};
 
