@@ -3248,106 +3248,77 @@ async function computeAllTradeDeltas(trades) {
   renderTradesTab(maxAbs, Math.max(maxAbs*0.1, 5));
 }
 
-// ── REPLACEMENT PREVIEW ──────────────────────────────────────
-// Given a player being sent away, find the next best player at that position
-// on my roster who would step into the lineup, accounting for superflex.
-function getReplacementPreview(playerName, playerPos) {
+// ── LINEUP DIFF PREVIEW ─────────────────────────────────────
+// Shows projected starting lineup at affected positions before and after a trade.
+// Only shows positions where the lineup actually changes.
+function getLineupDiff(sendPlayer, sendPos, recvPlayer, recvPos) {
   const myRoster = leagueRosters.find(r => r.isMe);
   if (!myRoster) return null;
 
-  const isSF = (window._rosterPositions || []).includes('SUPER_FLEX');
-  const nn   = norm(playerName);
+  const isSF    = (window._rosterPositions || []).includes('SUPER_FLEX');
+  const lockedN = isSF ? { QB:1, RB:2, WR:2, TE:1 } : { QB:2, RB:2, WR:2, TE:1 };
+  const N_FLEX  = isSF ? 4 : 3;
 
-  // Only show replacement if player is actually in the projected starting lineup.
-  // Bench players don't affect lineup when traded — no replacement needed.
-  const allAtPos = (myRoster.rosterPlayers || [])
-    .filter(p => p.pos === playerPos)
-    .map(p => ({ name: norm(p.name), ppg: estPPGGlobal(fcMap[norm(p.name)]?.redraftValue || 0, p.pos) }))
-    .sort((a, b) => b.ppg - a.ppg);
+  // Build roster with estimated PPG for all players
+  const rosterWithPPG = (myRoster.rosterPlayers || []).map(p => ({
+    name: p.name,
+    pos:  p.pos,
+    ppg:  estPPGGlobal(fcMap[norm(p.name)]?.redraftValue || 0, p.pos),
+  }));
 
-  const playerRank = allAtPos.findIndex(p => p.name === nn) + 1;
-  const lockedN    = (isSF ? { QB:1, RB:2, WR:2, TE:1 } : { QB:2, RB:2, WR:2, TE:1 })[playerPos] ?? 0;
-
-  // Rough starter cutoff: locked slots + flex contribution (top 3–4 at flex-eligible positions)
-  const flexCutoff = ['RB','WR','TE'].includes(playerPos) ? lockedN + (isSF ? 4 : 3) : lockedN;
-  if (playerRank === 0 || playerRank > flexCutoff) return null;
-
-  const fcEntry  = fcMap[nn];
-  const sentPPG  = estPPGGlobal(fcEntry?.redraftValue || 0, playerPos);
-
-  // Next best player at this position
-  const bench = allAtPos.filter(p => p.name !== nn);
-  let replacement = bench[lockedN - 1] || bench[0] || null; // first player who would step up
-
-  // In superflex, if QB and no replacement QB, check flex candidates
-  if (!replacement && isSF && playerPos === 'QB') {
-    const sfCands = (myRoster.rosterPlayers || [])
-      .filter(p => ['RB','WR','TE'].includes(p.pos))
-      .map(p => ({ name: p.name, pos: p.pos, ppg: estPPGGlobal(fcMap[norm(p.name)]?.redraftValue || 0, p.pos) }))
-      .sort((a, b) => b.ppg - a.ppg);
-    if (sfCands[0]) {
-      return {
-        sentPPG: +sentPPG.toFixed(1),
-        replName: sfCands[0].name,
-        replPPG: +sfCands[0].ppg.toFixed(1),
-        delta: +(sfCands[0].ppg - sentPPG).toFixed(1),
-        label: ' (superflex)',
-      };
+  // Project optimal lineup: locked starters per pos, then greedy flex
+  function projectLineup(players) {
+    const byPos = { QB:[], RB:[], WR:[], TE:[] };
+    for (const p of players) {
+      if (byPos[p.pos]) byPos[p.pos].push(p);
     }
-    return { sentPPG: +sentPPG.toFixed(1), replName: null, replPPG: 0, delta: +(-sentPPG).toFixed(1), label: '' };
+    for (const pos of Object.keys(byPos)) byPos[pos].sort((a, b) => b.ppg - a.ppg);
+
+    const starters = [];
+    const used = new Set();
+    // Fill locked slots
+    for (const [pos, n] of Object.entries(lockedN)) {
+      for (let i = 0; i < Math.min(n, byPos[pos].length); i++) {
+        starters.push(byPos[pos][i]);
+        used.add(byPos[pos][i].name);
+      }
+    }
+    // Fill flex greedily
+    const flexElig = isSF ? ['QB','RB','WR','TE'] : ['RB','WR','TE'];
+    const flexPool = flexElig.flatMap(pos => byPos[pos].filter(p => !used.has(p.name)))
+      .sort((a, b) => b.ppg - a.ppg)
+      .slice(0, N_FLEX);
+    for (const p of flexPool) { starters.push(p); used.add(p.name); }
+    return starters;
   }
 
-  if (!replacement) return null;
+  const before = projectLineup(rosterWithPPG);
 
-  return {
-    sentPPG:  +sentPPG.toFixed(1),
-    replName: replacement.name,
-    replPPG:  +replacement.ppg.toFixed(1),
-    delta:    +(replacement.ppg - sentPPG).toFixed(1),
-    label:    '',
-  };
-}
+  // Apply trade: remove send, add recv
+  const sendNN  = norm(sendPlayer);
+  const recvRd  = sendPos !== 'PICK' ? (fcMap[norm(recvPlayer)]?.redraftValue || 0) : 0;
+  const recvPPG = recvPos !== 'PICK' ? estPPGGlobal(recvRd, recvPos) : 0;
 
+  const afterRoster = rosterWithPPG.filter(p => norm(p.name) !== sendNN);
+  if (recvPos && recvPos !== 'PICK') {
+    afterRoster.push({ name: recvPlayer, pos: recvPos, ppg: recvPPG });
+  }
+  const after = projectLineup(afterRoster);
 
-// Given a player being received, check if they'd crack the starting lineup.
-// Returns their PPG and whether they add marginal value.
-function getAdditionPreview(playerName, playerPos) {
-  const myRoster = leagueRosters.find(r => r.isMe);
-  if (!myRoster || !playerName || playerPos === 'PICK') return null;
+  // Find positions where lineup changed
+  const beforeNames = new Set(before.map(p => norm(p.name)));
+  const afterNames  = new Set(after.map(p => norm(p.name)));
 
-  const isSF  = (window._rosterPositions || []).includes('SUPER_FLEX');
-  const nn    = norm(playerName);
-  const fcEntry = fcMap[nn];
-  const recvRd  = fcEntry?.redraftValue || 0;
-  const recvPPG = estPPGGlobal(recvRd, playerPos);
+  const added   = after.filter(p => !beforeNames.has(norm(p.name)));
+  const removed = before.filter(p => !afterNames.has(norm(p.name)));
 
-  // My current starters at this position (sorted by PPG)
-  const allAtPos = (myRoster.rosterPlayers || [])
-    .filter(p => p.pos === playerPos)
-    .map(p => ({ name: norm(p.name), ppg: estPPGGlobal(fcMap[norm(p.name)]?.redraftValue || 0, p.pos) }))
-    .sort((a, b) => b.ppg - a.ppg);
+  // Only return if lineup actually changed
+  if (!added.length && !removed.length) return null;
 
-  const lockedN   = (isSF ? { QB:1, RB:2, WR:2, TE:1 } : { QB:2, RB:2, WR:2, TE:1 })[playerPos] ?? 0;
-  const flexCutoff = ['RB','WR','TE'].includes(playerPos) ? lockedN + (isSF ? 4 : 3) : lockedN;
+  const ppgBefore = before.reduce((s, p) => s + p.ppg, 0);
+  const ppgAfter  = after.reduce((s, p) => s + p.ppg, 0);
 
-  // Would they start? Find where they'd rank among my current players
-  const rank = allAtPos.filter(p => p.ppg > recvPPG).length + 1;
-  const starts = rank <= flexCutoff;
-
-  // Who do they displace? (the player currently at that rank, if any)
-  const displaced = allAtPos[rank - 1] || null;
-  const marginal  = starts
-    ? recvPPG - (displaced ? displaced.ppg : 0)
-    : 0;
-
-  return {
-    recvPPG:  +recvPPG.toFixed(1),
-    starts,
-    rank,
-    displacedName: displaced ? displaced.name : null,
-    displacedPPG:  displaced ? +displaced.ppg.toFixed(1) : 0,
-    marginal: +marginal.toFixed(1),
-  };
+  return { added, removed, ppgBefore: +ppgBefore.toFixed(1), ppgAfter: +ppgAfter.toFixed(1) };
 }
 
 // ── PICK RANGE DISPLAY ───────────────────────────────────────
@@ -3690,44 +3661,28 @@ function tradeCard(t) {
             var col = marginal > 1 ? 'var(--accent)' : marginal > 0 ? 'var(--text2)' : marginal < -1 ? 'var(--red)' : 'var(--text3)';
             return '<div style="font-family:DM Mono,monospace;font-size:.52rem;color:' + col + ';margin-top:1px">' + (marginal >= 0 ? '+' : '') + marginal.toFixed(1) + ' est ppg/wk</div>'
             + (function(){
-                var lines = [];
-
-                // SEND side: what do I lose from lineup?
-                if (!t.sell.isPick) {
-                  var rp = getReplacementPreview(t.sell.name, t.sell.pos);
-                  if (rp) {
-                    var repl = rp.replName ? esc(rp.replName) + ' (' + rp.replPPG + ' ppg)' : 'no replacement';
-                    var col  = rp.delta < -3 ? 'var(--red)' : 'var(--text3)';
-                    lines.push('<div style="font-family:DM Mono,monospace;font-size:.5rem;color:' + col + ';margin-top:2px">'
-                      + '− ' + rp.sentPPG + ' ppg → ' + repl + rp.label + '</div>');
-                  } else {
-                    // Bench player — no lineup impact
-                    var sentRd  = (fcMap[norm(t.sell.name)] || {}).redraftValue || 0;
-                    var sentPPG = estPPGGlobal(sentRd, t.sell.pos);
-                    lines.push('<div style="font-family:DM Mono,monospace;font-size:.5rem;color:var(--text3);margin-top:2px">'
-                      + '− ' + sentPPG.toFixed(1) + ' ppg (bench, no lineup impact)</div>');
-                  }
+                var diff = getLineupDiff(t.sell.name, t.sell.pos, t.recv.name, t.recv.pos);
+                if (!diff) {
+                  // No lineup change — just show bench note
+                  var s = t.sell.isPick ? 0 : estPPGGlobal((fcMap[norm(t.sell.name)]||{}).redraftValue||0, t.sell.pos);
+                  var g = t.recv.isPick ? 0 : estPPGGlobal((fcMap[norm(t.recv.name)]||{}).redraftValue||0, t.recv.pos);
+                  return '<div style="font-family:DM Mono,monospace;font-size:.5rem;color:var(--text3);margin-top:2px">'
+                    + 'lineup unchanged · bench swap (' + s.toFixed(1) + ' ppg → ' + g.toFixed(1) + ' ppg depth)</div>';
                 }
-
-                // GET side: does the received player crack my lineup?
-                if (!t.recv.isPick) {
-                  var ap = getAdditionPreview(t.recv.name, t.recv.pos);
-                  if (ap) {
-                    if (ap.starts) {
-                      var acol = ap.marginal > 1 ? 'var(--accent)' : ap.marginal > 0 ? 'var(--text2)' : 'var(--text3)';
-                      var displStr = ap.displacedName
-                        ? ' (bumps ' + esc(ap.displacedName) + ' ' + ap.displacedPPG + ' ppg)'
-                        : '';
-                      lines.push('<div style="font-family:DM Mono,monospace;font-size:.5rem;color:' + acol + ';margin-top:1px">'
-                        + '+ ' + ap.recvPPG + ' ppg starts' + displStr + '</div>');
-                    } else {
-                      lines.push('<div style="font-family:DM Mono,monospace;font-size:.5rem;color:var(--text3);margin-top:1px">'
-                        + '+ ' + ap.recvPPG + ' ppg (bench depth)</div>');
-                    }
-                  }
+                var delta = diff.ppgAfter - diff.ppgBefore;
+                var dcol  = delta > 1 ? 'var(--accent)' : delta < -1 ? 'var(--red)' : 'var(--text2)';
+                var out   = '<div style="font-family:DM Mono,monospace;font-size:.5rem;margin-top:2px">';
+                if (diff.removed.length) {
+                  out += '<span style="color:var(--text3)">out: </span>'
+                    + diff.removed.map(function(p){ return '<span style="color:var(--text3)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ') + '  ';
                 }
-
-                return lines.join('');
+                if (diff.added.length) {
+                  out += '<span style="color:var(--text3)">in: </span>'
+                    + diff.added.map(function(p){ return '<span style="color:var(--text2)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ');
+                }
+                out += '  <span style="color:' + dcol + '">' + (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' ppg/wk</span>';
+                out += '</div>';
+                return out;
               })();
           })()}` : `
           <div id="${impactId}"></div>
