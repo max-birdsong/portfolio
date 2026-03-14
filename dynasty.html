@@ -3246,6 +3246,9 @@ function renderTradesTab(maxAbs, thresh) {
   // Section labels adapt to mode
   let html = '';
 
+  const bStrong = bundleList.filter(t => t.strong);
+  const bReg    = bundleList.filter(t => !t.strong);
+
   // Mode banner (non-rebuild modes get a subtle indicator)
   if (tradeMode !== 'unknown') {
     const mono2 = "font-family:'DM Mono',monospace";
