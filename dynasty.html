@@ -3787,22 +3787,10 @@ function tradeCard(t) {
                 }
                 // Gross delta: raw lineup PPG change
                 var grossDelta = diff.ppgAfter - diff.ppgBefore;
-
-                // Marginal delta: what the sim actually measures
-                // (player PPG minus replacement level on each side)
-                var myRoster3 = leagueRosters.find(function(r){ return r.isMe; });
-                var sendRd3 = t.sell.isPick ? 0 : (fcMap[norm(t.sell.name)]||{}).redraftValue||0;
-                var recvRd3 = t.recv.isPick ? 0 : (fcMap[norm(t.recv.name)]||{}).redraftValue||0;
-                var sendPPG3 = t.sell.isPick ? 0 : estPPGGlobal(sendRd3, t.sell.pos);
-                var recvPPG3 = t.recv.isPick ? 0 : estPPGGlobal(recvRd3, t.recv.pos);
-                var myRepl3  = t.sell.isPick ? 0 : (myRoster3&&myRoster3.replacementLevelPPG&&myRoster3.replacementLevelPPG[t.sell.pos]) || estPPGGlobal((myRoster3&&myRoster3.replacementLevel&&myRoster3.replacementLevel[t.sell.pos])||0, t.sell.pos);
-                var theirOwner3 = leagueRosters.find(function(r){ return r.ownerName===t.ownerName; });
-                var thRepl3  = t.recv.isPick ? 0 : (theirOwner3&&theirOwner3.replacementLevelPPG&&theirOwner3.replacementLevelPPG[t.recv.pos]) || 0;
-                var marginalDelta = (recvPPG3 - thRepl3) - (sendPPG3 - myRepl3);
-
+                // getLineupDiff already handles cascade correctly — use it directly
+                // No separate "marginal" calculation needed
                 var dcol  = grossDelta > 1 ? 'var(--accent)' : grossDelta < -1 ? 'var(--red)' : 'var(--text2)';
-                var mcol  = marginalDelta > 0.5 ? 'var(--accent)' : marginalDelta < -0.5 ? 'var(--red)' : 'var(--text3)';
-                var out   = '<div style="font-family:DM Mono,monospace;font-size:.5rem;margin-top:2px">';
+var out   = '<div style="font-family:DM Mono,monospace;font-size:.5rem;margin-top:2px">';
                 if (diff.removed.length) {
                   out += '<span style="color:var(--text3)">out: </span>'
                     + diff.removed.map(function(p){ return '<span style="color:var(--text3)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ') + '  ';
@@ -3811,8 +3799,7 @@ function tradeCard(t) {
                   out += '<span style="color:var(--text3)">in: </span>'
                     + diff.added.map(function(p){ return '<span style="color:var(--text2)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ');
                 }
-                out += '  <span style="color:' + dcol + '">' + (grossDelta >= 0 ? '+' : '') + grossDelta.toFixed(1) + ' gross</span>';
-                out += '  <span style="color:' + mcol + '">' + (marginalDelta >= 0 ? '+' : '') + marginalDelta.toFixed(1) + ' marginal</span>';
+                out += '  <span style="color:' + dcol + '">' + (grossDelta >= 0 ? '+' : '') + grossDelta.toFixed(1) + ' ppg/wk</span>';
                 out += '</div>';
                 return out;
               })();
