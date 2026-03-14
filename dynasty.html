@@ -1148,12 +1148,18 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
           age:      parseFloat(p.age) || null,
         });
       }
+      const onBlockIds = new Set(r.players_on_block || []);
+      // Mark which rosterPlayers are on the block
+      for (const rp of rosterPlayers) {
+        if (rp.playerId && onBlockIds.has(rp.playerId)) rp.onBlock = true;
+      }
       return {
         ownerId:  oid,
-        rosterId: r.roster_id, // Sleeper roster_id — needed for matchup score lookup
+        rosterId: r.roster_id,
         ownerName: ownerNames[oid] || oid || 'Unknown',
         playerNames,
         rosterPlayers,
+        onBlockPlayerIds: onBlockIds,
         isMe: oid === sleeperUserId,
         tradeCount:  tradesByOwner[oid] || 0,
         totalTrades: tradesByOwner[oid] || 0,
@@ -1166,10 +1172,18 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
 
     // Step 10: ownerByPlayer lookup
     ownerByPlayer = {};
+    // Build a name→onBlock lookup across all rosters
+    const onBlockNames = new Set();
+    for (const roster of leagueRosters) {
+      for (const rp of (roster.rosterPlayers || [])) {
+        if (rp.onBlock) onBlockNames.add(norm(rp.name));
+      }
+    }
     for (const roster of leagueRosters) {
       for (const name of roster.playerNames) {
         ownerByPlayer[name] = {
           ownerName:      roster.ownerName,
+          onBlock:        onBlockNames.has(name),
           isMe:           roster.isMe,
           tradeCount:     roster.tradeCount,
           totalTrades:    roster.totalTrades,
@@ -1770,6 +1784,7 @@ async function runSimulator(opts = {}) {
   for (const p of merged) {
     const ob = ownerByPlayer[norm(p.name)];
     if (ob) {
+      p.onBlock          = ob.onBlock || false;
       p.ownerWindow      = ob.window;
       p.ownerWindowColor = ob.windowColor;
     }
@@ -3179,7 +3194,7 @@ function sdBadge(sd) {
   return '';
 }
 
-function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge, sellTrend, theirChampDelta) {
+function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge, sellTrend, theirChampDelta, onBlock) {
   // Base: FC value ratio (they win on FC by construction, so ratio > 1)
   const s   = sellFcVal || 1;
   const r   = recvFcVal || 1;
@@ -3191,6 +3206,9 @@ function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge, sellTrend, 
   else if (ownerWindow === 'Rebuilding' && age > 0 && age < 24) ratio *= 1.15;
   else if (ownerWindow === 'Contender' && age > 0 && age < 24) ratio *= 0.88;
   else if (ownerWindow === 'Rebuilding' && age >= 28) ratio *= 0.88;
+
+  // On block: owner has explicitly flagged this player available — meaningful boost
+  if (onBlock) ratio *= 1.35;
 
   // Trend nudge
   const trend = sellTrend || 0;
@@ -3816,7 +3834,7 @@ function tradeCard(t) {
       <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">TAT value gain</div>
       <div class="tcard-net up">+${(t.tierGain/100).toFixed(2)}</div>
       <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);text-align:center">1sts equivalent</div>
-      ${acceptanceMeter(t.sell.fcValue, t.recv.fcValue, t.ownerWindow, t.sell.age, t.sell.trend, t.theirChampDelta ?? null)}
+      ${acceptanceMeter(t.sell.fcValue, t.recv.fcValue, t.ownerWindow, t.sell.age, t.sell.trend, t.theirChampDelta ?? null, t.recv.onBlock)}
     </div>
 
     <!-- RECEIVE -->
@@ -3826,6 +3844,7 @@ function tradeCard(t) {
       <div class="tcard-pmeta" style="margin-top:3px;justify-content:flex-end;flex-wrap:wrap;">
         ${t.ownerWindow ? `<span style="font-family:'DM Mono',monospace;font-size:.55rem;padding:2px 6px;border:1px solid ${t.ownerWindowColor};color:${t.ownerWindowColor}">${esc(t.ownerWindow)}${t.champPct != null ? ' · ' + Math.round(t.champPct*100) + '% 🏆' : t.ownerAvgAge ? ' · ' + t.ownerAvgAge : ''}</span>` : ''}
         <span class="owner-pill">${esc(t.ownerName)}</span>
+        ${t.recv.onBlock ? '<span style="font-family:\'DM Mono\',monospace;font-size:.5rem;color:var(--accent);border:1px solid var(--accent);padding:1px 5px;letter-spacing:1px">ON BLOCK</span>' : ''}
         ${t.recv.team ? `<span class="team-pip">${esc(t.recv.team)}</span>` : ''}
         <span class="pos-pip pos-${t.recv.pos}">${t.recv.pos}</span>
       </div>
