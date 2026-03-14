@@ -495,6 +495,7 @@ footer{border-top:1px solid var(--border);padding:14px 0;margin-top:40px;font-fa
       </div>
       <div id="pick-debug" style="display:none;margin:12px 0;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);line-height:1.7"></div>
 <div id="roster-context-banner" style="margin-bottom:16px"></div>
+<div id="delta-status" style="display:none;font-family:'DM Mono',monospace;font-size:.5rem;color:var(--text3);margin-bottom:8px;padding:4px 8px;border:1px solid var(--border2)"></div>
 
 <!-- Trade finder filter/sort bar — populated by JS -->
 <div id="trades-filter-bar" style="display:none;margin-bottom:14px"></div>
@@ -1724,6 +1725,7 @@ async function runSimulator(opts = {}) {
     const sensN       = sensTeams.length;
     const sensWeeks   = _sensSchedule;
     window._champSensTables = {};
+  document.getElementById('delta-status') && (document.getElementById('delta-status').style.display='block', document.getElementById('delta-status').textContent='⏳ building sensitivity tables…');
 
     for (let teamIdx = 0; teamIdx < sensN; teamIdx++) {
       const ownerName = sensTeams[teamIdx].ownerName;
@@ -1754,6 +1756,7 @@ async function runSimulator(opts = {}) {
       window._champSensTables[ownerName] = sensTable;
       // Yield between teams so UI stays responsive
       await new Promise(r => setTimeout(r, 0));
+      document.getElementById('delta-status') && (document.getElementById('delta-status').textContent = '⏳ sensitivity tables: ' + (teamIdx+1) + '/' + sensN + ' teams…');
     }
 
     // Set my table and kick off trade deltas with new accurate data
@@ -1765,6 +1768,7 @@ async function runSimulator(opts = {}) {
 
     // Re-run trade deltas now that accurate tables are available
     console.log('[sens] tables built for all teams, trades to process:', (window._lastRenderedTrades||[]).length);
+  document.getElementById('delta-status') && (document.getElementById('delta-status').style.display='block', document.getElementById('delta-status').textContent='⏳ computing champ% for all trades…');
     window._tradeDeltas = {};
     const allTrades = window._lastRenderedTrades || [];
     if (allTrades.length) computeAllTradeDeltas(allTrades);
@@ -3872,6 +3876,7 @@ async function computeAllTradeDeltas(trades) {
   }
 
   console.log('[deltas] done, re-rendering');
+  document.getElementById('delta-status') && (document.getElementById('delta-status').style.display='block', document.getElementById('delta-status').textContent='✓ champ% ready');
   // Re-render compact view with fresh deltas
   if (_tfState.compact && window._allRenderedCards?.length) {
     _applyTradeFilter();
