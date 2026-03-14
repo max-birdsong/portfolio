@@ -3224,116 +3224,103 @@ function renderTradesTab(maxAbs, thresh) {
   }
 
   // Section labels adapt to mode
+
+  // ── Flat unified list ─────────────────────────────────────────
+  // All trade types merged into one list, sorted by filter bar state.
+  // No section headers — just cards.
+
+  const allTrades = [
+    ...trades,
+    ...bundleList.map(t => ({ ...t, _isBundle: true })),
+    ...ppgTrades,
+  ];
+
+  // Pre-compute PPG delta and fillsTheirNeed for all trades
+  for (const t of allTrades) {
+    if (!t._ppgComputed) {
+      const sendArr2 = t._isBundle
+        ? [{name:t.main.name,pos:t.main.pos},{name:t.addon.name,pos:t.addon.pos}]
+        : [{name:(t.sell||{}).name||'',pos:(t.sell||{}).pos||''}];
+      const recvArr2 = [{name:(t.recv||{}).name||'',pos:(t.recv||{}).pos||''}];
+      const d2 = getLineupDiff(sendArr2, null, recvArr2, null);
+      t._ppgDelta    = d2 ? +(d2.ppgAfter - d2.ppgBefore).toFixed(1) : null;
+      t._ppgComputed = true;
+    }
+    if (!t._theirNeedChecked) {
+      const thR2 = leagueRosters.find(r => r.ownerName === t.ownerName);
+      const sendArr3 = t._isBundle
+        ? [{name:t.main.name,pos:t.main.pos},{name:t.addon.name,pos:t.addon.pos}]
+        : [{name:(t.sell||{}).name||'',pos:(t.sell||{}).pos||''}];
+      const recvArr3 = [{name:(t.recv||{}).name||'',pos:(t.recv||{}).pos||''}];
+      const thD2 = thR2 ? getLineupDiff(recvArr3, null, sendArr3, null, thR2) : null;
+      t.theirLineupDelta  = thD2 ? +(thD2.ppgAfter - thD2.ppgBefore).toFixed(1) : 0;
+      t.fillsTheirNeed    = t.theirLineupDelta > 0.5;
+      t._theirNeedChecked = true;
+    }
+  }
+
+  // Sort by current filter state
+  allTrades.sort((a, b) => _tfSortScore(b) - _tfSortScore(a));
+
+  // Build _allRenderedCards for filter re-apply
+  window._allRenderedCards = allTrades.map(t => ({
+    t,
+    section: '',
+    sectionColor: 'var(--text2)',
+    isBundle: t._isBundle || false,
+    html: tradeCard(t),
+  }));
+
+  // Compute PPG delta for compact card display
+  for (const c of window._allRenderedCards) {
+    c.t._ppgDelta = c.t._ppgDelta ?? c.t.ppgGain ?? null;
+  }
+
+  // Show filter bar
+  const filterBar2 = document.getElementById('trades-filter-bar');
+  if (filterBar2) {
+    const m2 = "font-family:'DM Mono',monospace";
+    const btnStyle2 = (active) => `${m2};font-size:.55rem;padding:3px 9px;cursor:pointer;border:1px solid var(--border);letter-spacing:.5px;` + (active ? 'background:var(--accent);color:#000' : 'background:none;color:var(--text3)');
+    let fb2 = '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
+    fb2 += `<span style="${m2};font-size:.48rem;color:var(--text3);letter-spacing:1px">POS</span>`;
+    for (const p of ['ALL','QB','RB','WR','TE','PICK']) {
+      fb2 += `<button id="tf-pos-${p}" onclick="setTradeFilter('pos','${p}')" style="${btnStyle2(p==='ALL')}">${p}</button>`;
+    }
+    fb2 += `<span style="${m2};font-size:.48rem;color:var(--text3);letter-spacing:1px;margin-left:12px">SORT</span>`;
+    for (const [v,l] of [['champ','Champ%'],['ppg','PPG'],['tat','TAT'],['accept','Accept']]) {
+      fb2 += `<button id="tf-sort-${v}" onclick="setTradeSort('${v}')" style="${btnStyle2(v===_tfState.sort)}">${l}</button>`;
+    }
+    fb2 += `<button id="tf-compact-btn" onclick="toggleCompactTrades()" style="${btnStyle2(_tfState.compact)};margin-left:8px">COMPACT</button>`;
+    fb2 += '</div>';
+    filterBar2.innerHTML = fb2;
+    filterBar2.style.display = 'block';
+  }
+  _tfState.pos = 'ALL';
+
   let html = '';
 
-  const bStrong = bundleList.filter(t => t.strong);
-  const bReg    = bundleList.filter(t => !t.strong);
+  // Mode one-liner
+  const modeColor2 = tradeMode === 'rebuild' ? 'var(--blue)' : tradeMode === 'contend' ? 'var(--amber)' : 'var(--text3)';
+  const modeLabel2 = tradeMode === 'rebuild'
+    ? '🔄 REBUILD — prioritising dynasty value'
+    : tradeMode === 'mixed'
+    ? '⚖️ MIXED — filling roster holes first · balancing now vs later'
+    : tradeMode === 'contend'
+    ? '🏆 CONTENDING — prioritising champ% impact'
+    : '';
+  if (modeLabel2) html += `<div style="font-family:'DM Mono',monospace;font-size:.55rem;color:${modeColor2};margin-bottom:12px;padding:6px 10px;border-left:2px solid ${modeColor2}">${modeLabel2}</div>`;
 
-  // Mode banner (non-rebuild modes get a subtle indicator)
-  if (tradeMode !== 'unknown') {
-    const mono2 = "font-family:'DM Mono',monospace";
-    const modeColor = tradeMode === 'rebuild' ? 'var(--blue)' : tradeMode === 'contend' ? 'var(--amber)' : 'var(--text3)';
-    const modeLabel = tradeMode === 'rebuild'
-      ? '🔄 REBUILD — prioritising dynasty value · win later'
-      : tradeMode === 'mixed'
-      ? '⚖️ MIXED — filling roster holes first · balancing now vs later'
-      : '🏆 CONTENDING — prioritising champ% impact · win now';
-    html += '<div style="' + mono2 + ';font-size:.55rem;color:' + modeColor + ';margin-bottom:12px;padding:6px 10px;border-left:2px solid ' + modeColor + '">' + modeLabel + '</div>';
-  }
-
-  // Rebuild mode sell banner
+  // Rebuild sell banner
   if (rebuildMode) {
-    const mono2 = "font-family:'DM Mono',monospace";
-    html += '<div style="margin-bottom:16px;padding:10px 14px;border:1px solid var(--blue);background:rgba(96,165,250,.06)">'
-      + '<div style="' + mono2 + ';font-size:.6rem;color:var(--blue);letter-spacing:1px;margin-bottom:4px">🔄 REBUILD MODE</div>'
-      + '<div style="' + mono2 + ';font-size:.62rem;color:var(--text2);line-height:1.5">'
-      + 'Your champ% is low and no available trades meaningfully improve it. '
-      + 'Focus on selling win-now assets to contenders for dynasty value — and tank for draft position.'
-      + '</div></div>';
+    const m3 = "font-family:'DM Mono',monospace";
+    html += `<div style="margin-bottom:16px;padding:10px 14px;border:1px solid var(--blue);background:rgba(96,165,250,.06)">
+      <div style="${m3};font-size:.6rem;color:var(--blue);letter-spacing:1px;margin-bottom:4px">🔄 REBUILD MODE</div>
+      <div style="${m3};font-size:.62rem;color:var(--text2);line-height:1.5">Your champ% is low. Focus on selling win-now assets for dynasty value.</div>
+    </div>`;
   }
 
-  // Main trades
-  if (trades.length) {
-    const topLabel = tradeMode === 'rebuild'  ? '📈 Dynasty Value Gains'
-      : tradeMode === 'contend' ? '⚡ Moves the Needle'
-      : '🕳️ Filling Roster Holes';
-    const topSub   = tradeMode === 'rebuild'  ? 'Best TAT value acquisitions available'
-      : tradeMode === 'contend' ? 'Best champ% uplift available'
-      : 'Hole-filling trades with champ% upside — sorted by impact';
-
-    const topColor = tradeMode === 'rebuild' ? 'var(--blue)' : tradeMode === 'contend' ? 'var(--accent)' : 'var(--amber)';
-
-    // Split at natural break point
-    const splitAt = tradeMode === 'rebuild' ? 0.5   // TAT tier gain threshold
-      : tradeMode === 'contend' ? 1.5              // champ% delta threshold
-      : null;                                       // mixed: holes vs non-holes
-
-    // Big TAT upgrades always shown prominently regardless of mode
-    // (bigTATThresh and isBigTAT defined at module scope)
-
-    let topTrades, restTrades;
-    if (tradeMode === 'rebuild') {
-      topTrades  = trades.filter(t => (t.tierGain / 100) >= 0.5);
-      restTrades = trades.filter(t => (t.tierGain / 100) < 0.5);
-    } else if (tradeMode === 'mixed') {
-      // Hole-filling + big TAT upgrades first, then champ% movers, then rest
-      topTrades  = trades.filter(t => t.fillsNeed || isBigTAT(t));
-      restTrades = trades.filter(t => !t.fillsNeed && !isBigTAT(t));
-    } else {
-      // Contend: champ% first, but big TAT upgrades always in top section
-      topTrades  = trades.filter(t => (t.champDelta ?? -999) > 1.5 || isBigTAT(t));
-      restTrades = trades.filter(t => (t.champDelta ?? -999) <= 1.5 && !isBigTAT(t));
-    }
-
-    if (topTrades.length)  html += tradeSection(topLabel, topColor, topSub, topTrades, false);
-    if (restTrades.length) html += tradeSection('Also Consider', 'var(--text2)', 'Worth exploring at the right terms', restTrades, false);
-  }
-
-  // Rebuild sell trades
-  if (rebuildTrades.length) {
-    html += '<div class="trade-section-head" style="margin-top:24px">'
-      + '<div class="trade-section-title" style="color:var(--blue)">📉 Sell Win-Now Assets</div>'
-      + '<div class="trade-section-sub">High redraft / lower dynasty — move these to contenders for dynasty value</div>'
-      + '</div><div class="trade-cards">'
-      + rebuildTrades.map(t => tradeCard(t)).join('')
-      + '</div>';
-  }
-
-  // Bundle offers
-  if (bStrong.length || bReg.length) {
-    html += `<div class="trade-section-head" style="margin-top:24px">
-      <div class="trade-section-title" style="color:var(--amber)">📦 Bundle Offers</div>
-      <div class="trade-section-sub">2-for-1 — add a sweetener to unlock a deal that wasn't there clean</div>
-    </div><div class="trade-cards">`;
-    if (bStrong.length) html += bStrong.map(t => bundleCard(t)).join('');
-    if (bReg.length)    html += bReg.map(t => bundleCard(t)).join('');
-    html += '</div>';
-  }
-
-  // PPG Upgrades — only show for non-rebuild teams
-  if (ppgTrades.length && tradeMode !== 'rebuild') {
-    const ppgStrong = ppgTrades.filter(t => t.strong);
-    const ppgReg    = ppgTrades.filter(t => !t.strong);
-    const slotTrades = ppgTrades.filter(t => t.slotUpgrade);
-    const genTrades  = ppgTrades.filter(t => !t.slotUpgrade);
-    if (slotTrades.length) {
-      html += '<div class="trade-section-head" style="margin-top:24px">'
-        + '<div class="trade-section-title" style="color:var(--blue)">🕳️ Slot Upgrades</div>'
-        + '<div class="trade-section-sub">Targets your weakest starter slots · counterparty wins on FC value</div>'
-        + '</div><div class="trade-cards">'
-        + slotTrades.map(t => tradeCard(t)).join('')
-        + '</div>';
-    }
-    if (genTrades.length) {
-      html += '<div class="trade-section-head" style="margin-top:24px">'
-        + '<div class="trade-section-title" style="color:var(--blue)">⚡ PPG Upgrades</div>'
-        + '<div class="trade-section-sub">General lineup improvement · counterparty wins on FC value</div>'
-        + '</div><div class="trade-cards">';
-    if (genTrades.filter(t=>t.strong).length) html += genTrades.filter(t=>t.strong).map(t => tradeCard(t)).join('');
-    if (genTrades.filter(t=>!t.strong).length) html += genTrades.filter(t=>!t.strong).map(t => tradeCard(t)).join('');
-    if (genTrades.length) html += '</div>';
-    }  // close if (genTrades.length)
-  }
+  // Render all cards flat
+  html += '<div class="trade-cards">' + window._allRenderedCards.map(c => c.html).join('') + '</div>';
 
   html += `<div class="tfoot" style="margin-top:12px">Rank gap = FC rank − TAT rank · Positive = TAT values higher · Rebuild mode: sell FC-overvalued assets for TAT dynasty value</div>`;
   // Build _allRenderedCards for filter/sort — store each trade with its section, html, and data
@@ -3554,278 +3541,11 @@ function acceptanceMeter(sellFcVal, recvFcVal, ownerWindow, sellAge, sellTrend, 
 }
 
 function bundleCard(t) {
-  const impactId = 'impact_bundle_' + (t.main.name + '_' + t.addon.name + '_' + t.recv.name + '_' + t.ownerName).replace(/[^a-z0-9]/gi,'_');
-  const sendJson = JSON.stringify([{name:t.main.name,pos:t.main.pos},{name:t.addon.name,pos:t.addon.pos}]).replace(/"/g,'&quot;');
-  const recvJson = JSON.stringify([{name:t.recv.name,pos:t.recv.pos}]).replace(/"/g,'&quot;');
-  const ownerKey = "ownership|" + t.main.name + "|" + t.ownerName;
-  const cached   = ownershipCache[ownerKey];
-  const ownId    = "own_" + (t.main.name + "_" + t.ownerName).replace(/[^a-z0-9]/gi, "_");
-  const ownSpan  = cached
-    ? '<span id="' + ownId + '" style="color:' + cached.color + '">' + esc(cached.text) + "</span>"
-    : '<span id="' + ownId + '" style="color:var(--text3)">checking ownership…</span>';
-
-  const mono = "font-family:\'DM Mono\',monospace";
-
-  return '<div class="tcard ' + (t.strong ? "strong" : "") + '">'
-
-    // SEND (stacked: main + addon)
-    + '<div class="tcard-player send">'
-    +   '<div style="' + mono + ';font-size:.56rem;letter-spacing:2px;color:var(--red);margin-bottom:4px">SEND</div>'
-    // main piece
-    +   '<div class="tcard-pname">' + esc(t.main.name) + (t.main.tierLabel ? ' <span class="tier-chip" style="font-size:.6rem;vertical-align:middle;opacity:.85">' + esc(t.main.tierLabel) + "</span>" : "") + "</div>"
-    +   '<div class="tcard-pmeta" style="margin-top:2px">'
-    +     '<span class="pos-pip pos-' + t.main.pos + '">' + t.main.pos + "</span>"
-    +     (t.main.team ? '<span class="team-pip">' + esc(t.main.team) + "</span>" : "")
-    +   "</div>"
-    // addon piece
-    +   '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">'
-    +     '<div style="' + mono + ';font-size:.52rem;color:var(--text3);margin-bottom:2px;letter-spacing:1px">+ ADD</div>'
-    +     '<div class="tcard-pname" style="font-size:.82rem">' + esc(t.addon.name) + (t.addon.tierLabel ? ' <span class="tier-chip" style="font-size:.55rem;vertical-align:middle;opacity:.75">' + esc(t.addon.tierLabel) + "</span>" : "") + "</div>"
-    +     '<div class="tcard-pmeta" style="margin-top:2px">'
-    +       '<span class="pos-pip pos-' + t.addon.pos + '" style="font-size:.55rem">' + t.addon.pos + "</span>"
-    +       (t.addon.team ? '<span class="team-pip" style="font-size:.55rem">' + esc(t.addon.team) + "</span>" : "")
-    +     "</div>"
-    +   "</div>"
-    +   '<div style="margin-top:8px;display:flex;gap:12px;' + mono + ';font-size:.65rem">'
-    +     '<span style="color:var(--text3)">Bundle FC </span><span style="color:var(--text2)">' + Math.round(t.bundleFcValue) + '</span>'              + '<span style="color:var(--text3)"> (−500 adj) · vs FC </span><span style="color:var(--text2)">' + Math.round(t.recv.fcValue||0) + '</span>'              + (t.bundleFcValue > (t.recv.fcValue||0)                ? '<span style="color:var(--accent)"> +' + Math.round(t.bundleFcValue - (t.recv.fcValue||0)) + '</span>'                : '<span style="color:var(--red)"> ' + Math.round(t.bundleFcValue - (t.recv.fcValue||0)) + '</span>')
-    +   "</div>"
-    +   (t.fillsNeed ? '<div style="margin-top:4px;display:inline-block;' + mono + ';font-size:.57rem;color:var(--accent);border:1px solid var(--accent);padding:1px 6px">✓ fills their ' + esc(t.main.pos) + " need</div>" : "")
-    + "</div>"
-
-    // ARROW
-    + '<div class="tcard-arrow">'
-    +   '<div class="tcard-swap">⇄</div>'
-    +   '<div style="' + mono + ';font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">TAT value gain</div>'
-    +   '<div class="tcard-net up">+' + (t.tierGain/100).toFixed(2) + "</div>"
-    +   '<div style="' + mono + ';font-size:.52rem;color:var(--text3);text-align:center">1sts equivalent</div>'
-    +   acceptanceMeter(t.bundleFcValue, t.recv.fcValue, t.ownerWindow, t.main.age, t.main.trend, t.theirChampDelta ?? null)
-    + "</div>"
-
-    // RECEIVE
-    + '<div class="tcard-player recv">'
-    +   '<div style="' + mono + ';font-size:.56rem;letter-spacing:2px;color:var(--accent);margin-bottom:4px;text-align:right">GET</div>'
-    +   '<div class="tcard-pname">' + esc(t.recv.name) + (t.recv.tierLabel ? ' <span class="tier-chip" style="font-size:.6rem;vertical-align:middle;opacity:.85">' + esc(t.recv.tierLabel) + "</span>" : "") + "</div>"
-    +   '<div class="tcard-pmeta" style="margin-top:3px;justify-content:flex-end;flex-wrap:wrap">'
-    +     (t.ownerWindow ? '<span style="' + mono + ';font-size:.55rem;padding:2px 6px;border:1px solid ' + t.ownerWindowColor + ";color:" + t.ownerWindowColor + '">' + esc(t.ownerWindow) + (t.champPct != null ? ' · ' + Math.round(t.champPct*100) + '% 🏆' : t.ownerAvgAge ? ' · ' + t.ownerAvgAge : '') + "</span>" : "")
-    +     '<span class="owner-pill">' + esc(t.ownerName) + "</span>"
-    +     (t.recv.team ? '<span class="team-pip">' + esc(t.recv.team) + "</span>" : "")
-    +     '<span class="pos-pip pos-' + t.recv.pos + '">' + t.recv.pos + "</span>"
-    +   "</div>"
-    +   '<div style="margin-top:10px;display:flex;gap:12px;' + mono + ';font-size:.68rem;justify-content:flex-end">'
-    +     '<span>TAT <span style="color:var(--text2)">' + (t.recv.tatRank ? "#" + t.recv.tatRank : "—") + "</span></span>"
-    +     '<span>FC <span style="color:var(--text2)">' + (t.recv.fcRank ? "#" + t.recv.fcRank : "—") + "</span></span>"
-    +   "</div>"
-    +   '<div style="' + mono + ';font-size:.62rem;color:var(--accent);margin-top:4px;text-align:right">TAT undervalued by FC → owner may sell cheap</div>'
-    + "</div>"
-
-    // FOOTER
-    + '<div style="grid-column:1/-1;border-top:1px solid var(--border);margin-top:12px;padding-top:10px;'
-    +   mono + ';font-size:.62rem;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">'
-    +   '<div style="color:var(--text3)">Message <span style="color:var(--accent)">' + esc(t.ownerName) + "</span> · offer " + esc(t.main.name) + " + " + esc(t.addon.name) + " for " + esc(t.recv.name) + "</div>"
-    +   '<div style="text-align:right;display:flex;flex-direction:column;gap:3px">'
-    +     (t.leagueCount != null ? '<span style="color:var(--text3)">' + t.leagueCount + " league" + (t.leagueCount !== 1 ? "s" : "") + " · " + (t.totalTrades || 0) + " pick trade" + (t.totalTrades !== 1 ? "s" : "") + " this season</span>" : "")
-    +     ownSpan
-    +   "</div>"
-    + "</div>"
-    + (leagueRosters.some(r => r.champPct != null)
-        ? '<div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:8px">'
-          + (function(){
-              // Lineup diff for bundle: send main+addon, recv t.recv
-              var sendArr = [{name:t.main.name,pos:t.main.pos},{name:t.addon.name,pos:t.addon.pos}];
-              var recvArr = [{name:t.recv.name,pos:t.recv.pos}];
-              var diff = getLineupDiff(sendArr, null, recvArr, null);
-              if (!diff || Math.abs(diff.ppgAfter - diff.ppgBefore) < 0.05) {
-                var s1 = estPPGGlobal((fcMap[norm(t.main.name)]||{}).redraftValue||0, t.main.pos);
-                var s2 = estPPGGlobal((fcMap[norm(t.addon.name)]||{}).redraftValue||0, t.addon.pos);
-                var g  = estPPGGlobal((fcMap[norm(t.recv.name)]||{}).redraftValue||0, t.recv.pos);
-                return '<div style="font-family:DM Mono,monospace;font-size:.5rem;color:var(--text3);margin-bottom:4px">lineup unchanged · bench swap (' + (s1+s2).toFixed(1) + ' ppg → ' + g.toFixed(1) + ' ppg depth)</div>';
-              }
-              var delta = diff.ppgAfter - diff.ppgBefore;
-              var dcol  = delta > 1 ? 'var(--accent)' : delta < -1 ? 'var(--red)' : 'var(--text2)';
-              var out   = '<div style="font-family:DM Mono,monospace;font-size:.5rem;margin-bottom:4px">';
-              if (diff.removed.length) out += '<span style="color:var(--text3)">out: </span>' + diff.removed.map(function(p){ return '<span style="color:var(--text3)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ') + '  ';
-              if (diff.added.length)   out += '<span style="color:var(--text3)">in: </span>'  + diff.added.map(function(p){ return '<span style="color:var(--text2)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ');
-              out += '  <span style="color:' + dcol + '">' + (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' ppg/wk</span></div>';
-              return out;
-            })()
-          + (t.champDelta !== null && t.champDelta !== undefined
-            ? '<div style="font-family:\'DM Mono\',monospace;font-size:.55rem">'
-              + '<span style="font-size:.9rem;font-weight:bold;color:' + (t.champDelta > 0.4 ? 'var(--accent)' : t.champDelta < -0.4 ? 'var(--red)' : 'var(--text2)') + '">'
-              + (t.champDelta >= 0 ? '+' : '') + t.champDelta.toFixed(1) + '% champ</span>'
-              + '<span style="color:var(--text3);margin-left:6px">'
-              + ((leagueRosters.find(r=>r.isMe)||{}).champPct*100||0).toFixed(1) + '% → '
-              + (((leagueRosters.find(r=>r.isMe)||{}).champPct||0)*100 + t.champDelta).toFixed(1) + '%'
-              + '</span></div>'
-            : '<div id="' + impactId + '"></div>'
-              + '<button onclick="runTradeImpact(this,' + sendJson + ',' + recvJson + ',\'' + esc(t.ownerName) + '\',\'' + impactId + '\')" style="font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--text3);background:none;border:1px solid var(--border);padding:3px 10px;cursor:pointer;letter-spacing:1px;margin-top:2px">▶ simulate impact</button>')
-          + '</div>'
-        : '')
-
-  + "</div>";
+  // Bundles now rendered through unified tradeCard
+  return tradeCard({ ...t, _isBundle: true });
 }
 
 
-// ── HISTORICAL SD CHECK ──────────────────────────────────────
-async function checkHistoricalSD() {
-  const el = document.getElementById('sd-check-result');
-  if (!window._leagueId) { el.textContent = 'load a league first'; return; }
-  el.textContent = 'fetching…';
-
-  // Try current league first, fall back to previous season if no scores yet
-  const leagueToCheck = window._prevLeagueId || window._leagueId;
-  const scores = [];
-  for (let w = 1; w <= 17; w++) {
-    const d = await fetch(`${SLEEPER}/league/${leagueToCheck}/matchups/${w}`)
-      .then(r => r.ok ? r.json() : []).catch(() => []);
-    for (const e of d) if (e.points > 5) scores.push(e.points);
-    if (d.length && d.every(e => !e.points || e.points === 0)) break; // empty week = season ended
-  }
-
-  if (!scores.length) { el.textContent = 'no score data found (no prev season linked?)'; return; }
-  const seasonNote = window._prevLeagueId ? ' (prev season)' : ''
-
-  const n    = scores.length;
-  const mean = scores.reduce((a, b) => a + b, 0) / n;
-  const sd   = Math.sqrt(scores.reduce((a, b) => a + (b - mean) ** 2, 0) / n);
-  const min  = Math.min(...scores);
-  const max  = Math.max(...scores);
-
-  el.textContent = `n=${n}  mean=${mean.toFixed(1)}  sd=${sd.toFixed(1)}  range ${min.toFixed(0)}–${max.toFixed(0)}${seasonNote}`;
-}
-
-// ── BATCH TRADE DELTA COMPUTE ────────────────────────────────
-// Pre-computes champ% delta for every trade candidate after sim runs.
-// 500 mini-sim iterations per trade, batched async to keep UI responsive.
-// Results in window._tradeDeltas keyed "sendName|recvName|ownerName".
-async function computeAllTradeDeltas(trades) {
-  if (!leagueRosters.length || !fcData.some(p => p.redraftValue > 0)) return;
-  window._tradeDeltas = window._tradeDeltas || {};
-  const MINI = 2000, BATCH = 5;
-  const N = leagueRosters.length;
-  const schedule = generateSchedule(N, 14);
-  const allRdBefore   = leagueRosters.map(r => r.redraftStrength || 0);
-  // redraftStrength is now in estimated PPG units — use directly as sim mean
-  const allMeanBefore = leagueRosters.map(r => r.simMean || r.redraftStrength || BASE_SCORE);
-  const myIdx = leagueRosters.findIndex(r => r.isMe);
-  if (myIdx < 0) return;
-
-  // PPG per unit of FC redraft value (matches PPG_FLOOR=8, PPG_SCALE=600 in computeRosterProfiles)
-  // Delta for a player: 1/600 PPG per redraft point (floor already counted in baseline)
-  const PPG_SCALE_DELTA = 500;  // approximate mid-range slope for fallback
-  const rdScale = 1 / PPG_SCALE_DELTA;
-
-  function runMini(means) {
-    const teams = means.map(m => ({ mean: m, sd: BASE_SD }));
-    const champ = new Array(N).fill(0);
-    function sg(a,b) { return Math.max(0,teams[a].mean+teams[a].sd*randn()) >= Math.max(0,teams[b].mean+teams[b].sd*randn()) ? a : b; }
-    for (let s=0; s<MINI; s++) {
-      const wins=new Array(N).fill(0), pts=new Array(N).fill(0);
-      for (const wk of schedule) {
-        const sc=teams.map(t=>Math.max(0,t.mean+t.sd*randn()));
-        for (const [a,b] of wk) { pts[a]+=sc[a]; pts[b]+=sc[b]; if(sc[a]>sc[b]) wins[a]++; else wins[b]++; }
-      }
-      const seeds=teams.map((_,i)=>i).sort((a,b)=>wins[b]-wins[a]||pts[b]-pts[a]);
-      champ[sg(sg(seeds[0],sg(seeds[3],seeds[4])),sg(seeds[1],sg(seeds[2],seeds[5])))]++;
-    }
-    return champ.map(c=>c/MINI);
-  }
-
-  const baseline = runMini(allMeanBefore);
-  const myBaseline = baseline[myIdx];
-  const rdByName = {};
-  for (const p of fcData) rdByName[norm(p.name)] = p.redraftValue || 0;
-
-  const projPts      = window._projPtsByName || {};
-  const useProjDelta = Object.keys(projPts).length > 0;
-
-  async function processBatch(batch) {
-    for (const t of batch) {
-      const sendName = norm(t.sell.name), recvName = norm(t.recv.name);
-      const theirIdx = leagueRosters.findIndex(r => r.ownerName === t.ownerName);
-      if (theirIdx < 0) continue;
-
-      let myMeanDelta, theirMeanDelta;
-      // Picks have zero marginal PPW — they don't play, skip replacement level entirely
-      const sendIsPick = t.sell.pos === 'PICK' || t.sell.isPick;
-      const recvIsPick = t.recv.pos === 'PICK' || t.recv.isPick;
-
-      // Build send/recv lists (bundles send two players)
-      const sendList = t._isBundle
-        ? [{ name: t.sell.name, pos: t.sell.pos }, { name: t._addon.name, pos: t._addon.pos }]
-        : [{ name: t.sell.name, pos: t.sell.pos }];
-      const recvList = [{ name: t.recv.name, pos: t.recv.pos }];
-      const tradeKey = t._isBundle
-        ? norm(t.sell.name) + '+' + norm(t._addon.name) + '|' + recvName + '|' + norm(t.ownerName)
-        : sendName + '|' + recvName + '|' + norm(t.ownerName);
-
-      // Use getLineupDiff for my side — handles cascade + multi-player sends
-      const myDiff = getLineupDiff(sendList, null, recvList, null);
-      myMeanDelta = myDiff ? myDiff.ppgAfter - myDiff.ppgBefore : 0;
-
-      // Fast path: use per-team sensitivity tables for exact lookup on both sides
-      if (window._champSensTables) {
-        const myTable    = window._champSensTables[leagueRosters[myIdx].ownerName];
-        const theirTable = window._champSensTables[leagueRosters[theirIdx].ownerName];
-
-        // Their PPG delta: they lose recv, gain all send players
-        const theirRosterObj2 = leagueRosters[theirIdx];
-        const theirDiff2 = getLineupDiff(recvList, null, sendList, null, theirRosterObj2);
-        const theirMeanDelta2 = theirDiff2 ? theirDiff2.ppgAfter - theirDiff2.ppgBefore : 0;
-
-        const myOffset    = Math.max(-20, Math.min(20, Math.round(myMeanDelta)));
-        const theirOffset = Math.max(-20, Math.min(20, Math.round(theirMeanDelta2)));
-
-        const myBase    = myTable?.[0]    || 0;
-        const theirBase = theirTable?.[0] || 0;
-        const myDelta    = myTable    ? (myTable[myOffset]       || myBase)    - myBase    : 0;
-        const theirDelta = theirTable ? (theirTable[theirOffset] || theirBase) - theirBase : 0;
-
-        window._tradeDeltas[tradeKey]           = +myDelta.toFixed(2);
-        window._tradeDeltas[tradeKey + '|them'] = +theirDelta.toFixed(2);
-        continue;
-      }
-
-      // Their side: they lose recv (what they sent me), gain send (what I sent them)
-      // Use getLineupDiff from their roster's perspective for cascade-aware calc
-      const theirRosterObj = leagueRosters[theirIdx];
-      const theirDiff = getLineupDiff(t.recv.name, t.recv.pos, t.sell.name, t.sell.pos, theirRosterObj);
-      theirMeanDelta = theirDiff ? theirDiff.ppgAfter - theirDiff.ppgBefore : 0;
-
-      const meansAfter = allMeanBefore.map((v,i) =>
-        i===myIdx    ? Math.max(BASE_SCORE * 0.5, v + myMeanDelta)    :
-        i===theirIdx ? Math.max(BASE_SCORE * 0.5, v + theirMeanDelta) : v
-      );
-      const afterResults  = runMini(meansAfter);
-      const delta         = (afterResults[myIdx]    - myBaseline) * 100;
-      const theirDelta    = (afterResults[theirIdx]  - baseline[theirIdx]) * 100;
-      const key = sendName + '|' + recvName + '|' + norm(t.ownerName);
-      window._tradeDeltas[key]              = +delta.toFixed(2);
-      window._tradeDeltas[key + '|them']    = +theirDelta.toFixed(2);
-    }
-  }
-
-  // Skip already-computed trades
-  const pending = trades.filter(t => {
-    const key = norm(t.sell.name)+'|'+norm(t.recv.name)+'|'+norm(t.ownerName);
-    return window._tradeDeltas[key] === undefined;
-  });
-
-  for (let i=0; i<pending.length; i+=BATCH) {
-    await new Promise(resolve => setTimeout(resolve, 0));
-    await processBatch(pending.slice(i, i+BATCH));
-  }
-
-  if (!pending.length) return;
-
-  // Re-render with deltas
-  const wd = merged.filter(p=>p.rankDelta!==null);
-  const maxAbs = wd.length ? Math.max(...wd.map(p=>Math.abs(p.rankDelta))) : 1;
-  renderTradesTab(maxAbs, Math.max(maxAbs*0.1, 5));
-}
-
-// ── LINEUP DIFF PREVIEW ─────────────────────────────────────
-// Shows projected starting lineup at affected positions before and after a trade.
-// Only shows positions where the lineup actually changes.
 function getLineupDiff(sendPlayer, sendPos, recvPlayer, recvPos, targetRoster) {
   // sendPlayer/recvPlayer can be a string (single) or array of {name,pos} objects (bundle)
   const sendList = Array.isArray(sendPlayer)
@@ -4276,167 +3996,180 @@ function runTradeImpact(btnEl, sendPlayers, recvPlayers, theirOwner, cardId) {
 
 
 function tradeCard(t) {
-  const sellDelta = t.sell.rankDelta;
-  const recvDelta = t.recv.rankDelta;
+  const isBundle = t._isBundle || (t.main && t.addon);
+  const mono = "font-family:'DM Mono',monospace";
 
-  // Impact sim vars
-  const impactId = 'impact_' + (t.sell.name + '_' + t.recv.name + '_' + t.ownerName).replace(/[^a-z0-9]/gi,'_');
-  const sendJson = JSON.stringify([{name: t.sell.name, pos: t.sell.pos}]).replace(/"/g,'&quot;');
-  const recvJson = JSON.stringify([{name: t.recv.name, pos: t.recv.pos}]).replace(/"/g,'&quot;');
+  // ── Normalise send/recv regardless of bundle vs regular ──────
+  const sendName  = isBundle ? (t.main.name + ' + ' + t.addon.name) : (t.sell?.name || '');
+  const sendPos   = isBundle ? t.main.pos  : (t.sell?.pos  || '');
+  const sendFC    = isBundle ? t.main.fcRank  : (t.sell?.fcRank  || null);
+  const sendTAT   = isBundle ? t.main.tatRank : (t.sell?.tatRank || null);
+  const sendDelta = isBundle ? t.main.rankDelta : (t.sell?.rankDelta ?? null);
+  const sendFcVal = isBundle ? (t.bundleFcValue ?? 0) : (t.sell?.fcValue || 0);
 
-  // Ownership line — use cache if available, otherwise placeholder
-  const ownerKey = 'ownership|' + t.sell.name + '|' + t.ownerName;
-  const cached   = ownershipCache[ownerKey];
-  const ownId    = 'own_' + (t.sell.name + '_' + t.ownerName).replace(/[^a-z0-9]/gi, '_');
-  const ownSpan  = cached
-    ? `<span id="${ownId}" style="color:${cached.color}">${esc(cached.text)}</span>`
-    : `<span id="${ownId}" style="color:var(--text3)">checking ownership…</span>`;
+  const recvName  = t.recv?.name || '';
+  const recvPos   = t.recv?.pos  || '';
+  const recvFC    = t.recv?.fcRank  || null;
+  const recvTAT   = t.recv?.tatRank || null;
+  const recvDelta = t.recv?.rankDelta ?? null;
+  const recvFcVal = t.recv?.fcValue  || 0;
 
-  return `<div class="tcard ${t.strong ? 'strong' : ''}">
+  const posColor = { QB:'var(--amber)', RB:'var(--accent)', WR:'#60a5fa', TE:'#c084fc', PICK:'var(--text3)' };
+  const pc = s => posColor[s] || 'var(--text3)';
+  const esc2 = s => esc(String(s||''));
 
-    <!-- SEND -->
-    <div class="tcard-player send">
-      <div style="font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:2px;color:var(--red);margin-bottom:4px">SEND</div>
-      <div class="tcard-pname">${esc(t.sell.name)}${t.sell.tierLabel ? ` <span class="tier-chip" style="font-size:.6rem;vertical-align:middle;opacity:.85">${esc(t.sell.tierLabel)}</span>` : ''}</div>
-      <div class="tcard-pmeta" style="margin-top:3px">
-        <span class="pos-pip pos-${t.sell.pos}">${t.sell.pos}</span>
-        ${t.sell.team ? `<span class="team-pip">${esc(t.sell.team)}</span>` : ''}
-        <span class="owner-pill you">★ yours</span>
+  // ── TAT value ─────────────────────────────────────────────────
+  const tatGain    = t.tierGain || 0;
+  const tatStr     = (tatGain >= 0 ? '+' : '') + (tatGain/100).toFixed(2) + ' 1sts';
+  const tatCol     = tatGain > 25 ? 'var(--accent)' : tatGain < -25 ? 'var(--red)' : 'var(--text3)';
+
+  // ── PPG delta ─────────────────────────────────────────────────
+  const sendArr = isBundle
+    ? [{name:t.main.name,pos:t.main.pos},{name:t.addon.name,pos:t.addon.pos}]
+    : [{name:t.sell?.name||'',pos:t.sell?.pos||''}];
+  const recvArr = [{name:recvName,pos:recvPos}];
+  const diff    = getLineupDiff(sendArr, null, recvArr, null);
+  const ppgDelta = diff ? +(diff.ppgAfter - diff.ppgBefore).toFixed(1) : (t.ppgGain ?? t._ppgDelta ?? null);
+  const ppgStr  = ppgDelta !== null ? (ppgDelta >= 0 ? '+' : '') + ppgDelta.toFixed(1) : '—';
+  const ppgCol  = ppgDelta === null ? 'var(--text3)' : ppgDelta > 1 ? 'var(--accent)' : ppgDelta < -1 ? 'var(--red)' : 'var(--text2)';
+
+  // ── Champ% delta ──────────────────────────────────────────────
+  const champDelta = t.champDelta ?? null;
+  const champStr   = champDelta !== null ? (champDelta >= 0 ? '+' : '') + champDelta.toFixed(1) + '%' : null;
+  const champCol   = champDelta === null ? 'var(--text3)' : champDelta > 0.5 ? 'var(--accent)' : champDelta < -0.5 ? 'var(--red)' : 'var(--text2)';
+  const myChamp    = (leagueRosters.find(r=>r.isMe)||{}).champPct || 0;
+
+  // ── Buy/sell signal ───────────────────────────────────────────
+  let signalHtml = '';
+  if (sendDelta !== null && sendDelta < -5)
+    signalHtml += `<span style="${mono};font-size:.48rem;color:var(--red);padding:1px 5px;border:1px solid var(--red);margin-left:4px">SELL HIGH</span>`;
+  else if (sendDelta !== null && sendDelta > 5)
+    signalHtml += `<span style="${mono};font-size:.48rem;color:var(--accent);padding:1px 5px;border:1px solid var(--accent);margin-left:4px">BUY TARGET</span>`;
+  if (t.recv?.onBlock)
+    signalHtml += `<span style="${mono};font-size:.48rem;color:var(--accent);padding:1px 5px;border:1px solid var(--accent);margin-left:4px">ON BLOCK</span>`;
+
+  // ── Their need ────────────────────────────────────────────────
+  const needHtml = t.fillsTheirNeed === true
+    ? `<span style="${mono};font-size:.48rem;color:var(--accent)">fills their need ✓</span>`
+    : t.fillsTheirNeed === false
+    ? `<span style="${mono};font-size:.48rem;color:var(--red)">doesn't fill their need</span>`
+    : '';
+
+  // ── Owner context ─────────────────────────────────────────────
+  const ownerCol   = t.ownerWindowColor || 'var(--text3)';
+  const ownerChamp = t.champPct != null ? (t.champPct*100).toFixed(0)+'%' : '';
+  const theirChampStr = t.theirChampDelta != null
+    ? (t.theirChampDelta >= 0 ? '+' : '') + t.theirChampDelta.toFixed(1) + '% their champ'
+    : '';
+  const theirChampCol = !t.theirChampDelta ? 'var(--text3)'
+    : t.theirChampDelta > 0.3 ? 'var(--accent)' : t.theirChampDelta < -0.3 ? 'var(--red)' : 'var(--text3)';
+
+  // ── Lineup impact text ────────────────────────────────────────
+  function lineupLine(d, label) {
+    if (!d) return '';
+    const delta = d.ppgAfter - d.ppgBefore;
+    const noChange = !d.added.length && !d.removed.length && Math.abs(delta) < 0.1;
+    if (noChange) return '';
+    const dc = delta > 1 ? 'var(--accent)' : delta < -1 ? 'var(--red)' : 'var(--text2)';
+    let s = `<div style="${mono};font-size:.5rem;margin-top:3px;color:var(--text3)">${label}`;
+    if (d.removed.length) s += ' out: ' + d.removed.map(p=>`<span style="color:var(--text3)">${esc2(p.name)} ${p.ppg.toFixed(1)}</span>`).join(', ') + '  ';
+    if (d.added.length)   s += ' in: '  + d.added.map(p=>`<span style="color:var(--text2)">${esc2(p.name)} ${p.ppg.toFixed(1)}</span>`).join(', ');
+    s += `  <span style="color:${dc}">${delta>=0?'+':''}${delta.toFixed(1)} ppg/wk</span></div>`;
+    return s;
+  }
+
+  const myLineup    = lineupLine(diff, '');
+  const theirRoster = leagueRosters.find(r => r.ownerName === t.ownerName);
+  const theirDiff   = theirRoster ? getLineupDiff(recvArr, null, sendArr, null, theirRoster) : null;
+  const theirLineup = lineupLine(theirDiff, 'their lineup:');
+
+  // ── Acceptance ────────────────────────────────────────────────
+  const acceptHtml = acceptanceMeter(sendFcVal, recvFcVal, t.ownerWindow, isBundle ? t.main.age : t.sell?.age, isBundle ? t.main.trend : t.sell?.trend, t.theirChampDelta ?? null, t.recv?.onBlock, t.fillsTheirNeed);
+
+  // ── FC edge line ──────────────────────────────────────────────
+  const fcEdge = sendFcVal - recvFcVal;
+  const fcEdgeStr = fcEdge > 0
+    ? `<span style="color:var(--text3)">they get FC #${recvFC}, give up FC #${sendFC} — </span><span style="color:var(--accent)">+${Math.round(fcEdge)} FC for them</span>`
+    : `<span style="color:var(--text3)">FC edge: even</span>`;
+
+  // ── Bundle addon line ─────────────────────────────────────────
+  const bundleLine = isBundle
+    ? `<div style="${mono};font-size:.5rem;color:var(--text3);margin-top:2px">bundle: ${esc2(t.main.name)} + <span style="color:var(--text2)">${esc2(t.addon.name)}</span> · adj FC ${Math.round(t.bundleFcValue)} (−500) vs ${Math.round(recvFcVal)} · <span style="color:${fcEdge>0?'var(--accent)':'var(--red)'}">${fcEdge>0?'+':''}${Math.round(fcEdge)}</span></div>`
+    : '';
+
+  // ── Message link ──────────────────────────────────────────────
+  const msgLink = t.ownerName
+    ? `<div style="${mono};font-size:.5rem;color:var(--text3);margin-top:6px">Message <span style="color:var(--accent)">${esc2(t.ownerName)}</span> · offer <span style="color:var(--text2)">${esc2(sendName)}</span> for <span style="color:var(--text2)">${esc2(recvName)}</span></div>`
+    : '';
+
+  const leagueNote = t.leagueCount != null
+    ? `<span style="${mono};font-size:.48rem;color:var(--text3)">${t.leagueCount} league${t.leagueCount!==1?'s':''}</span>`
+    : '';
+
+  return `<div class="tcard">
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:0 12px;align-items:start">
+
+      <!-- SEND -->
+      <div>
+        <div style="${mono};font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-bottom:4px">SEND</div>
+        <div style="font-size:1.05rem;font-weight:700;color:var(--text1);line-height:1.2">${esc2(sendName)}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap">
+          <span style="${mono};font-size:.6rem;color:${pc(sendPos)}">${esc2(sendPos)}</span>
+          ${sendFC ? `<span style="${mono};font-size:.55rem;color:var(--text3)">#${sendFC}<span style="font-size:.45rem">FC</span></span>` : ''}
+          ${sendTAT ? `<span style="${mono};font-size:.55rem;color:var(--text3)">#${sendTAT}<span style="font-size:.45rem">TAT</span></span>` : ''}
+          ${signalHtml}
+        </div>
+        ${isBundle ? `<div style="${mono};font-size:.5rem;color:var(--text3);margin-top:3px">+ ${esc2(t.addon.name)} <span style="color:${pc(t.addon.pos)}">${t.addon.pos}</span></div>` : ''}
       </div>
-      <div style="margin-top:10px;display:flex;gap:12px;font-family:'DM Mono',monospace;font-size:.68rem;">
-        <span>TAT <span style="color:var(--text2)">${t.sell.tatRank ? '#' + t.sell.tatRank : '—'}</span></span>
-        <span>FC <span style="color:var(--text2)">${t.sell.fcRank ? '#' + t.sell.fcRank : '—'}</span></span>
-      </div>
-      ${sellDelta !== null && sellDelta < -5 ? `<div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red);margin-top:4px">
-        FC overvalues vs TAT by ${Math.abs(sellDelta)} spots → sell high
-      </div>` : sellDelta !== null && sellDelta > 5 ? `<div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--accent);margin-top:4px">
-        TAT overvalues vs FC by ${sellDelta} spots → buy target
-      </div>` : ''}
-      ${t.fillsNeed ? `<div style="margin-top:4px;display:inline-block;font-family:'DM Mono',monospace;font-size:.57rem;color:var(--accent);border:1px solid var(--accent);padding:1px 6px">✓ fills their ${esc(t.sell.pos)} need</div>` : ''}
-      ${trendBadge(t.sell.trend)}
-    </div>
 
-    <!-- ARROW -->
-    <div class="tcard-arrow">
-      <div class="tcard-swap">⇄</div>
-      <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);text-align:center;margin-top:4px">${t.motivation === 'ppg' ? 'PPG upgrade' : 'TAT value gain'}</div>
-      <div class="tcard-net up">${t.motivation === 'ppg' ? '+' + t.ppgGain.toFixed(1) : '+' + (t.tierGain/100).toFixed(2)}</div>
-      <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);text-align:center">${t.motivation === 'ppg' ? 'est ppg/wk' : '1sts equivalent'}</div>
-      ${acceptanceMeter(t.sell.fcValue, t.recv.fcValue, t.ownerWindow, t.sell.age, t.sell.trend, t.theirChampDelta ?? null, t.recv.onBlock, t.fillsTheirNeed)}
-    </div>
+      <!-- MIDDLE: TAT + PPG + Champ% -->
+      <div style="text-align:center;padding-top:16px">
+        <div style="${mono};font-size:.48rem;color:var(--text3);letter-spacing:1px">TAT</div>
+        <div style="${mono};font-size:1.1rem;font-weight:700;color:${tatCol}">${tatStr}</div>
+        <div style="margin-top:6px">
+          ${champStr
+            ? `<div style="${mono};font-size:.95rem;font-weight:700;color:${champCol}">${champStr}</div>
+               <div style="${mono};font-size:.45rem;color:var(--text3)">${(myChamp*100).toFixed(1)}% → ${((myChamp*100)+champDelta).toFixed(1)}%</div>`
+            : `<div style="${mono};font-size:.55rem;color:var(--text3)">— champ%</div>`
+          }
+        </div>
+        <div style="margin-top:6px;${mono};font-size:.9rem;font-weight:700;color:${ppgCol}">${ppgStr}</div>
+        <div style="${mono};font-size:.45rem;color:var(--text3)">ppg/wk</div>
+      </div>
 
-    <!-- RECEIVE -->
-    <div class="tcard-player recv">
-      <div style="font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:2px;color:var(--accent);margin-bottom:4px;text-align:right">GET</div>
-      <div class="tcard-pname">${esc(t.recv.name)}${t.recv.tierLabel ? ` <span class="tier-chip" style="font-size:.6rem;vertical-align:middle;opacity:.85">${esc(t.recv.tierLabel)}</span>` : ''}</div>
-      <div class="tcard-pmeta" style="margin-top:3px;justify-content:flex-end;flex-wrap:wrap;">
-        ${t.ownerWindow ? `<span style="font-family:'DM Mono',monospace;font-size:.55rem;padding:2px 6px;border:1px solid ${t.ownerWindowColor};color:${t.ownerWindowColor}">${esc(t.ownerWindow)}${t.champPct != null ? ' · ' + Math.round(t.champPct*100) + '% 🏆' : t.ownerAvgAge ? ' · ' + t.ownerAvgAge : ''}</span>` : ''}
-        <span class="owner-pill">${esc(t.ownerName)}</span>
-        ${t.recv.onBlock ? '<span style="font-family:\'DM Mono\',monospace;font-size:.5rem;color:var(--accent);border:1px solid var(--accent);padding:1px 5px;letter-spacing:1px">ON BLOCK</span>' : ''}
-        ${t.recv.team ? `<span class="team-pip">${esc(t.recv.team)}</span>` : ''}
-        <span class="pos-pip pos-${t.recv.pos}">${t.recv.pos}</span>
+      <!-- RECV -->
+      <div style="text-align:right">
+        <div style="${mono};font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-bottom:4px">GET</div>
+        <div style="font-size:1.05rem;font-weight:700;color:var(--text1);line-height:1.2">${esc2(recvName)}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap;justify-content:flex-end">
+          <span style="${mono};font-size:.6rem;color:${pc(recvPos)}">${esc2(recvPos)}</span>
+          ${recvFC ? `<span style="${mono};font-size:.55rem;color:var(--text3)">#${recvFC}<span style="font-size:.45rem">FC</span></span>` : ''}
+          ${recvTAT ? `<span style="${mono};font-size:.55rem;color:var(--text3)">#${recvTAT}<span style="font-size:.45rem">TAT</span></span>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px;justify-content:flex-end;flex-wrap:wrap">
+          <span style="${mono};font-size:.58rem;color:${ownerCol}">${esc2(t.ownerWindow||'')} ${ownerChamp ? '· '+ownerChamp+' 🏆' : ''}</span>
+          <span class="owner-pill">${esc2(t.ownerName||'')}</span>
+        </div>
+        <div style="margin-top:4px;display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
+          ${needHtml}
+          ${theirChampStr ? `<span style="${mono};font-size:.48rem;color:${theirChampCol}">${theirChampStr}</span>` : ''}
+        </div>
       </div>
-      ${t.recv.isPick && t.recv.round === 1 ? pickRangeHtml(t.ownerName, 1) : ''}
-      <div style="margin-top:10px;display:flex;gap:12px;font-family:'DM Mono',monospace;font-size:.68rem;justify-content:flex-end">
-        <span>TAT <span style="color:var(--text2)">${t.recv.tatRank ? '#' + t.recv.tatRank : '—'}</span></span>
-        <span>FC <span style="color:var(--text2)">${t.recv.fcRank ? '#' + t.recv.fcRank : '—'}</span></span>
-      </div>
-      <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--accent);margin-top:4px;text-align:right">
-        TAT overvalues vs FC by ${recvDelta} spots → owner may sell cheap
-      </div>
-      <div style="display:flex;justify-content:flex-end;margin-top:2px">${sdBadge(t.recv.sd)}</div>
     </div>
 
     <!-- FOOTER -->
-    <div style="grid-column:1/-1;border-top:1px solid var(--border);margin-top:12px;padding-top:10px;
-      font-family:'DM Mono',monospace;font-size:.62rem;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div style="color:var(--text3)">
-        <span style="color:var(--accent);letter-spacing:1px;font-size:.55rem">YOU WIN ON TAT</span><br>
-        ${esc(t.recv.name)} [${esc(t.recv.tierLabel||'?')}] vs ${esc(t.sell.tierLabel||'?')} —
-        <span style="color:var(--accent)">+${(t.tierGain/100).toFixed(2)} 1sts · +${t.tatImprovement} rank spots</span>
-      </div>
-      <div style="color:var(--text3);text-align:right">
-        ${t.motivation === 'buy'
-          ? `<span style="color:var(--amber);letter-spacing:1px;font-size:.55rem">&#9733; BUY TARGET</span><br>
-        TAT ranks ${esc(t.recv.name)} <span style="color:var(--amber)">+${t.recv.rankDelta||0} vs FC</span> — undervalued by market`
-          : `<span style="color:var(--amber);letter-spacing:1px;font-size:.55rem">THEY WIN ON FC</span><br>
-        They get FC #${t.sell.fcRank || '—'}, give up FC #${t.recv.fcRank || '—'} —
-        <span style="color:var(--amber)">${t.fcEdgeForThem >= 0 ? '+' + t.fcEdgeForThem + ' FC spots for them' : 'FC even'}</span>`
-        }
-      </div>
-      <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:8px;
-        display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
-        <div style="color:var(--text3)">
-          Message <span style="color:var(--accent)">${esc(t.ownerName)}</span>
-          · offer ${esc(t.sell.name)} for ${esc(t.recv.name)}
-        </div>
-        <div style="text-align:right;display:flex;flex-direction:column;gap:3px;">
-          ${t.leagueCount != null ? `<span style="color:var(--text3)">${t.leagueCount} league${t.leagueCount !== 1 ? 's' : ''} · ${t.totalTrades || 0} pick trade${t.totalTrades !== 1 ? 's' : ''} this season</span>` : ''}
-          ${ownSpan}
+    <div style="border-top:1px solid var(--border2);margin-top:10px;padding-top:8px">
+      ${bundleLine}
+      ${myLineup}
+      ${theirLineup}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;flex-wrap:wrap;gap:6px">
+        ${acceptHtml}
+        <div style="display:flex;gap:8px;align-items:center">
+          ${leagueNote}
+          ${recvDelta !== null && recvDelta < -5 ? `<span style="${mono};font-size:.48rem;color:var(--accent)">TAT overvalues vs FC ✓</span>` : ''}
         </div>
       </div>
-      ${leagueRosters.some(r => r.champPct != null) ? `
-      <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:6px;">
-        ${t.champDelta !== null && t.champDelta !== undefined ? `
-          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-            <span style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:bold;color:${t.champDelta > 0.4 ? 'var(--accent)' : t.champDelta > 0 ? 'var(--text1)' : t.champDelta < -0.4 ? 'var(--red)' : 'var(--text2)'}">
-              ${t.champDelta >= 0 ? '+' : ''}${t.champDelta.toFixed(1)}% champ
-            </span>
-            <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--text3)">
-              ${((leagueRosters.find(r=>r.isMe)||{}).champPct*100||0).toFixed(1)}% → ${(((leagueRosters.find(r=>r.isMe)||{}).champPct||0)*100 + t.champDelta).toFixed(1)}%
-            </span>
-          </div>
-          ${(function(){
-            // Lineup diff — cascade-aware PPG change using full greedy projection
-            var diff = getLineupDiff(t.sell.name, t.sell.pos, t.recv.name, t.recv.pos);
-            var noLineupChange = !diff || (!diff.added.length && !diff.removed.length && Math.abs(diff.ppgAfter - diff.ppgBefore) < 0.1);
-            if (noLineupChange) {
-              var s = t.sell.isPick ? 0 : estPPGGlobal((fcMap[norm(t.sell.name)]||{}).redraftValue||0, t.sell.pos);
-              var g = t.recv.isPick ? 0 : estPPGGlobal((fcMap[norm(t.recv.name)]||{}).redraftValue||0, t.recv.pos);
-              return '<div style="font-family:DM Mono,monospace;font-size:.5rem;color:var(--text3);margin-top:4px">'
-                + 'lineup unchanged · bench swap (' + s.toFixed(1) + ' → ' + g.toFixed(1) + ' ppg depth)</div>';
-            }
-            var grossDelta = diff.ppgAfter - diff.ppgBefore;
-            var dcol = grossDelta > 1 ? 'var(--accent)' : grossDelta < -1 ? 'var(--red)' : 'var(--text2)';
-            var out = '<div style="font-family:DM Mono,monospace;font-size:.5rem;margin-top:4px">';
-            if (diff.removed.length) {
-              out += '<span style="color:var(--text3)">out: </span>'
-                + diff.removed.map(function(p){ return '<span style="color:var(--text3)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ') + '  ';
-            }
-            if (diff.added.length) {
-              out += '<span style="color:var(--text3)">in: </span>'
-                + diff.added.map(function(p){ return '<span style="color:var(--text2)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ');
-            }
-            out += '  <span style="color:' + dcol + '">' + (grossDelta >= 0 ? '+' : '') + grossDelta.toFixed(1) + ' ppg/wk</span>';
-            out += '</div>';
-
-            // Their lineup impact
-            var theirRoster4 = leagueRosters.find(function(r){ return r.ownerName === t.ownerName; });
-            if (theirRoster4) {
-              var theirDiff4 = getLineupDiff(t.recv.name, t.recv.pos, t.sell.name, t.sell.pos, theirRoster4);
-              if (theirDiff4) {
-                var theirDelta4 = theirDiff4.ppgAfter - theirDiff4.ppgBefore;
-                var noTheirChange = !theirDiff4.added.length && !theirDiff4.removed.length && Math.abs(theirDelta4) < 0.1;
-                if (!noTheirChange) {
-                  var tdcol = theirDelta4 > 1 ? 'var(--accent)' : theirDelta4 < -1 ? 'var(--red)' : 'var(--text2)';
-                  out += '<div style="font-family:DM Mono,monospace;font-size:.5rem;margin-top:2px;color:var(--text3)">';
-                  out += 'their lineup: ';
-                  if (theirDiff4.removed.length) out += 'out: ' + theirDiff4.removed.map(function(p){ return '<span style="color:var(--text3)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ') + '  ';
-                  if (theirDiff4.added.length)   out += 'in: '  + theirDiff4.added.map(function(p){   return '<span style="color:var(--text2)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ');
-                  out += '  <span style="color:' + tdcol + '">' + (theirDelta4 >= 0 ? '+' : '') + theirDelta4.toFixed(1) + ' ppg/wk</span>';
-                  out += '</div>';
-                }
-              }
-            }
-
-            return out;
-          })()}` : `
-          <div id="${impactId}"></div>
-          <button onclick="runTradeImpact(this,[${sendJson}],[${recvJson}],'${esc(t.ownerName)}','${impactId}')"
-            style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);background:none;border:1px solid var(--border);padding:3px 10px;cursor:pointer;letter-spacing:1px;margin-top:2px">
-            ▶ simulate impact
-          </button>`}
-      </div>` : ''}
+      ${msgLink}
     </div>
   </div>`;
 }
