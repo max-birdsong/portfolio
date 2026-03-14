@@ -3668,7 +3668,7 @@ function _getSectionLabel(t, tradeMode, hasDelta, isBigTAT) {
 }
 
 // ── TRADE FINDER FILTER / SORT / COMPACT ─────────────────────
-const _tfState = { pos: 'ALL', sort: 'champ', compact: false };
+const _tfState = { pos: 'ALL', sort: 'champ', compact: true };
 
 function tfToggleExpand(el) {
   const id = el.getAttribute('data-expid');
@@ -3744,21 +3744,8 @@ function _applyTradeFilter() {
   if (_tfState.compact) {
     inner.innerHTML = cards.map(c => compactTradeCard(c.t, c.isBundle)).join('');
   } else {
-    // Re-group into sections by section label
-    let html = '';
-    let lastSection = null;
-    for (const c of cards) {
-      if (c.section !== lastSection) {
-        if (lastSection !== null) html += '</div>';
-        html += `<div class="trade-section-head" style="margin-top:${lastSection===null?'0':'24px'}">
-          <div class="trade-section-title" style="color:${c.sectionColor||'var(--text2)'}">` + (c.section||'') + `</div>
-        </div><div class="trade-cards">`;
-        lastSection = c.section;
-      }
-      html += c.html;
-    }
-    if (lastSection !== null) html += '</div>';
-    inner.innerHTML = html;
+    // Full cards — render live from c.t so deltas are current
+    inner.innerHTML = '<div class="trade-cards">' + cards.map(c => tradeCard(c.t)).join('') + '</div>';
   }
 }
 
@@ -3821,6 +3808,71 @@ function compactTradeCard(t, isBundle) {
 //
 // "Dynasty value" = avgTierVal of top starters (TAT-based, same as window calc)
 // "Champ%"        = simulator output using FC redraft strength
+
+// ── BATCH TRADE DELTA COMPUTE ────────────────────────────────
+// Pre-computes champ% delta for every trade using sensitivity tables (fast path)
+// or mini-sim fallback. Results stored in window._tradeDeltas.
+async function computeAllTradeDeltas(trades) {
+  if (!trades || !trades.length) return;
+  const BATCH = 5;
+
+  for (let i = 0; i < trades.length; i += BATCH) {
+    await new Promise(r => setTimeout(r, 0)); // yield to UI
+    const batch = trades.slice(i, i + BATCH);
+    for (const t of batch) {
+      const isBundle = t._isBundle || (t.main && t.addon);
+      const sendObj  = isBundle ? t.main : (t.sell || {});
+      const addonObj = isBundle ? t.addon : null;
+      const recvObj  = t.recv || {};
+
+      const sendArr = isBundle
+        ? [{name:sendObj.name||'',pos:sendObj.pos||''},{name:addonObj.name||'',pos:addonObj.pos||''}]
+        : [{name:sendObj.name||'',pos:sendObj.pos||''}];
+      const recvArr = [{name:recvObj.name||'',pos:recvObj.pos||''}];
+
+      // My lineup delta
+      const myDiff = getLineupDiff(sendArr, null, recvArr, null);
+      const myPPGDelta = myDiff ? myDiff.ppgAfter - myDiff.ppgBefore : 0;
+
+      // Their lineup delta
+      const theirRosterD = leagueRosters.find(r => r.ownerName === t.ownerName);
+      const theirDiff = theirRosterD ? getLineupDiff(recvArr, null, sendArr, null, theirRosterD) : null;
+      const theirPPGDelta = theirDiff ? theirDiff.ppgAfter - theirDiff.ppgBefore : 0;
+
+      // Store PPG delta on trade object
+      t._ppgDelta    = +(myPPGDelta).toFixed(1);
+      t._ppgComputed = true;
+
+      // Champ% via sensitivity table (fast path)
+      const myOwner    = (leagueRosters.find(r => r.isMe) || {}).ownerName;
+      const myTable    = window._champSensTables?.[myOwner];
+      const theirTable = window._champSensTables?.[t.ownerName];
+
+      let myChampDelta = null, theirChampDelta = null;
+      if (myTable) {
+        const myOffset = Math.max(-20, Math.min(20, Math.round(myPPGDelta)));
+        myChampDelta = +(((myTable[myOffset] || myTable[0] || 0) - (myTable[0] || 0))).toFixed(2);
+      }
+      if (theirTable) {
+        const theirOffset = Math.max(-20, Math.min(20, Math.round(theirPPGDelta)));
+        theirChampDelta = +(((theirTable[theirOffset] || theirTable[0] || 0) - (theirTable[0] || 0))).toFixed(2);
+      }
+
+      // Build key and store
+      const key = isBundle
+        ? norm(sendObj.name||'') + '+' + norm(addonObj?.name||'') + '|' + norm(recvObj.name||'') + '|' + norm(t.ownerName||'')
+        : norm(sendObj.name||'') + '|' + norm(recvObj.name||'') + '|' + norm(t.ownerName||'');
+
+      if (myChampDelta !== null)    { window._tradeDeltas[key]            = myChampDelta;    t.champDelta      = myChampDelta; }
+      if (theirChampDelta !== null) { window._tradeDeltas[key + '|them']  = theirChampDelta; t.theirChampDelta = theirChampDelta; }
+    }
+  }
+
+  // Re-render compact view with fresh deltas
+  if (_tfState.compact && window._allRenderedCards?.length) {
+    _applyTradeFilter();
+  }
+}
 
 function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM = 2000) {
   if (!leagueRosters.length || !fcData.length) return null;
