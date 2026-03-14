@@ -1402,14 +1402,16 @@ async function runSimulator(opts = {}) {
   const projReady = computeProjectedPPW();
   const useProjPPW = projReady && leagueRosters.some(r => (r.projectedPPW || 0) > 0);
 
+  // redraftStrength is now in estimated PPG units (FLOOR=8, SCALE=600)
+  // Use directly as sim mean — no normalisation needed.
+  // If Sleeper projected PPW available, prefer that instead.
   const rdStrengths = leagueRosters.map(r => r.redraftStrength || 0);
-  const maxRd = Math.max(...rdStrengths, 1);
   const rdReady = rdStrengths.some(v => v > 0);
 
   const teams = leagueRosters.map((r, i) => {
     const strengthMean = useProjPPW
-      ? (r.projectedPPW || BASE_SCORE)
-      : BASE_SCORE + (rdStrengths[i] / maxRd) * SCORE_SCALE;
+      ? (r.projectedPPW || rdStrengths[i] || BASE_SCORE)
+      : (rdStrengths[i] || BASE_SCORE);
     const actual = actualScores[r.rosterId] || null;
 
     let mean, sd;
@@ -1434,9 +1436,9 @@ async function runSimulator(opts = {}) {
     };
   });
 
-  const strengthNote = (!useProjPPW && !rdReady)
-    ? "<div style=\"font-family:'DM Mono',monospace;font-size:.6rem;color:var(--amber);margin-bottom:8px\">⚠ Projections unavailable — using FC redraft as strength proxy.</div>"
-    : useProjPPW ? '' : '';
+  const strengthNote = !rdReady && !useProjPPW
+    ? "<div style=\"font-family:'DM Mono',monospace;font-size:.6rem;color:var(--amber);margin-bottom:8px\">⚠ Load FC data first for strength estimates.</div>"
+    : '';
 
   const numTeams = teams.length;
   const schedule = generateSchedule(numTeams, numWeeks);
@@ -1806,14 +1808,41 @@ function computeRosterProfiles() {
     roster.avgAge      = avgAge > 0 ? +avgAge.toFixed(1) : null;
     roster.avgTierVal  = +avgTierVal.toFixed(2);
 
-    // Redraft strength: sum of top starters' redraftValue from FC
-    // Used by simulator — reflects expected THIS-SEASON production, not dynasty value
-    const rdVals = allStarters
-      .map(p => fcMap[p.name] ? (fcMap[p.name].redraftValue || 0) : 0)
-      .filter(v => v > 0);
-    roster.redraftStrength = rdVals.length
-      ? rdVals.reduce((s, v) => s + v, 0)
-      : 0;
+    // Estimated PPG from FC redraft value: PPG = FLOOR + redraftValue / SCALE
+    // FLOOR=8 ensures even a 0-rd waiver player contributes something.
+    // SCALE=600 calibrated so elite lineup ≈ 170, average ≈ 127, weak ≈ 101.
+    // This naturally weights positions: a 5000-rd TE adds 16 PPG, a 500-rd TE adds 9.
+    // Picks/zeros contribute only the floor — handled as unfilled slots below.
+    const PPG_FLOOR = 8, PPG_SCALE = 600;
+    const estPPG = rd => PPG_FLOOR + rd / PPG_SCALE;
+
+    const LOCKED_N = { QB:2, RB:2, WR:2, TE:1 };
+    let ppgSum = 0;
+    roster._lockedSlotsFilled = {};
+
+    for (const [pos, n] of Object.entries(LOCKED_N)) {
+      const sorted = (byPos[pos] || [])
+        .map(p => fcMap[p.name]?.redraftValue || 0)
+        .sort((a, b) => b - a);
+      let filled = 0;
+      for (let i = 0; i < n; i++) {
+        ppgSum += estPPG(sorted[i] || 0);
+        if ((sorted[i] || 0) > 0) filled++;
+      }
+      roster._lockedSlotsFilled[pos] = filled;
+    }
+
+    // Flex: pool remaining RB/WR/TE by rd, take top 3
+    const flexCands = ['RB','WR','TE'].flatMap(pos => {
+      const n = LOCKED_N[pos];
+      return (byPos[pos] || [])
+        .map(p => fcMap[p.name]?.redraftValue || 0)
+        .sort((a, b) => b - a)
+        .slice(n);
+    }).sort((a, b) => b - a);
+    for (let i = 0; i < 3; i++) ppgSum += estPPG(flexCands[i] || 0);
+
+    roster.redraftStrength = +ppgSum.toFixed(1);  // now in estimated PPG units
 
     // Replacement level from FC redraft — fallback used when Sleeper projections
     // aren't available. Identifies the first bench player at each position
@@ -1846,6 +1875,15 @@ function computeRosterProfiles() {
       }
     }
   }
+
+  // ── Positional completeness penalty ─────────────────────────
+  // For each locked starter slot that a roster can't fill with a rostered player,
+  // subtract the league-average redraft value for that position slot.
+  // This depresses sim strength for rosters with genuine positional holes (e.g. no TE).
+  // redraftStrength is now in estimated PPG units — positional gaps already baked in via PPG_FLOOR.
+  // The positional penalty is already baked in via estPPG(0) = PPG_FLOOR for missing slots,
+  // which is correct — an unfilled slot contributes the floor (waiver-wire minimum).
+  // No separate penalty pass needed.
 
   // ── League-average depth → thin positions (based on locked starters) ──
   const leagueAvgDepth = {};
@@ -2946,12 +2984,15 @@ async function computeAllTradeDeltas(trades) {
   const N = leagueRosters.length;
   const schedule = generateSchedule(N, 14);
   const allRdBefore   = leagueRosters.map(r => r.redraftStrength || 0);
-  const allMeanBefore = leagueRosters.map(r => r._simMean || (BASE_SCORE + (r.redraftStrength||0)/Math.max(...leagueRosters.map(x=>x.redraftStrength||0),1)*SCORE_SCALE));
+  // redraftStrength is now in estimated PPG units — use directly as sim mean
+  const allMeanBefore = leagueRosters.map(r => r._simMean || r.redraftStrength || BASE_SCORE);
   const myIdx = leagueRosters.findIndex(r => r.isMe);
   if (myIdx < 0) return;
 
-  const rdScale = allRdBefore.some(v => v > 0)
-    ? SCORE_SCALE / Math.max(...allRdBefore, 1) : 0;
+  // PPG per unit of FC redraft value (matches PPG_FLOOR=8, PPG_SCALE=600 in computeRosterProfiles)
+  // Delta for a player: 1/600 PPG per redraft point (floor already counted in baseline)
+  const PPG_SCALE_DELTA = 600;
+  const rdScale = 1 / PPG_SCALE_DELTA;
 
   function runMini(means) {
     const teams = means.map(m => ({ mean: m, sd: BASE_SD }));
@@ -2984,17 +3025,19 @@ async function computeAllTradeDeltas(trades) {
       if (theirIdx < 0) continue;
 
       let myMeanDelta, theirMeanDelta;
+      // Picks have zero marginal PPW — they don't play, skip replacement level entirely
+      const sendIsPick = t.sell.pos === 'PICK' || t.sell.isPick;
+      const recvIsPick = t.recv.pos === 'PICK' || t.recv.isPick;
       if (useProjDelta) {
-        // Marginal: player value minus the bench player they replace
-        const myRepl   = leagueRosters[myIdx].replacementLevel?.[t.sell.pos]   ?? 0;
-        const thRepl   = leagueRosters[theirIdx].replacementLevel?.[t.recv.pos] ?? 0;
-        const sendPts  = projPts[sendName] ?? rdByName[sendName] * rdScale ?? 0;
-        const recvPts  = projPts[recvName] ?? rdByName[recvName] * rdScale ?? 0;
-        // I lose send's marginal contribution, gain recv's marginal contribution
+        const myRepl   = sendIsPick ? 0 : (leagueRosters[myIdx].replacementLevel?.[t.sell.pos]   ?? 0);
+        const thRepl   = recvIsPick ? 0 : (leagueRosters[theirIdx].replacementLevel?.[t.recv.pos] ?? 0);
+        const sendPts  = sendIsPick ? 0 : (projPts[sendName] ?? rdByName[sendName] * rdScale ?? 0);
+        const recvPts  = recvIsPick ? 0 : (projPts[recvName] ?? rdByName[recvName] * rdScale ?? 0);
         myMeanDelta    = (recvPts - thRepl) - (sendPts - myRepl);
         theirMeanDelta = -myMeanDelta;
       } else {
-        const sendRd = rdByName[sendName]||0, recvRd = rdByName[recvName]||0;
+        const sendRd = sendIsPick ? 0 : (rdByName[sendName]||0);
+        const recvRd = recvIsPick ? 0 : (rdByName[recvName]||0);
         myMeanDelta    = (recvRd - sendRd) * rdScale;
         theirMeanDelta = -myMeanDelta;
       }
@@ -3106,8 +3149,8 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
     return r.redraftStrength || 0;
   });
   const allRdBefore2   = leagueRosters.map(r => r.redraftStrength || 0);
-  const allMeanBefore2 = leagueRosters.map(r => r._simMean || (BASE_SCORE + (r.redraftStrength||0)/Math.max(...leagueRosters.map(x=>x.redraftStrength||0),1)*SCORE_SCALE));
-  const rdScale2 = allRdBefore2.some(v=>v>0) ? SCORE_SCALE / Math.max(...allRdBefore2,1) : 0;
+  const allMeanBefore2 = leagueRosters.map(r => r._simMean || r.redraftStrength || BASE_SCORE);
+  const rdScale2 = 1 / 600; // PPG per unit of FC redraft value
 
   function runMiniSim(means) {
     const teams = means.map(m => ({ mean: m, sd: BASE_SD }));
@@ -3150,11 +3193,20 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
   const myRoster2   = leagueRosters.find(r => r.isMe);
   const theirRoster2 = leagueRosters.find(r => r.ownerName === theirOwnerName);
 
-  // Direct per-player marginal computation:
+  // Direct per-player marginal computation.
+  // Picks have zero marginal PPW impact — they don't play, so skip replacement level logic.
+  const rosterPlayerMap = {};
+  for (const r of leagueRosters) {
+    for (const p of (r.rosterPlayers||[])) rosterPlayerMap[norm(p.name)] = p;
+  }
+  function isPick(nn) { return !rosterPlayerMap[nn] && (nn.includes('pick') || nn.match(/^\d{4}/)); }
+
   let myMeanDelta2 = 0;
   for (const pn of sendNames) {
-    const nn  = norm(pn);
-    const pos = (leagueRosters.flatMap(r => r.rosterPlayers||[]).find(p => norm(p.name)===nn)||{}).pos || 'WR';
+    const nn = norm(pn);
+    if (isPick(nn)) continue; // picks don't affect weekly scoring
+    const rp  = rosterPlayerMap[nn];
+    const pos = rp?.pos || 'WR';
     if (_useProjD2) {
       myMeanDelta2 -= (_projPts2[nn]??0) - (myRoster2?.replacementLevel?.[pos]??0);
     } else {
@@ -3162,8 +3214,10 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
     }
   }
   for (const pn of recvNames) {
-    const nn  = norm(pn);
-    const pos = (leagueRosters.flatMap(r => r.rosterPlayers||[]).find(p => norm(p.name)===nn)||{}).pos || 'WR';
+    const nn = norm(pn);
+    if (isPick(nn)) continue; // picks don't affect weekly scoring
+    const rp  = rosterPlayerMap[nn];
+    const pos = rp?.pos || 'WR';
     if (_useProjD2) {
       myMeanDelta2 += (_projPts2[nn]??0) - (theirRoster2?.replacementLevel?.[pos]??0);
     } else {
