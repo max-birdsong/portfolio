@@ -1411,19 +1411,42 @@ async function runSimulator(opts = {}) {
   const rdStrengths = leagueRosters.map(r => r.redraftStrength || 0);
   const rdReady = rdStrengths.some(v => v > 0);
 
+  // Depth-adjusted SD: deep rosters absorb injuries/byes better → lower variance.
+  // Count rostered players with redraftValue > 1000 beyond the starting lineup (10 starters).
+  // Each usable depth player reduces SD by 1.5 pts, capped at 8 pts total reduction.
+  const DEPTH_THRESHOLD = 1000;  // minimum rd value to count as "usable" depth
+  const DEPTH_SD_STEP   = 1.0;   // SD shift per depth player (±)
+  const DEPTH_SD_RANGE  = 4;     // max deviation from BASE_SD in either direction → range 30–38
+  const STARTERS_N      = 10;    // QB2 RB2 WR2 TE1 FLEX3
+
   const teams = leagueRosters.map((r, i) => {
     const strengthMean = useProjPPW
       ? (r.projectedPPW || rdStrengths[i] || BASE_SCORE)
       : (rdStrengths[i] || BASE_SCORE);
+
+    // Count usable bench players (above threshold, beyond starters)
+    const rosterRdVals = (r.rosterPlayers || [])
+      .map(p => fcMap[norm(p.name)]?.redraftValue || 0)
+      .filter(v => v > DEPTH_THRESHOLD)
+      .sort((a, b) => b - a);
+    // Depth relative to league average — positive = deeper than avg (lower SD), negative = shallower
+    const depthPlayers    = rosterRdVals.length - STARTERS_N;
+    const leagueAvgDepth2 = leagueRosters.reduce((s, r2) =>
+      s + Math.max(0, (r2.rosterPlayers||[]).filter(p => (fcMap[norm(p.name)]?.redraftValue||0) > DEPTH_THRESHOLD).length - STARTERS_N)
+    , 0) / Math.max(leagueRosters.length, 1);
+    const depthDelta  = depthPlayers - leagueAvgDepth2;  // + = deeper, - = shallower
+    const sdAdjust    = Math.max(-DEPTH_SD_RANGE, Math.min(DEPTH_SD_RANGE, -depthDelta * DEPTH_SD_STEP));
+    const rosterSD    = BASE_SD + sdAdjust;  // deep roster < 34, shallow roster > 34
+
     const actual = actualScores[r.rosterId] || null;
 
     let mean, sd;
     if (actual && actual.n >= 3) {
       mean = BLEND_WEIGHT * actual.mean + (1 - BLEND_WEIGHT) * strengthMean;
-      sd   = BLEND_WEIGHT * actual.sd   + (1 - BLEND_WEIGHT) * BASE_SD;
+      sd   = BLEND_WEIGHT * actual.sd   + (1 - BLEND_WEIGHT) * rosterSD;
     } else {
       mean = strengthMean;
-      sd   = BASE_SD;
+      sd   = rosterSD;
     }
 
     return {
@@ -1533,6 +1556,7 @@ async function runSimulator(opts = {}) {
     avgWins:     +(winTotals[i]   / SIM_N).toFixed(1),
     avgPoints:   +(pointTotals[i] / SIM_N).toFixed(0),
     draftProbs:  draftPositionCounts[i].map(c => +(c / SIM_N).toFixed(4)),
+    teamSD:      +teams[i].sd.toFixed(1),
   })).sort((a, b) => b.playoffPct - a.playoffPct);
 
   const myResult = results.find(r => r.isMe);
@@ -1653,6 +1677,7 @@ async function runSimulator(opts = {}) {
         + '</div>'
         // avg wins / pts
         + '<div style="' + mono + ';font-size:.58rem;color:var(--text3);text-align:right;min-width:72px">' + t.avgWins + 'W<br>' + t.avgPoints + 'pts</div>'
+        + '<div style="' + mono + ';font-size:.58rem;color:var(--text3);text-align:right;min-width:48px">sd ' + (t.teamSD || BASE_SD) + '</div>'
       + '</div>'
     + '</div>';
   });
