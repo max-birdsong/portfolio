@@ -1666,6 +1666,7 @@ async function runSimulator(opts = {}) {
     avgPoints:   +(pointTotals[i] / SIM_N).toFixed(0),
     draftProbs:  draftPositionCounts[i].map(c => +(c / SIM_N).toFixed(4)),
     teamSD:      +teams[i].sd.toFixed(1),
+    mean:        +teams[i].mean.toFixed(1),  // actual sim mean (may include score blend)
   })).sort((a, b) => b.playoffPct - a.playoffPct);
 
   const myResult = results.find(r => r.isMe);
@@ -3285,7 +3286,7 @@ async function computeAllTradeDeltas(trades) {
   const schedule = generateSchedule(N, 14);
   const allRdBefore   = leagueRosters.map(r => r.redraftStrength || 0);
   // redraftStrength is now in estimated PPG units — use directly as sim mean
-  const allMeanBefore = leagueRosters.map(r => r._simMean || r.redraftStrength || BASE_SCORE);
+  const allMeanBefore = leagueRosters.map(r => r.simMean || r.redraftStrength || BASE_SCORE);
   const myIdx = leagueRosters.findIndex(r => r.isMe);
   if (myIdx < 0) return;
 
@@ -3557,7 +3558,7 @@ function simulateTradeDelta(sendPlayers, recvPlayers, theirOwnerName, MINI_SIM =
     return r.redraftStrength || 0;
   });
   const allRdBefore2   = leagueRosters.map(r => r.redraftStrength || 0);
-  const allMeanBefore2 = leagueRosters.map(r => r._simMean || r.redraftStrength || BASE_SCORE);
+  const allMeanBefore2 = leagueRosters.map(r => r.simMean || r.redraftStrength || BASE_SCORE);
   const rdScale2 = 1 / 500; // PPG per unit of FC redraft value
 
   function runMiniSim(means) {
