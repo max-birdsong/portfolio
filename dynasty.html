@@ -2102,13 +2102,14 @@ function renderRosterContextBanner() {
       html += '<div>';
       html += '<div style="' + mono + ';font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-bottom:2px">' + pos + '</div>';
       for (const s of starters) {
-        const rdStr   = s.redraftVal > 0 ? ' <span style="color:var(--text3)">rd:' + s.redraftVal.toLocaleString() + '</span>' : '';
+        const estPPG2  = s.redraftVal > 0 ? +(8 + s.redraftVal / 600).toFixed(1) : null;
+        const ppgStr   = estPPG2 !== null ? ' <span style="color:var(--accent);opacity:.85">' + estPPG2 + ' ppg</span>' : '';
         const ageStr  = s.age ? ' <span style="color:var(--text3)">age ' + s.age + '</span>' : '';
         const posTag  = s.posRank ? pos + s.posRank : (s.tatRank ? '#' + s.tatRank : '');
         const rankStr = posTag ? ' <span style="color:var(--accent);opacity:.7">' + posTag + '</span>' : '';
         html += '<div style="' + mono + ';font-size:.6rem;color:var(--text1);display:flex;align-items:baseline;gap:4px;margin-bottom:1px">'
           + '<span>' + esc(s.name) + '</span>'
-          + rankStr + ageStr + rdStr
+          + rankStr + ageStr + ppgStr
           + '</div>';
       }
       html += '</div>';
@@ -3466,14 +3467,25 @@ function tradeCard(t) {
       ${leagueRosters.some(r => r.champPct != null) ? `
       <div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:6px;">
         ${t.champDelta !== null && t.champDelta !== undefined ? `
-          <div style="display:flex;align-items:baseline;gap:8px">
+          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
             <span style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:bold;color:${t.champDelta > 0.4 ? 'var(--accent)' : t.champDelta > 0 ? 'var(--text1)' : t.champDelta < -0.4 ? 'var(--red)' : 'var(--text2)'}">
               ${t.champDelta >= 0 ? '+' : ''}${t.champDelta.toFixed(1)}% champ
             </span>
             <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--text3)">
               ${((leagueRosters.find(r=>r.isMe)||{}).champPct*100||0).toFixed(1)}% → ${(((leagueRosters.find(r=>r.isMe)||{}).champPct||0)*100 + t.champDelta).toFixed(1)}%
             </span>
-          </div>` : `
+          </div>
+          ${(function(){
+            var sendPts = (window._projPtsByName && window._projPtsByName[norm(t.sell.name)] != null) ? window._projPtsByName[norm(t.sell.name)] : (t.sell.isPick ? 0 : Math.max(0, 8 + (t.sell.fcValue||0)/600));
+            var recvPts = (window._projPtsByName && window._projPtsByName[norm(t.recv.name)] != null) ? window._projPtsByName[norm(t.recv.name)] : (t.recv.isPick ? 0 : Math.max(0, 8 + (t.recv.fcValue||0)/600));
+            var myMe = leagueRosters.find(function(r){return r.isMe;});
+            var them = leagueRosters.find(function(r){return r.ownerName===t.ownerName;});
+            var sendRepl = t.sell.isPick ? 0 : ((myMe && myMe.replacementLevel && myMe.replacementLevel[t.sell.pos]) || 0);
+            var recvRepl = t.recv.isPick ? 0 : ((them && them.replacementLevel && them.replacementLevel[t.recv.pos]) || 0);
+            var marginal = (recvPts - recvRepl) - (sendPts - sendRepl);
+            var col = marginal > 1 ? 'var(--accent)' : marginal > 0 ? 'var(--text2)' : marginal < -1 ? 'var(--red)' : 'var(--text3)';
+            return '<div style="font-family:DM Mono,monospace;font-size:.52rem;color:' + col + ';margin-top:1px">' + (marginal >= 0 ? '+' : '') + marginal.toFixed(1) + ' est ppg/wk</div>';
+          })()}` : `
           <div id="${impactId}"></div>
           <button onclick="runTradeImpact(this,[${sendJson}],[${recvJson}],'${esc(t.ownerName)}','${impactId}')"
             style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);background:none;border:1px solid var(--border);padding:3px 10px;cursor:pointer;letter-spacing:1px;margin-top:2px">
