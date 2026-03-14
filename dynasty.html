@@ -3322,6 +3322,25 @@ function bundleCard(t) {
     + "</div>"
     + (leagueRosters.some(r => r.champPct != null)
         ? '<div style="grid-column:1/-1;border-top:1px solid var(--border2);padding-top:8px">'
+          + (function(){
+              // Lineup diff for bundle: send main+addon, recv t.recv
+              var sendArr = [{name:t.main.name,pos:t.main.pos},{name:t.addon.name,pos:t.addon.pos}];
+              var recvArr = [{name:t.recv.name,pos:t.recv.pos}];
+              var diff = getLineupDiff(sendArr, null, recvArr, null);
+              if (!diff || Math.abs(diff.ppgAfter - diff.ppgBefore) < 0.05) {
+                var s1 = estPPGGlobal((fcMap[norm(t.main.name)]||{}).redraftValue||0, t.main.pos);
+                var s2 = estPPGGlobal((fcMap[norm(t.addon.name)]||{}).redraftValue||0, t.addon.pos);
+                var g  = estPPGGlobal((fcMap[norm(t.recv.name)]||{}).redraftValue||0, t.recv.pos);
+                return '<div style="font-family:DM Mono,monospace;font-size:.5rem;color:var(--text3);margin-bottom:4px">lineup unchanged · bench swap (' + (s1+s2).toFixed(1) + ' ppg → ' + g.toFixed(1) + ' ppg depth)</div>';
+              }
+              var delta = diff.ppgAfter - diff.ppgBefore;
+              var dcol  = delta > 1 ? 'var(--accent)' : delta < -1 ? 'var(--red)' : 'var(--text2)';
+              var out   = '<div style="font-family:DM Mono,monospace;font-size:.5rem;margin-bottom:4px">';
+              if (diff.removed.length) out += '<span style="color:var(--text3)">out: </span>' + diff.removed.map(function(p){ return '<span style="color:var(--text3)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ') + '  ';
+              if (diff.added.length)   out += '<span style="color:var(--text3)">in: </span>'  + diff.added.map(function(p){ return '<span style="color:var(--text2)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ');
+              out += '  <span style="color:' + dcol + '">' + (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' ppg/wk</span></div>';
+              return out;
+            })()
           + (t.champDelta !== null && t.champDelta !== undefined
             ? '<div style="font-family:\'DM Mono\',monospace;font-size:.55rem">'
               + '<span style="font-size:.9rem;font-weight:bold;color:' + (t.champDelta > 0.4 ? 'var(--accent)' : t.champDelta < -0.4 ? 'var(--red)' : 'var(--text2)') + '">'
