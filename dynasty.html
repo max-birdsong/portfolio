@@ -3574,7 +3574,7 @@ function bundleCard(t) {
     +     "</div>"
     +   "</div>"
     +   '<div style="margin-top:8px;display:flex;gap:12px;' + mono + ';font-size:.65rem">'
-    +     '<span>Bundle FC <span style="color:var(--text2)">' + Math.round(t.bundleFcValue) + "</span></span>"
+    +     '<span style="color:var(--text3)">Bundle FC </span><span style="color:var(--text2)">' + Math.round(t.bundleFcValue) + '</span>'              + '<span style="color:var(--text3)"> (−500 adj) · vs FC </span><span style="color:var(--text2)">' + Math.round(t.recv.fcValue||0) + '</span>'              + (t.bundleFcValue > (t.recv.fcValue||0)                ? '<span style="color:var(--accent)"> +' + Math.round(t.bundleFcValue - (t.recv.fcValue||0)) + '</span>'                : '<span style="color:var(--red)"> ' + Math.round(t.bundleFcValue - (t.recv.fcValue||0)) + '</span>')
     +   "</div>"
     +   (t.fillsNeed ? '<div style="margin-top:4px;display:inline-block;' + mono + ';font-size:.57rem;color:var(--accent);border:1px solid var(--accent);padding:1px 6px">✓ fills their ' + esc(t.main.pos) + " need</div>" : "")
     + "</div>"
@@ -4394,6 +4394,26 @@ function tradeCard(t) {
             }
             out += '  <span style="color:' + dcol + '">' + (grossDelta >= 0 ? '+' : '') + grossDelta.toFixed(1) + ' ppg/wk</span>';
             out += '</div>';
+
+            // Their lineup impact
+            var theirRoster4 = leagueRosters.find(function(r){ return r.ownerName === t.ownerName; });
+            if (theirRoster4) {
+              var theirDiff4 = getLineupDiff(t.recv.name, t.recv.pos, t.sell.name, t.sell.pos, theirRoster4);
+              if (theirDiff4) {
+                var theirDelta4 = theirDiff4.ppgAfter - theirDiff4.ppgBefore;
+                var noTheirChange = !theirDiff4.added.length && !theirDiff4.removed.length && Math.abs(theirDelta4) < 0.1;
+                if (!noTheirChange) {
+                  var tdcol = theirDelta4 > 1 ? 'var(--accent)' : theirDelta4 < -1 ? 'var(--red)' : 'var(--text2)';
+                  out += '<div style="font-family:DM Mono,monospace;font-size:.5rem;margin-top:2px;color:var(--text3)">';
+                  out += 'their lineup: ';
+                  if (theirDiff4.removed.length) out += 'out: ' + theirDiff4.removed.map(function(p){ return '<span style="color:var(--text3)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ') + '  ';
+                  if (theirDiff4.added.length)   out += 'in: '  + theirDiff4.added.map(function(p){   return '<span style="color:var(--text2)">' + esc(p.name) + ' ' + p.ppg.toFixed(1) + '</span>'; }).join(', ');
+                  out += '  <span style="color:' + tdcol + '">' + (theirDelta4 >= 0 ? '+' : '') + theirDelta4.toFixed(1) + ' ppg/wk</span>';
+                  out += '</div>';
+                }
+              }
+            }
+
             return out;
           })()}` : `
           <div id="${impactId}"></div>
