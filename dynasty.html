@@ -656,6 +656,14 @@ const NAME_ALIASES = {
   'd.k. metcalf':      'dk metcalf',
 };
 
+// Global PPG estimator — uses TE premium from league scoring settings if available
+function estPPGGlobal(rd, pos) {
+  const sc = window._scoringSettings || {};
+  const baseRec = sc.rec || 0;
+  const teBoost = ((sc.rec_te || baseRec) - baseRec + (sc.bonus_rec_te || 0)) * 2.9;
+  return 8 + (rd || 0) / 600 + (pos === 'TE' ? teBoost : 0);
+}
+
 function norm(n) {
   if (!n) return '';
   const base = String(n).replace(/(\d{4})\s+rookie\s+/i,'$1 Pick ')
@@ -866,8 +874,9 @@ async function loadLeagueRosters(leagueId, playersMap, bar) {
     const leagueInfo  = leagueRes.ok ? await leagueRes.json() : {};
     const draftRounds     = leagueInfo?.settings?.draft_rounds || 3;
     const scoringSettings = leagueInfo?.scoring_settings || {};
-    window._scoringSettings = scoringSettings;
-    window._prevLeagueId = leagueInfo?.previous_league_id || null;
+    window._scoringSettings   = scoringSettings;
+    window._prevLeagueId      = leagueInfo?.previous_league_id || null;
+    window._rosterPositions   = leagueInfo?.roster_positions || [];
 
     // Fetch week 1 projections for PPW computation (non-blocking — best effort)
     // Fetch projections: try current NFL state first to find the right season+week,
@@ -1811,11 +1820,14 @@ function computeProjectedPPW() {
     }
 
     // Pool remaining flex-eligible players (RB/WR/TE) and fill 3 flex spots greedily
-    const flexPool = ['RB','WR','TE'].flatMap(pos =>
+    const flexEligPos = (window._rosterPositions||[]).includes('SUPER_FLEX')
+      ? ['QB','RB','WR','TE'] : ['RB','WR','TE'];
+    const N_FLEX_PPW = flexEligPos.includes('QB') ? 4 : 3;
+    const flexPool = flexEligPos.flatMap(pos =>
       byPos[pos].slice(usedByPos[pos])
     ).sort((a, b) => b.projPts - a.projPts);
 
-    const flexStarters = flexPool.slice(0, N_FLEX);
+    const flexStarters = flexPool.slice(0, N_FLEX_PPW);
     for (const p of flexStarters) totalPPW += p.projPts;
 
     // Replacement level per position: best available after starters + flex are filled
@@ -1842,12 +1854,17 @@ function computeProjectedPPW() {
 function computeRosterProfiles() {
   if (!leagueRosters.length || !tatData.length) return;
 
-  // 2QB / 2RB / 2WR / 1TE / 3FLEX lineup
-  // FLEX eligible: RB/WR/TE. Approximate starters by taking top-N per pos
-  // including likely flex contributors: QB×2, RB×5, WR×5, TE×2
+  // Lineup structure — detect superflex vs 2QB from league settings
+  const rosterPos   = (window._rosterPositions || []);
+  const isSuperFlex = rosterPos.includes('SUPER_FLEX');
+
   const STARTER_N  = { QB: 2, RB: 5, WR: 5, TE: 2 };
-  // Locked starters (non-flex): used for thin-position calc
-  const LOCKED_N   = { QB: 2, RB: 2, WR: 2, TE: 1 };
+  // Superflex: QB1 is locked, QB2 competes in flex pool against RB/WR/TE
+  // 2QB: both QB slots are locked
+  const LOCKED_N   = isSuperFlex
+    ? { QB: 1, RB: 2, WR: 2, TE: 1 }
+    : { QB: 2, RB: 2, WR: 2, TE: 1 };
+  const N_FLEX_SPOTS = isSuperFlex ? 4 : 3;
 
   // TAT rank lookup by normalised name
   const tatRankByName = {};
@@ -1912,7 +1929,19 @@ function computeRosterProfiles() {
     // This naturally weights positions: a 5000-rd TE adds 16 PPG, a 500-rd TE adds 9.
     // Picks/zeros contribute only the floor — handled as unfilled slots below.
     const PPG_FLOOR = 8, PPG_SCALE = 600;
-    const estPPG = rd => PPG_FLOOR + rd / PPG_SCALE;
+
+    // TE premium: if league awards extra points per TE reception, boost TE redraft values.
+    // Sleeper stores this as bonus_rec_te (flat bonus per catch) or a higher rec_te vs rec rate.
+    // We estimate ~40 receptions/season for a starting TE → ~2.9 per game.
+    // Boost = extra_per_rec * 2.9 PPG added to TE estimates.
+    const sc = window._scoringSettings || {};
+    const baseRec  = sc.rec     || 0;
+    const teRec    = sc.rec_te  || baseRec;
+    const bonusTe  = sc.bonus_rec_te || 0;
+    const teExtraPerRec = (teRec - baseRec) + bonusTe;  // extra pts per TE reception
+    const TE_PPG_BOOST  = teExtraPerRec * 2.9;           // ~2.9 receptions per game for TE1
+
+    const estPPG = (rd, pos) => PPG_FLOOR + rd / PPG_SCALE + (pos === 'TE' ? TE_PPG_BOOST : 0);
 
     let ppgSum = 0;
     roster._lockedSlotsFilled = {};
@@ -1923,21 +1952,23 @@ function computeRosterProfiles() {
         .sort((a, b) => b - a);
       let filled = 0;
       for (let i = 0; i < n; i++) {
-        ppgSum += estPPG(sorted[i] || 0);
+        ppgSum += estPPG(sorted[i] || 0, pos);
         if ((sorted[i] || 0) > 0) filled++;
       }
       roster._lockedSlotsFilled[pos] = filled;
     }
 
     // Flex: pool remaining RB/WR/TE by rd, take top 3
-    const flexCands = ['RB','WR','TE'].flatMap(pos => {
-      const n = LOCKED_N[pos];
-      return (byPos[pos] || [])
-        .map(p => fcMap[p.name]?.redraftValue || 0)
-        .sort((a, b) => b - a)
+    // Flex pool: RB/WR/TE always eligible; QB eligible in superflex (beyond locked QB1)
+    const flexPositions = isSuperFlex ? ['QB','RB','WR','TE'] : ['RB','WR','TE'];
+    const flexCands = flexPositions.flatMap(p2 => {
+      const n = LOCKED_N[p2] || 0;
+      return (byPos[p2] || [])
+        .map(p => ({ rd: fcMap[p.name]?.redraftValue || 0, pos: p2 }))
+        .sort((a, b) => b.rd - a.rd)
         .slice(n);
-    }).sort((a, b) => b - a);
-    for (let i = 0; i < 3; i++) ppgSum += estPPG(flexCands[i] || 0);
+    }).sort((a, b) => b.rd - a.rd);
+    for (let i = 0; i < N_FLEX_SPOTS; i++) ppgSum += estPPG((flexCands[i] || {}).rd || 0, (flexCands[i] || {}).pos || 'WR');
 
     roster.redraftStrength = +ppgSum.toFixed(1);  // now in estimated PPG units
 
@@ -1961,14 +1992,18 @@ function computeRosterProfiles() {
       // Fill locked starters, then flex greedily
       const usedRd = { QB:0, RB:0, WR:0, TE:0 };
       for (const [pos, n] of Object.entries(LOCKED)) usedRd[pos] = Math.min(n, rdByPos[pos].length);
-      const flexPool = ['RB','WR','TE'].flatMap(pos => rdByPos[pos].slice(usedRd[pos]))
+      const flexEligPos3 = (window._rosterPositions||[]).includes('SUPER_FLEX')
+        ? ['QB','RB','WR','TE'] : ['RB','WR','TE'];
+      const N_FLEX3 = flexEligPos3.includes('QB') ? 4 : 3;
+      const flexPool = flexEligPos3.flatMap(pos => rdByPos[pos].slice(usedRd[pos]))
         .sort((a, b) => b.rd - a.rd);
-      const flexStarted = new Set(flexPool.slice(0, N_FLEX).map(p => p.name));
+      const flexStarted = new Set(flexPool.slice(0, N_FLEX3).map(p => p.name));
       for (const pos of ['QB','RB','WR','TE']) {
         const bench = rdByPos[pos].filter((p, i) => i >= usedRd[pos] && !flexStarted.has(p.name));
-        // Use first bench player's rd, but floor at a small positive so rookie bench
-        // players with rd:0 don't collapse replacement level to zero
         roster.replacementLevel[pos] = bench[0]?.rd || 0;
+        // Store as estimated PPG for direct comparison
+        roster.replacementLevelPPG = roster.replacementLevelPPG || {};
+        roster.replacementLevelPPG[pos] = estPPG(bench[0]?.rd || 0, pos);
       }
     }
   }
@@ -2156,7 +2191,7 @@ function renderRosterContextBanner() {
       html += '<div>';
       html += '<div style="' + mono + ';font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-bottom:2px">' + pos + '</div>';
       for (const s of starters) {
-        const estPPG2  = s.redraftVal > 0 ? +(8 + s.redraftVal / 600).toFixed(1) : null;
+        const estPPG2  = s.redraftVal > 0 ? +estPPGGlobal(s.redraftVal, pos).toFixed(1) : null;
         const ppgStr   = estPPG2 !== null ? ' <span style="color:var(--accent);opacity:.85">' + estPPG2 + ' ppg</span>' : '';
         const ageStr  = s.age ? ' <span style="color:var(--text3)">age ' + s.age + '</span>' : '';
         const posTag  = s.posRank ? pos + s.posRank : (s.tatRank ? '#' + s.tatRank : '');
@@ -3200,6 +3235,58 @@ async function computeAllTradeDeltas(trades) {
   renderTradesTab(maxAbs, Math.max(maxAbs*0.1, 5));
 }
 
+// ── REPLACEMENT PREVIEW ──────────────────────────────────────
+// Given a player being sent away, find the next best player at that position
+// on my roster who would step into the lineup, accounting for superflex.
+function getReplacementPreview(playerName, playerPos) {
+  const myRoster = leagueRosters.find(r => r.isMe);
+  if (!myRoster) return null;
+  const isSF = (window._rosterPositions || []).includes('SUPER_FLEX');
+
+  // Get all my players at this position sorted by estimated PPG
+  const nn = norm(playerName);
+  const posPlayers = (myRoster.rosterPlayers || [])
+    .filter(p => p.pos === playerPos && norm(p.name) !== nn)
+    .map(p => {
+      const rd = fcMap[norm(p.name)]?.redraftValue || 0;
+      return { name: p.name, ppg: estPPGGlobal(rd, p.pos), rd };
+    })
+    .sort((a, b) => b.ppg - a.ppg);
+
+  // The player being traded away
+  const fcEntry = fcMap[nn];
+  const sentPPG = estPPGGlobal(fcEntry?.redraftValue || 0, playerPos);
+
+  // If superflex and position is QB, the replacement might be a non-QB
+  let replacement = posPlayers[0] || null;
+  let replacementLabel = '';
+
+  if (!replacement && isSF && playerPos === 'QB') {
+    // Find best non-QB for the superflex slot
+    const sfCands = (myRoster.rosterPlayers || [])
+      .filter(p => ['RB','WR','TE'].includes(p.pos))
+      .map(p => {
+        const rd = fcMap[norm(p.name)]?.redraftValue || 0;
+        return { name: p.name, pos: p.pos, ppg: estPPGGlobal(rd, p.pos), rd };
+      })
+      .sort((a, b) => b.ppg - a.ppg);
+    replacement = sfCands[0] || null;
+    replacementLabel = ' (superflex)';
+  }
+
+  if (!replacement) return { sentPPG, replName: null, replPPG: 0, delta: -sentPPG, label: 'no replacement' };
+
+  const delta = replacement.ppg - sentPPG;
+  return {
+    sentPPG: +sentPPG.toFixed(1),
+    replName: replacement.name,
+    replPPG: +replacement.ppg.toFixed(1),
+    replPos: replacement.pos || playerPos,
+    delta: +delta.toFixed(1),
+    label: replacementLabel,
+  };
+}
+
 // ── PICK RANGE DISPLAY ───────────────────────────────────────
 // Given a roster's draftProbs array, compute percentile bands for a 1st round pick.
 // Shows e.g. "top 3: 28%  top 6: 71%  avg pick: 5.2"
@@ -3530,15 +3617,27 @@ function tradeCard(t) {
             </span>
           </div>
           ${(function(){
-            var sendPts = (window._projPtsByName && window._projPtsByName[norm(t.sell.name)] != null) ? window._projPtsByName[norm(t.sell.name)] : (t.sell.isPick ? 0 : Math.max(0, 8 + (t.sell.fcValue||0)/600));
-            var recvPts = (window._projPtsByName && window._projPtsByName[norm(t.recv.name)] != null) ? window._projPtsByName[norm(t.recv.name)] : (t.recv.isPick ? 0 : Math.max(0, 8 + (t.recv.fcValue||0)/600));
+            var sendPts = (window._projPtsByName && window._projPtsByName[norm(t.sell.name)] != null) ? window._projPtsByName[norm(t.sell.name)] : (t.sell.isPick ? 0 : estPPGGlobal(t.sell.fcValue||0, t.sell.pos || 'WR'));
+            var recvPts = (window._projPtsByName && window._projPtsByName[norm(t.recv.name)] != null) ? window._projPtsByName[norm(t.recv.name)] : (t.recv.isPick ? 0 : estPPGGlobal(t.recv.fcValue||0, t.recv.pos || 'WR'));
             var myMe = leagueRosters.find(function(r){return r.isMe;});
             var them = leagueRosters.find(function(r){return r.ownerName===t.ownerName;});
             var sendRepl = t.sell.isPick ? 0 : ((myMe && myMe.replacementLevel && myMe.replacementLevel[t.sell.pos]) || 0);
             var recvRepl = t.recv.isPick ? 0 : ((them && them.replacementLevel && them.replacementLevel[t.recv.pos]) || 0);
             var marginal = (recvPts - recvRepl) - (sendPts - sendRepl);
             var col = marginal > 1 ? 'var(--accent)' : marginal > 0 ? 'var(--text2)' : marginal < -1 ? 'var(--red)' : 'var(--text3)';
-            return '<div style="font-family:DM Mono,monospace;font-size:.52rem;color:' + col + ';margin-top:1px">' + (marginal >= 0 ? '+' : '') + marginal.toFixed(1) + ' est ppg/wk</div>';
+            return '<div style="font-family:DM Mono,monospace;font-size:.52rem;color:' + col + ';margin-top:1px">' + (marginal >= 0 ? '+' : '') + marginal.toFixed(1) + ' est ppg/wk</div>'
+            + (function(){
+                if (t.sell.isPick) return '';
+                var rp = getReplacementPreview(t.sell.name, t.sell.pos);
+                if (!rp) return '';
+                var col = rp.delta >= 0 ? 'var(--text3)' : rp.delta < -3 ? 'var(--red)' : 'var(--text3)';
+                var repl = rp.replName
+                  ? esc(rp.replName) + ' (' + rp.replPPG + ' ppg)'
+                  : 'no replacement';
+                return '<div style="font-family:DM Mono,monospace;font-size:.5rem;color:' + col + ';margin-top:1px">'
+                  + 'lose ' + rp.sentPPG + ' ppg → ' + repl + rp.label
+                  + '</div>';
+              })();
           })()}` : `
           <div id="${impactId}"></div>
           <button onclick="runTradeImpact(this,[${sendJson}],[${recvJson}],'${esc(t.ownerName)}','${impactId}')"
@@ -3740,7 +3839,7 @@ async function runTradeAnalyzer() {
     var nn = norm(p.name);
     if (projPts[nn] != null) return projPts[nn];
     var rd = p.redraftValue || (p.fc ? p.fc.redraftValue : 0) || 0;
-    return (p.isPick || p.pos === 'PICK') ? 0 : Math.max(0, 8 + rd / 600);
+    return (p.isPick || p.pos === 'PICK') ? 0 : estPPGGlobal(rd, p.pos);
   }
 
   function marginalPPG(p, fromRoster) {
