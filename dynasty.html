@@ -2184,38 +2184,112 @@ function renderRosterContextBanner() {
     const posOrder = ['QB','RB','WR','TE'];
     let html = '<div style="margin-top:12px;border-top:1px solid var(--border2);padding-top:10px">';
     html += '<div style="' + mono + ';font-size:.52rem;color:var(--text3);letter-spacing:1px;margin-bottom:6px">PROJECTED STARTERS</div>';
-    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px 16px">';
 
-    for (const pos of posOrder) {
-      const n = STARTER_N[pos];
-      const starters = (me.rosterPlayers || [])
-        .filter(p => p.pos === pos)
-        .map(p => {
-          const nn = norm(p.name);
-          const tat = tatTierByName2[nn] || {};
-          return { name: p.name, age: p.age, tatRank: tat.tatRank || null,
-                   posRank: tatPosRank[nn] || null,
-                   redraftVal: rdByName[nn] || 0, tierLabel: tat.tierLabel || '' };
-        })
-        .sort((a,b) => (a.tatRank||9999)-(b.tatRank||9999))
-        .slice(0, n);
+    // Build full projected lineup using same greedy flex logic as sim
+    const isSF2    = (window._rosterPositions || []).includes('SUPER_FLEX');
+    const lockedN2 = isSF2 ? { QB:1, RB:2, WR:2, TE:1 } : { QB:2, RB:2, WR:2, TE:1 };
+    const nFlex2   = isSF2 ? 4 : 3;
 
-      if (!starters.length) continue;
-      html += '<div>';
-      html += '<div style="' + mono + ';font-size:.5rem;color:var(--text3);letter-spacing:1px;margin-bottom:2px">' + pos + '</div>';
-      for (const s of starters) {
-        const estPPG2  = s.redraftVal > 0 ? +estPPGGlobal(s.redraftVal, pos).toFixed(1) : null;
-        const ppgStr   = estPPG2 !== null ? ' <span style="color:var(--accent);opacity:.85">' + estPPG2 + ' ppg</span>' : '';
-        const ageStr  = s.age ? ' <span style="color:var(--text3)">age ' + s.age + '</span>' : '';
-        const posTag  = s.posRank ? pos + s.posRank : (s.tatRank ? '#' + s.tatRank : '');
-        const rankStr = posTag ? ' <span style="color:var(--accent);opacity:.7">' + posTag + '</span>' : '';
-        html += '<div style="' + mono + ';font-size:.6rem;color:var(--text1);display:flex;align-items:baseline;gap:4px;margin-bottom:1px">'
-          + '<span>' + esc(s.name) + '</span>'
-          + rankStr + ageStr + ppgStr
+    // All my players with PPG
+    const myPlayers2 = (me.rosterPlayers || []).map(p => {
+      const nn  = norm(p.name);
+      const tat = tatTierByName2[nn] || {};
+      const rd  = rdByName[nn] || 0;
+      return {
+        name: p.name, pos: p.pos, age: p.age,
+        rd, ppg: estPPGGlobal(rd, p.pos),
+        tatRank: tat.tatRank || null,
+        posRank: tatPosRank[nn] || null,
+      };
+    });
+
+    // Sort each position by PPG
+    const byPos2 = { QB:[], RB:[], WR:[], TE:[] };
+    for (const p of myPlayers2) { if (byPos2[p.pos]) byPos2[p.pos].push(p); }
+    for (const pos of Object.keys(byPos2)) byPos2[pos].sort((a,b) => b.ppg - a.ppg);
+
+    // Fill locked starters
+    const lineupSlots = []; // { slotLabel, player }
+    const usedNames = new Set();
+    const posLabels = isSF2 ? { QB: ['QB'] } : { QB: ['QB1','QB2'] };
+    const rbLabels  = ['RB1','RB2'];
+    const wrLabels  = ['WR1','WR2'];
+    const teLabels  = ['TE'];
+
+    function fillLocked(pos, n, labels) {
+      for (let i = 0; i < n; i++) {
+        const p = byPos2[pos] && byPos2[pos][i];
+        lineupSlots.push({ slotLabel: labels[i] || pos + (i+1), player: p || null });
+        if (p) usedNames.add(norm(p.name));
+      }
+    }
+    // In superflex: QB1 is locked, then RB1/2, WR1/2, TE are locked, then flex+SFLX at bottom
+    // In 2QB: QB1+QB2 locked, then RB1/2, WR1/2, TE, then flex
+    fillLocked('QB', lockedN2.QB, ['QB']);   // always just QB1 in SF, QB1+QB2 in 2QB
+    fillLocked('RB', lockedN2.RB, ['RB1','RB2']);
+    fillLocked('WR', lockedN2.WR, ['WR1','WR2']);
+    fillLocked('TE', lockedN2.TE, ['TE']);
+
+    // Flex pool: remaining eligible players sorted by PPG
+    // In SF: QB2 slot becomes SFLX — best remaining player at any position wins it
+    const flexElig2 = isSF2 ? ['QB','RB','WR','TE'] : ['RB','WR','TE'];
+    const flexPool2 = flexElig2.flatMap(pos => (byPos2[pos]||[]).filter(p => !usedNames.has(norm(p.name))))
+      .sort((a,b) => b.ppg - a.ppg);
+
+    // Regular flex slots first (FLX1/2/3), then SFLX last
+    const regularFlexN = isSF2 ? 3 : 3;
+    for (let i = 0; i < regularFlexN; i++) {
+      const p = flexPool2[i] || null;
+      lineupSlots.push({ slotLabel: 'FLX' + (i+1), player: p });
+      if (p) usedNames.add(norm(p.name));
+    }
+    if (isSF2) {
+      const sfp = flexPool2[3] || null;
+      lineupSlots.push({ slotLabel: 'SFLX', player: sfp, isSuperFlex: true });
+      if (sfp) usedNames.add(norm(sfp.name));
+    }
+
+    // Bench: everyone not starting
+    const bench2 = myPlayers2.filter(p => !usedNames.has(norm(p.name)))
+      .sort((a,b) => b.ppg - a.ppg);
+
+    // Render lineup table
+    const totalPPG2 = lineupSlots.reduce((s, sl) => s + (sl.player ? sl.player.ppg : 0), 0);
+
+    function playerRow(p, slotLabel, isBench, extraStyle) {
+      const es = extraStyle || '';
+      if (!p) {
+        return '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px;opacity:.4' + es + '">'
+          + '<span style="' + mono + ';font-size:.5rem;color:var(--text3);min-width:36px">' + slotLabel + '</span>'
+          + '<span style="' + mono + ';font-size:.58rem;color:var(--text3)">empty</span>'
           + '</div>';
       }
-      html += '</div>';
+      const posTag  = p.posRank ? p.pos + p.posRank : (p.tatRank ? '#' + p.tatRank : '');
+      const rankStr = posTag ? '<span style="color:var(--accent);opacity:.7;font-size:.5rem">' + posTag + '</span>' : '';
+      const ageStr  = p.age   ? '<span style="color:var(--text3)">' + p.age + '</span>' : '';
+      const ppgStr  = p.ppg   ? '<span style="color:' + (isBench ? 'var(--text3)' : 'var(--accent)') + ';opacity:.85">' + p.ppg.toFixed(1) + '</span>' : '';
+      return '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px' + es + '">'
+        + '<span style="' + mono + ';font-size:.5rem;color:var(--text3);min-width:36px">' + slotLabel + '</span>'
+        + '<span style="' + mono + ';font-size:.6rem;color:' + (isBench ? 'var(--text3)' : 'var(--text1)') + '">' + esc(p.name) + '</span>'
+        + '<span style="' + mono + ';font-size:.5rem;color:var(--text3);display:flex;gap:4px">' + rankStr + ageStr + '</span>'
+        + ppgStr
+        + '</div>';
     }
+
+    html += '<div style="margin-top:8px">';
+    for (const sl of lineupSlots) {
+      const sfStyle = sl.isSuperFlex ? ';border-top:1px solid var(--border2);margin-top:4px;padding-top:4px' : '';
+      html += playerRow(sl.player, sl.slotLabel, false, sfStyle);
+    }
+
+    if (bench2.length) {
+      html += '<div style="' + mono + ';font-size:.48rem;color:var(--text3);letter-spacing:1px;margin:8px 0 4px;border-top:1px solid var(--border2);padding-top:6px">BENCH</div>';
+      for (const p of bench2) html += playerRow(p, p.pos, true);
+    }
+
+    html += '<div style="' + mono + ';font-size:.5rem;color:var(--text3);margin-top:6px;border-top:1px solid var(--border2);padding-top:4px">'
+      + 'projected total: <span style="color:var(--accent)">' + totalPPG2.toFixed(1) + ' ppg</span></div>';
+
     html += '</div></div>';
     return html;
   })();
