@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ankieta dotycząca usług ekosystemowych Odry</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c5f8d; margin-bottom: 10px; font-size: 28px; }
+        h2 { color: #2c5f8d; margin-top: 30px; margin-bottom: 15px; font-size: 20px; border-bottom: 2px solid #2c5f8d; padding-bottom: 5px; }
+        .intro { background-color: #e8f4f8; padding: 15px; border-left: 4px solid #2c5f8d; margin-bottom: 25px; }
+        .question { margin-bottom: 25px; padding: 15px; background-color: #fafafa; border-radius: 5px; }
+        .question-text { font-weight: bold; margin-bottom: 12px; color: #2c5f8d; }
+        .question-clarification { font-size: 14px; font-style: italic; color: #666; margin-bottom: 12px; }
+        .skip-logic-note { font-size: 12px; font-style: italic; color: #d9534f; background-color: #fff3cd; padding: 8px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #d9534f; }
+        .placeholder-note { font-size: 12px; color: #856404; background-color: #fff3cd; padding: 8px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #ffc107; }
+.shared-row { background-color: #f0f7f0; }
+        .shared-row td:first-child { color: #3a7d44; font-weight: 600; }
+.radio-group, .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+        .radio-option, .checkbox-option { display: flex; align-items: center; padding: 8px; border-radius: 4px; transition: background-color 0.2s; }
+        .radio-option:hover, .checkbox-option:hover { background-color: #e8f4f8; }
+        input[type="radio"], input[type="checkbox"] { margin-right: 10px; cursor: pointer; }
+        label { cursor: pointer; }
+        .grid-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        .grid-table th { background-color: #2c5f8d; color: white; padding: 12px 8px; text-align: center; font-weight: normal; font-size: 13px; }
+        .grid-table td { padding: 12px 8px; border-bottom: 1px solid #ddd; }
+        .grid-table tr:hover { background-color: #f5f5f5; }
+        .grid-table td:first-child { font-weight: 500; width: 35%; }
+        .grid-table td:not(:first-child) { text-align: center; }
+        /* dk-col: visually separated from substantive scale (Guideline 7) */
+        .dk-col { background-color: #dde4ed; border-left: 2px solid #2c5f8d; }
+        .text-input { width: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .section-intro { font-style: italic; color: #666; margin-bottom: 15px; }
+        .progress-bar { width: 100%; height: 8px; background-color: #e0e0e0; border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background-color: #2c5f8d; width: 0%; transition: width 0.3s ease; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; }
+        button { padding: 12px 30px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
+        .btn-primary { background-color: #2c5f8d; color: white; }
+        .btn-primary:hover { background-color: #1e4564; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-secondary:hover { background-color: #545b62; }
+        .hidden { display: none; }
+        .attachment-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .attachment-table th { padding: 8px; text-align: center; vertical-align: bottom; border-bottom: 2px solid #ddd; }
+        .attachment-table td { padding: 12px 8px; border-bottom: 1px solid #ddd; }
+        .attachment-table td:first-child { width: 45%; font-weight: normal; }
+        .attachment-table td:not(:first-child) { text-align: center; }
+        .attachment-table tr:hover { background-color: #f5f5f5; }
+
+@media (max-width: 768px) { .grid-table { font-size: 12px; } .grid-table th, .grid-table td { padding: 8px 4px; } h1 { font-size: 24px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 1: Your Relationship with the Oder River             -->
+    <!-- ============================================================ -->
+    <div id="section1" class="section">
+        <h1>Ankieta dotycząca usług ekosystemowych Odry</h1>
+        <div class="intro">
+            <p><strong>Dziękujemy za udział w tej ankiecie dotyczącej Odry.</strong></p>
+            <p>Ankieta jest częścią projektu OderRazem, który bada usługi ekosystemowe oraz odbudowę Odry po katastrofie ekologicznej z 2022 roku. Państwa odpowiedzi pomogą kształtować przyszłe decyzje zarządcze.</p>
+            <p><strong>Szacowany czas:</strong> 15 minut</p>
+        </div>
+<h2>Sekcja 1: Państwa relacja z Odrą</h2>
+
+        <!-- Q1: Distance from Oder
+             Mail survey advantage: mailing addresses geocoded post-collection
+             for actual distance validation. Self-reported = primary variable
+             (perception matters for ES valuation). -->
+        <div class="question">
+            <div class="question-text">Q1. Jak daleko mieszka Pan/Pani od Odry?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" id="dist1" name="distance" value="1"><label for="dist1">Mniej niż 2 km</label></div>
+                <div class="radio-option"><input type="radio" id="dist2" name="distance" value="2"><label for="dist2">2–5 km</label></div>
+                <div class="radio-option"><input type="radio" id="dist3" name="distance" value="3"><label for="dist3">5–10 km</label></div>
+                <div class="radio-option"><input type="radio" id="dist4" name="distance" value="4"><label for="dist4">10–20 km</label></div>
+                <div class="radio-option"><input type="radio" id="dist5" name="distance" value="5"><label for="dist5">20–30 km</label></div>
+                <div class="radio-option"><input type="radio" id="dist6" name="distance" value="6"><label for="dist6">30–50 km</label></div>
+                <div class="radio-option"><input type="radio" id="dist7" name="distance" value="7"><label for="dist7">Ponad 50 km</label></div>
+            </div>
+        </div>
+
+        <!-- Q2: Visit frequency
+             12-month recall: captures seasonal variation; ~29% combined overestimation
+             expected (Connelly et al. 2000: 14% recall bias + 13% nonresponse bias).
+             Correction factor 0.78 if needed. Broad categories reduce precision burden.
+             INSTRUKCJA FILTROWANIA: Q2a wyświetla się tylko jeśli Q2 ≠ "Wcale" -->
+        <div class="question">
+            <div class="question-text">Q2. Ile razy odwiedził/a Pan/Pani Odrę w ciągu ostatnich 12 miesięcy? (proszę wpisać 0, jeśli wcale)</div>
+            <div class="question-clarification">Proszę liczyć wizyty, podczas których zatrzymał/a się Pan/Pani, aby wykonać jakąś czynność, np. spacer, jazdę na rowerze, pływanie lub odpoczynek. Proszę nie liczyć przejazdów, podczas których jedynie minął/a Pan/Pani rzekę lub ją przekroczył/a.</div>
+                <input type="number" name="visit_count" min="0" max="365" placeholder="np. 12" style="width:80px; padding:6px; font-size:16px; border:1px solid #ccc; border-radius:4px; margin-top:8px;"> <span style="font-size:15px; color:#444;">razy</span>
+            <div class="radio-group">
+            </div>
+        </div>
+
+        <!-- Q2b: Activities
+             INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q2 ≠ "Wcale"
+             Spacer z psem kept as separate item from general walking. -->
+        <div class="question" id="q2a">
+            <div class="skip-logic-note">⚠️ INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q2 ≠ "Wcale"</div>
+            <div class="question-text">Q2a. Co Pan/Pani robi podczas wizyt nad Odrą? (Proszę zaznaczyć wszystkie pasujące odpowiedzi)</div>
+            <div class="checkbox-group">
+                <div class="checkbox-option"><input type="checkbox" id="act1" name="activities" value="walking"><label for="act1">Spacery lub wędrówki</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="act1b" name="activities" value="running"><label for="act1b">Bieganie lub jogging</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="act2" name="activities" value="dog_walking"><label for="act2">Spacer z psem</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="act3" name="activities" value="cycling"><label for="act3">Jazda na rowerze</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="act4" name="activities" value="nature"><label for="act4">Obserwacja przyrody</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="act5" name="activities" value="swimming"><label for="act5">Pływanie</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="act6" name="activities" value="boating"><label for="act6">Płynięcie łodzią</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="act7" name="activities" value="fishing"><label for="act7">Wędkarstwo lub połów ryb</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="act8" name="activities" value="relaxing"><label for="act8">Relaks lub odpoczynek</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="act9" name="activities" value="picnic"><label for="act9">Piknik lub spotkania z rodziną albo przyjaciółmi</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="act10" name="activities" value="other"><label for="act10">Inne (proszę podać):</label><input type="text" class="text-input" id="act_other_text" name="activities_other" style="margin-left:10px;width:200px;"></div>
+            </div>
+        </div>
+
+        
+        <div class="question" id="q3_angling_identity">
+            <div class="skip-logic-note">⚠️ INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli "Wędkarstwo" checked in Q2a</div>
+            <div class="question-text">Q3. Proszę określić, w jakim stopniu zgadza się lub nie zgadza Pan/Pani z każdą z poniższych stwierdzeń dotyczących wędkarstwa.</div>
+            <table class="attachment-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;background-color:transparent;color:#333;font-weight:normal;"></th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Zdecydowanie<br>nie zgadzam<br>się</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Nie zgadzam się</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Ani tak,<br>ani nie</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Zgadzam się</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Zdecydowanie<br>zgadzam się</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Bycie wędkarzem jest ważną częścią mojej tożsamości</td><td style="text-align:center;"><input type="radio" name="angid1" value="1"></td><td style="text-align:center;"><input type="radio" name="angid1" value="2"></td><td style="text-align:center;"><input type="radio" name="angid1" value="3"></td><td style="text-align:center;"><input type="radio" name="angid1" value="4"></td><td style="text-align:center;"><input type="radio" name="angid1" value="5"></td></tr>
+                    <tr><td>Wędkarstwo to coś, o czym rzadko myślę <em>(r)</em></td><td style="text-align:center;"><input type="radio" name="angid2" value="1"></td><td style="text-align:center;"><input type="radio" name="angid2" value="2"></td><td style="text-align:center;"><input type="radio" name="angid2" value="3"></td><td style="text-align:center;"><input type="radio" name="angid2" value="4"></td><td style="text-align:center;"><input type="radio" name="angid2" value="5"></td></tr>
+                    <tr><td>Nie wiedziałbym/wiedziałabym, co ze sobą począć, gdybym musiał/a zrezygnować z wędkarstwa</td><td style="text-align:center;"><input type="radio" name="angid3" value="1"></td><td style="text-align:center;"><input type="radio" name="angid3" value="2"></td><td style="text-align:center;"><input type="radio" name="angid3" value="3"></td><td style="text-align:center;"><input type="radio" name="angid3" value="4"></td><td style="text-align:center;"><input type="radio" name="angid3" value="5"></td></tr>
+                    <tr><td>Bycie wędkarzem to coś więcej niż tylko łowienie ryb</td><td style="text-align:center;"><input type="radio" name="angid4" value="1"></td><td style="text-align:center;"><input type="radio" name="angid4" value="2"></td><td style="text-align:center;"><input type="radio" name="angid4" value="3"></td><td style="text-align:center;"><input type="radio" name="angid4" value="4"></td><td style="text-align:center;"><input type="radio" name="angid4" value="5"></td></tr>
+                    <tr><td>Nie mam wyraźnych uczuć co do bycia wędkarzem <em>(r)</em></td><td style="text-align:center;"><input type="radio" name="angid5" value="1"></td><td style="text-align:center;"><input type="radio" name="angid5" value="2"></td><td style="text-align:center;"><input type="radio" name="angid5" value="3"></td><td style="text-align:center;"><input type="radio" name="angid5" value="4"></td><td style="text-align:center;"><input type="radio" name="angid5" value="5"></td></tr>
+                </tbody>
+            </table>
+            <div style="font-size:12px;color:#888;margin-top:8px;font-style:italic;">(r) = odwrotne kodowanie do analizy</div>
+        </div>
+
+        
+        <div class="question">
+<div class="question-text">Q4. Proszę określić, w jakim stopniu zgadza się lub nie zgadza Pan/Pani z każdą z poniższych stwierdzeń dotyczących Odry.</div>
+            <table class="attachment-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;background-color:transparent;color:#333;font-weight:normal;"></th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Zdecydowanie<br>nie zgadzam<br>się</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Nie zgadzam się</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Ani tak,<br>ani nie</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Zgadzam się</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Zdecydowanie<br>zgadzam się</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Place identity -->
+                    <tr><td>Odra jest dla mnie wyjątkowa</td><td style="text-align:center;"><input type="radio" name="attach1" value="1"></td><td style="text-align:center;"><input type="radio" name="attach1" value="2"></td><td style="text-align:center;"><input type="radio" name="attach1" value="3"></td><td style="text-align:center;"><input type="radio" name="attach1" value="4"></td><td style="text-align:center;"><input type="radio" name="attach1" value="5"></td></tr>
+                    <tr><td>Silnie utożsamiam się z Odrą</td><td style="text-align:center;"><input type="radio" name="attach2" value="1"></td><td style="text-align:center;"><input type="radio" name="attach2" value="2"></td><td style="text-align:center;"><input type="radio" name="attach2" value="3"></td><td style="text-align:center;"><input type="radio" name="attach2" value="4"></td><td style="text-align:center;"><input type="radio" name="attach2" value="5"></td></tr>
+                                        <tr><td>Uważam Odrę za część naturalnego dziedzictwa mojego kraju</td><td style="text-align:center;"><input type="radio" name="attach_heritage" value="1"></td><td style="text-align:center;"><input type="radio" name="attach_heritage" value="2"></td><td style="text-align:center;"><input type="radio" name="attach_heritage" value="3"></td><td style="text-align:center;"><input type="radio" name="attach_heritage" value="4"></td><td style="text-align:center;"><input type="radio" name="attach_heritage" value="5"></td></tr>
+                    <tr><td>Wizyty nad Odrą dużo mówią o tym, kim jestem</td><td style="text-align:center;"><input type="radio" name="attach3" value="1"></td><td style="text-align:center;"><input type="radio" name="attach3" value="2"></td><td style="text-align:center;"><input type="radio" name="attach3" value="3"></td><td style="text-align:center;"><input type="radio" name="attach3" value="4"></td><td style="text-align:center;"><input type="radio" name="attach3" value="5"></td></tr>
+                    <!-- Affective attachment -->
+                    <tr><td>Jestem bardzo związany/a z Odrą</td><td style="text-align:center;"><input type="radio" name="attach4" value="1"></td><td style="text-align:center;"><input type="radio" name="attach4" value="2"></td><td style="text-align:center;"><input type="radio" name="attach4" value="3"></td><td style="text-align:center;"><input type="radio" name="attach4" value="4"></td><td style="text-align:center;"><input type="radio" name="attach4" value="5"></td></tr>
+                    <tr><td>Odra wiele dla mnie znaczy</td><td style="text-align:center;"><input type="radio" name="attach5" value="1"></td><td style="text-align:center;"><input type="radio" name="attach5" value="2"></td><td style="text-align:center;"><input type="radio" name="attach5" value="3"></td><td style="text-align:center;"><input type="radio" name="attach5" value="4"></td><td style="text-align:center;"><input type="radio" name="attach5" value="5"></td></tr>
+                    <!-- Place dependence -->
+                    <tr><td>Nie wyobrażam sobie lepszego miejsca na moje ulubione aktywności niż Odra</td><td style="text-align:center;"><input type="radio" name="attach6" value="1"></td><td style="text-align:center;"><input type="radio" name="attach6" value="2"></td><td style="text-align:center;"><input type="radio" name="attach6" value="3"></td><td style="text-align:center;"><input type="radio" name="attach6" value="4"></td><td style="text-align:center;"><input type="radio" name="attach6" value="5"></td></tr>
+                    <tr><td>Odra jest najlepszym miejscem do moich ulubionych aktywności</td><td style="text-align:center;"><input type="radio" name="attach7" value="1"></td><td style="text-align:center;"><input type="radio" name="attach7" value="2"></td><td style="text-align:center;"><input type="radio" name="attach7" value="3"></td><td style="text-align:center;"><input type="radio" name="attach7" value="4"></td><td style="text-align:center;"><input type="radio" name="attach7" value="5"></td></tr>
+                    <tr><td>Wizyty nad Odrą sprawiają mi więcej przyjemności niż wizyty w innych miejscach</td><td style="text-align:center;"><input type="radio" name="attach8" value="1"></td><td style="text-align:center;"><input type="radio" name="attach8" value="2"></td><td style="text-align:center;"><input type="radio" name="attach8" value="3"></td><td style="text-align:center;"><input type="radio" name="attach8" value="4"></td><td style="text-align:center;"><input type="radio" name="attach8" value="5"></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Q4: Disaster awareness
+             "Before today" prevents survey itself from biasing responses.
+             Terminology: "fish kill" = Fischsterben (most common German media term,
+             per Wikipedia Oder 2022 article). -->
+        <div class="question">
+            <div class="question-text">Q5. Czy przed dzisiejszym dniem wiedzieli Państwo o katastrofie ekologicznej (śnięciu ryb) w Odrze w 2022 roku?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" id="aware1" name="awareness" value="yes"><label for="aware1">Tak</label></div>
+                <div class="radio-option"><input type="radio" id="aware2" name="awareness" value="no"><label for="aware2">Nie</label></div>
+                <div class="radio-option"><input type="radio" id="aware3" name="awareness" value="unsure"><label for="aware3">Nie jestem pewien/pewna</label></div>
+            </div>
+        </div>
+
+        <!-- Q5a: Perceived cause — multi-select (check all that apply)
+             INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Yes" or "Nie jestem pewien/pewna"
+             Multi-select because actual cause was multi-factorial:
+             industrial discharge → high salinity → algae bloom → toxins → fish death.
+             Mercury option included as "misconception indicator" (was officially disproven).
+             Analytical value: causal complexity score; co-occurrence patterns.
+             Positioned before framing (Q5b): causes are concrete/factual,
+             framing is interpretive — concrete to abstract ordering. -->
+        <div class="question" id="q5a">
+            <div class="skip-logic-note">⚠️ INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Yes" or "Nie jestem pewien/pewna"</div>
+            <div class="question-text">Q5a. Co Państwa zdaniem przyczyniło się do śnięcia ryb w 2022 roku? (Proszę zaznaczyć wszystkie pasujące odpowiedzi)</div>
+            <div class="checkbox-group">
+                <div class="checkbox-option"><input type="checkbox" id="cause1" name="perceived_cause" value="industrial"><label for="cause1">Zanieczyszczenie przemysłowe lub zrzuty ścieków</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="cause2" name="perceived_cause" value="agriculture"><label for="cause2">Spływy z pól rolnych</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="cause3" name="perceived_cause" value="algae"><label for="cause3">Toksyczny zakwit glonow</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="cause4" name="perceived_cause" value="salinity"><label for="cause4">Wysoka zasolenie wody</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="cause5" name="perceived_cause" value="drought"><label for="cause5">Susza i niskie stany wód</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="cause6" name="perceived_cause" value="climate"><label for="cause6">Zmiany klimatu lub ekstremalne zjawiska pogodowe</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="cause7" name="perceived_cause" value="mercury"><label for="cause7">Zanieczyszczenie rtęcią lub metalami ciężkimi</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="cause8" name="perceived_cause" value="unknown"><label for="cause8">Nie wiem / Nie jestem pewien/pewna</label></div>
+            </div>
+        </div>
+
+        <!-- Q5b: Severity framing — single-select
+             INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Yes" or "Nie jestem pewien/pewna"
+             Clean single-dimension severity scale (not multi-select).
+             Political failure frame removed — covered by Q5c (attribution).
+             Temporary setback option added to avoid steering toward disaster framing.
+             Single-select because severity is a single ordinal dimension. -->
+        <div class="question" id="q5b">
+            <div class="skip-logic-note">⚠️ INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Yes" or "Nie jestem pewien/pewna"</div>
+            <div class="question-text">Q5b. Jak poważne było Państwa zdaniem wydarzenie z 2022 roku na Odrze?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" id="sev1" name="disaster_severity" value="1"><label for="sev1">Niewielki incydent o ograniczonych i krótkoterminowych skutkach środowiskowych</label></div>
+                <div class="radio-option"><input type="radio" id="sev2" name="disaster_severity" value="2"><label for="sev2">Poważne zdarzenie środowiskowe o znacznych, lecz możliwych do usunięcia skutkach</label></div>
+                <div class="radio-option"><input type="radio" id="sev3" name="disaster_severity" value="3"><label for="sev3">Poważna katastrofa ekologiczna o rozległych i trwałych skutkach</label></div>
+                <div class="radio-option"><input type="radio" id="sev4" name="disaster_severity" value="99"><label for="sev4">Nie jestem pewien/pewna</label></div>
+            </div>
+        </div>
+
+        <!-- Q5c: Responsibility attribution — multi-select
+             INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Yes" or "Nie jestem pewien/pewna"
+             Parallel wording for Niemcy and Polska — no blame signal in question design.
+             "Nobody" option captures naturalisation frame without endorsing it.
+             Connects analytically to Q7a (satisfaction) and Q7b (institutional trust). -->
+        <div class="question" id="q5c">
+            <div class="skip-logic-note">⚠️ INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Yes" or "Nie jestem pewien/pewna"</div>
+            <div class="question-text">Q5c. Kto Państwa zdaniem ponosi odpowiedzialność za śnięcie ryb w 2022 roku? (Proszę zaznaczyć wszystkie pasujące odpowiedzi)</div>
+            <div class="checkbox-group">
+                <div class="checkbox-option"><input type="checkbox" id="resp1" name="responsibility" value="industry"><label for="resp1">Przemysł lub przedsiębiorstwa działające wzdłuż Odry</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="resp2" name="responsibility" value="germany"><label for="resp2">Władze krajowe w Niemczech</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="resp3" name="responsibility" value="poland"><label for="resp3">Władze krajowe w Polsce</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="resp4" name="responsibility" value="nobody"><label for="resp4">Nikt, było to przede wszystkim zdarzenie naturalne lub środowiskowe</label></div>
+                <div class="checkbox-option"><input type="checkbox" id="resp5" name="responsibility" value="unknown"><label for="resp5">Nie wiem</label></div>
+            </div>
+        </div>
+
+        <!-- Q5d: Behavioral change post-disaster
+             INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q2 ≠ "Wcale" AND Q5 = "Yes"
+             "Not applicable" kept: captures new users (no pre-disaster baseline).
+             Present tense framing = current behavior, not immediate reaction. -->
+        <div class="question" id="q5d">
+            <div class="skip-logic-note">⚠️ INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q2 > 0 I Q5 ≠ „Nie“</div>
+            <div class="question-text">Q5d. Czy śnięcie ryb w 2022 roku wpłynęło na to, jak korzysta Pan/Pani z Odry?</div>
+            <table class="grid-table">
+                <thead>
+                    <tr>
+                        <th style="width:45%;text-align:left;">Zachowanie</th>
+                        <th>Po śnięciu ryb</th>
+                        <th>Nadal dziś</th>
+                        <th>Nie dotyczy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Odwiedzam rzekę rzadziej</td><td><input type="radio" name="bc_visited_less" value="1"></td><td><input type="radio" name="bc_visited_less" value="2"></td><td><input type="radio" name="bc_visited_less" value="0"></td></tr>
+                    <tr><td>Unikam kontaktu z wodą (np. pływanie, brodzenie)</td><td><input type="radio" name="bc_water_contact" value="1"></td><td><input type="radio" name="bc_water_contact" value="2"></td><td><input type="radio" name="bc_water_contact" value="0"></td></tr>
+                    <tr><td>Zaprzestałem/am lub ograniczyłem/am wędkarstwo</td><td><input type="radio" name="bc_fishing" value="1"></td><td><input type="radio" name="bc_fishing" value="2"></td><td><input type="radio" name="bc_fishing" value="0"></td></tr>
+                    <tr><td>Zaprzestałem/am jedzenia ryb z rzeki</td><td><input type="radio" name="bc_eating_fish" value="1"></td><td><input type="radio" name="bc_eating_fish" value="2"></td><td><input type="radio" name="bc_eating_fish" value="0"></td></tr>
+                    <tr><td>Jestem bardziej ostrożny/a, ale nadal odwiedzam rzekę jak przedtem</td><td><input type="radio" name="bc_cautious" value="1"></td><td><input type="radio" name="bc_cautious" value="2"></td><td><input type="radio" name="bc_cautious" value="0"></td></tr>
+                    <tr><td>Bez zmian – korzystam z rzeki tak samo jak wcześniej</td><td><input type="radio" name="bc_no_change" value="1"></td><td><input type="radio" name="bc_no_change" value="2"></td><td><input type="radio" name="bc_no_change" value="0"></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 2: ES Importance                                     -->
+    <!-- Guideline 29: interesting opening section already done (S1)  -->
+    <!-- 21 items covering MA categories (provisioning, regulating,   -->
+    <!-- cultural, non-use). 57% cultural ES (12/21).                 -->
+    <!-- Question stem: "from" not "provides" — avoids implying       -->
+    <!-- current delivery (post-disaster some ES may be degraded).    -->
+    <!-- Unipolar importance scale (Guideline 6).                     -->
+    <!-- ============================================================ -->
+    <div id="section2" class="section hidden">
+        <h2>Section 2: Korzyśćs from the Oder River – Importance</h2>
+        <p class="section-intro">Jak ważne są dla Państwa osobiście następujące korzyści płynące z Odry?</p>
+        <table class="grid-table">
+            <thead>
+                <tr>
+                    <th>Korzyść</th>
+                    <th>Wcale nie ważne</th>
+                    <th>Nieco ważne</th>
+                    <th>Umiarkowanie ważne</th>
+                    <th>Bardzo ważne</th>
+                    <th>Niezwykle ważne</th>
+                </tr>
+            </thead>
+            <tbody id="importanceTable"></tbody>
+        </table>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 3: Concerns, Priorities, and Management              -->
+    <!-- Buffer between ES importance (S2) and ES condition (S4)      -->
+    <!-- to reduce carryover/response set bias (Guideline 31).        -->
+    <!-- ============================================================ -->
+    <div id="section3" class="section hidden">
+        <h2>Section 3: Concerns, Priorities, and Management</h2>
+
+        
+        <div class="question">
+<div class="question-text">Q6. Jak bardzo martwi się Pan/Pani o obecny stan Odry?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" id="concern1" name="concern" value="1"><label for="concern1">Wcale się nie martwię</label></div>
+                <div class="radio-option"><input type="radio" id="concern2" name="concern" value="2"><label for="concern2">Trochę się martwię</label></div>
+                <div class="radio-option"><input type="radio" id="concern3" name="concern" value="3"><label for="concern3">Umiarkowanie się martwię</label></div>
+                <div class="radio-option"><input type="radio" id="concern4" name="concern" value="4"><label for="concern4">Bardzo się martwię</label></div>
+                <div class="radio-option"><input type="radio" id="concern5" name="concern" value="5"><label for="concern5">Niezwykle się martwię</label></div>
+            </div>
+        </div>
+
+        <div class="question">
+            <div class="question-text">Q6a. Jak bardzo martwi się Pan/Pani o przyszły stan Odry?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" id="concern_future1" name="concern_future" value="1"><label for="concern_future1">Wcale się nie martwię</label></div>
+                <div class="radio-option"><input type="radio" id="concern_future2" name="concern_future" value="2"><label for="concern_future2">Trochę się martwię</label></div>
+                <div class="radio-option"><input type="radio" id="concern_future3" name="concern_future" value="3"><label for="concern_future3">Umiarkowanie się martwię</label></div>
+                <div class="radio-option"><input type="radio" id="concern_future4" name="concern_future" value="4"><label for="concern_future4">Bardzo się martwię</label></div>
+                <div class="radio-option"><input type="radio" id="concern_future5" name="concern_future" value="5"><label for="concern_future5">Niezwykle się martwię</label></div>
+            </div>
+        </div>
+
+        <div class=question>
+            <div class=question-text>Q6b. Jak bardzo martwi się Pan/Pani, że podobna katastrofa ekologiczna mogłaby się ponownie zdarzyć na Odrze?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" name="concern_recurrence" value="1"><label>Wcale się nie martwię</label></div>
+                <div class="radio-option"><input type="radio" name="concern_recurrence" value="2"><label>Trochę się martwię</label></div>
+                <div class="radio-option"><input type="radio" name="concern_recurrence" value="3"><label>Umiarkowanie się martwię</label></div>
+                <div class="radio-option"><input type="radio" name="concern_recurrence" value="4"><label>Bardzo się martwię</label></div>
+                <div class="radio-option"><input type="radio" name="concern_recurrence" value="5"><label>Niezwykle się martwię</label></div>
+            </div>
+        </div>
+        <!-- Q7: Eco-grief / Solastalgia (3 items)
+             Framed within Albrecht's (2005) solastalgia concept — distress caused
+             by environmental change in one's home environment while still present.
+             Item 1 (personal loss) + Item 2 (anger): acute grief (Cunsolo & Ellis 2018)
+             Item 3 (ongoing distress): chronic solastalgia dimension — distinguishes
+             solastalgia from acute grief; captures "still living with it" 2-3 years on.
+             Bipolar agree-disagree (Guideline 6).
+             INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Yes" or "Nie jestem pewien/pewna" -->
+        <div class="question" id="Q7">
+            <div class="skip-logic-note">⚠️ INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Yes" or "Nie jestem pewien/pewna"</div>
+            <div class="question-text">Q7. Proszę myśleć o poniższych stwierdzeniach w odniesieniu do śnięcia ryb w Odrze w 2022 roku i określić, w jakim stopniu się z nimi Pan/Pani zgadza lub nie.</div>
+            <table class="attachment-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;background-color:transparent;color:#333;font-weight:normal;"></th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Zdecydowanie<br>nie zgadzam<br>się</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Nie zgadzam się</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Ani tak,<br>ani nie</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Zgadzam się</th>
+                        <th style="background-color:transparent;color:#666;font-weight:normal;font-size:12px;">Zdecydowanie<br>zgadzam się</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Odczuwam osobistą stratę z powodu tego, co przydarzyło się Odrze</td><td style="text-align:center;"><input type="radio" name="grief1" value="1"></td><td style="text-align:center;"><input type="radio" name="grief1" value="2"></td><td style="text-align:center;"><input type="radio" name="grief1" value="3"></td><td style="text-align:center;"><input type="radio" name="grief1" value="4"></td><td style="text-align:center;"><input type="radio" name="grief1" value="5"></td></tr>
+                    <tr><td>Czuję złość z powodu tego, co przydarzyło się Odrze</td><td style="text-align:center;"><input type="radio" name="grief4" value="1"></td><td style="text-align:center;"><input type="radio" name="grief4" value="2"></td><td style="text-align:center;"><input type="radio" name="grief4" value="3"></td><td style="text-align:center;"><input type="radio" name="grief4" value="4"></td><td style="text-align:center;"><input type="radio" name="grief4" value="5"></td></tr>
+                    <tr><td>Trwający stan Odry nadal sprawia mi przykrość</td><td style="text-align:center;"><input type="radio" name="grief5" value="1"></td><td style="text-align:center;"><input type="radio" name="grief5" value="2"></td><td style="text-align:center;"><input type="radio" name="grief5" value="3"></td><td style="text-align:center;"><input type="radio" name="grief5" value="4"></td><td style="text-align:center;"><input type="radio" name="grief5" value="5"></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Q6a: Satisfaction with authorities' disaster response (NEW)
+             INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Yes" or "Nie jestem pewien/pewna"
+             Bipolar satisfied-dissatisfied (Guideline 28: construct-specific scale).
+             Fills WP4 gap: "accountability" dimension not otherwise measured.
+             Connects to Q4b (political failure framing) and Q6b (trust). -->
+        <div class="question" id="Q7a">
+            <div class="skip-logic-note">⚠️ INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Tak" lub "Nie jestem pewien/pewna"</div>
+            <div class="question-text">Q7a. Jak ocenia Pan/Pani bezpośrednią reakcję władz na śnięcie ryb w Odrze w 2022 roku?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" name="authority_sat_immediate" value="1"><label>Bardzo niezadowolony/a</label></div>
+                <div class="radio-option"><input type="radio" name="authority_sat_immediate" value="2"><label>Niezadowolony/a</label></div>
+                <div class="radio-option"><input type="radio" name="authority_sat_immediate" value="3"><label>Ani zadowolony/a, ani niezadowolony/a</label></div>
+                <div class="radio-option"><input type="radio" name="authority_sat_immediate" value="4"><label>Zadowolony/a</label></div>
+                <div class="radio-option"><input type="radio" name="authority_sat_immediate" value="5"><label>Bardzo zadowolony/a</label></div>
+                <div class="radio-option"><input type="radio" name="authority_sat_immediate" value="99"><label>Nie wiem / Nie byłem/byłam świadomy/a reakcji</label></div>
+            </div>
+        </div>
+
+        <div class="question" id="Q7a_b">
+            <div class="skip-logic-note">⚠️ INSTRUKCJA FILTROWANIA: Wyświetlić tylko jeśli Q5 = "Tak" lub "Nie jestem pewien/pewna"</div>
+            <div class="question-text">Q7a_b. Jak ocenia Pan/Pani sposób, w jaki władze radzą sobie z trwającą odbudową Odry od 2022 roku?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" name="authority_sat_ongoing" value="1"><label>Bardzo niezadowolony/a</label></div>
+                <div class="radio-option"><input type="radio" name="authority_sat_ongoing" value="2"><label>Niezadowolony/a</label></div>
+                <div class="radio-option"><input type="radio" name="authority_sat_ongoing" value="3"><label>Ani zadowolony/a, ani niezadowolony/a</label></div>
+                <div class="radio-option"><input type="radio" name="authority_sat_ongoing" value="4"><label>Zadowolony/a</label></div>
+                <div class="radio-option"><input type="radio" name="authority_sat_ongoing" value="5"><label>Bardzo zadowolony/a</label></div>
+                <div class="radio-option"><input type="radio" name="authority_sat_ongoing" value="99"><label>Nie wiem</label></div>
+            </div>
+        </div>
+
+        <!-- Q6b: Institutional trust — BIPOLAR scale (Guideline 6)
+             "Zdecydowanie nie ufam → Zdecydowanie ufam" (not unipolar)
+             Five groups: national government, environmental/water authorities,
+             cross-border river management bodies, scientists, industry.
+             "Nie wiem" column (Guideline 7) — especially important for
+             cross-border bodies which many residents will not know exist.
+             IKSO/IKSD acronym deliberately omitted — differs across languages
+             and would cause confusion in German/Polish translation. -->
+        <div class="question">
+            <div class="question-text">Q7b. Jak bardzo ufa Pan/Pani każdemu z poniższych podmiotów w podejmowaniu decyzji korzystnych dla długoterminowego zdrowia Odry?</div>
+            <div class="question-clarification">Jeśli nie zna Pan/Pani danej grupy lub nie ma opinii, proszę wybrać "Nie wiem."</div>
+            <table class="grid-table">
+                <thead>
+                    <tr>
+                        <th>Group</th>
+                        <th>Zdecydowanie nie ufam</th>
+                        <th>Nie ufam</th>
+                        <th>Ani tak, ani nie</th>
+                        <th>Ufam</th>
+                        <th>Zdecydowanie ufam</th>
+                        <th class="dk-col">Nie wiem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Rząd krajowy Niemiec</td>
+                        <td><input type="radio" name="trust_de_federal" value="1"></td>
+                        <td><input type="radio" name="trust_de_federal" value="2"></td>
+                        <td><input type="radio" name="trust_de_federal" value="3"></td>
+                        <td><input type="radio" name="trust_de_federal" value="4"></td>
+                        <td><input type="radio" name="trust_de_federal" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="trust_de_federal" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Władze regionalne Niemiec</td>
+                        <td><input type="radio" name="trust_de_regional" value="1"></td>
+                        <td><input type="radio" name="trust_de_regional" value="2"></td>
+                        <td><input type="radio" name="trust_de_regional" value="3"></td>
+                        <td><input type="radio" name="trust_de_regional" value="4"></td>
+                        <td><input type="radio" name="trust_de_regional" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="trust_de_regional" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Niemieckie organy ochrony środowiska i gospodarki wodnej</td>
+                        <td><input type="radio" name="trust_de_env" value="1"></td>
+                        <td><input type="radio" name="trust_de_env" value="2"></td>
+                        <td><input type="radio" name="trust_de_env" value="3"></td>
+                        <td><input type="radio" name="trust_de_env" value="4"></td>
+                        <td><input type="radio" name="trust_de_env" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="trust_de_env" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Rząd krajowy Polski</td>
+                        <td><input type="radio" name="trust_pl_national" value="1"></td>
+                        <td><input type="radio" name="trust_pl_national" value="2"></td>
+                        <td><input type="radio" name="trust_pl_national" value="3"></td>
+                        <td><input type="radio" name="trust_pl_national" value="4"></td>
+                        <td><input type="radio" name="trust_pl_national" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="trust_pl_national" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Polskie władze regionalne</td>
+                        <td><input type="radio" name="trust_pl_regional" value="1"></td>
+                        <td><input type="radio" name="trust_pl_regional" value="2"></td>
+                        <td><input type="radio" name="trust_pl_regional" value="3"></td>
+                        <td><input type="radio" name="trust_pl_regional" value="4"></td>
+                        <td><input type="radio" name="trust_pl_regional" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="trust_pl_regional" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Polskie organy ochrony środowiska i gospodarki wodnej</td>
+                        <td><input type="radio" name="trust_pl_env" value="1"></td>
+                        <td><input type="radio" name="trust_pl_env" value="2"></td>
+                        <td><input type="radio" name="trust_pl_env" value="3"></td>
+                        <td><input type="radio" name="trust_pl_env" value="4"></td>
+                        <td><input type="radio" name="trust_pl_env" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="trust_pl_env" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Polsko-niemieckie organy zarządzania rzeką (np. MKOO/IKSO)</td>
+                        <td><input type="radio" name="trust_crossborder" value="1"></td>
+                        <td><input type="radio" name="trust_crossborder" value="2"></td>
+                        <td><input type="radio" name="trust_crossborder" value="3"></td>
+                        <td><input type="radio" name="trust_crossborder" value="4"></td>
+                        <td><input type="radio" name="trust_crossborder" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="trust_crossborder" value="99"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Q7: Management priorities (trimmed 8→5)
+             Unipolar priority scale (Guideline 6).
+             Cross-border coordination item kept as project-specific priority. -->
+        <div class="question">
+            <div class="question-text">Q8. Jaką rangę należy nadać każdemu z poniższych celów zarządzania Odrą?</div>
+            <table class="grid-table">
+                <thead>
+                    <tr>
+                        <th>Cel zarządzania</th>
+                        <th>Bardzo niski priorytet</th>
+                        <th>Niski priorytet</th>
+                        <th>Średni priorytet</th>
+                        <th>Wysoki priorytet</th>
+                        <th>Bardzo wysoki priorytet</th>
+                    </tr>
+                </thead>
+                <tbody>
+                                        <tr><td>Zapobieganie przyszłym katastrofom ekologicznym</td><td><input type="radio" name="priority1" value="1"></td><td><input type="radio" name="priority1" value="2"></td><td><input type="radio" name="priority1" value="3"></td><td><input type="radio" name="priority1" value="4"></td><td><input type="radio" name="priority1" value="5"></td></tr>
+                    <tr><td>Renaturyzacja populacji ryb</td><td><input type="radio" name="priority2" value="1"></td><td><input type="radio" name="priority2" value="2"></td><td><input type="radio" name="priority2" value="3"></td><td><input type="radio" name="priority2" value="4"></td><td><input type="radio" name="priority2" value="5"></td></tr>
+                    <tr><td>Poprawa jakości wody</td><td><input type="radio" name="priority3" value="1"></td><td><input type="radio" name="priority3" value="2"></td><td><input type="radio" name="priority3" value="3"></td><td><input type="radio" name="priority3" value="4"></td><td><input type="radio" name="priority3" value="5"></td></tr>
+                    <tr><td>Redukcja poziomu soli i zanieczyszczeń w rzece</td><td><input type="radio" name="priority4" value="1"></td><td><input type="radio" name="priority4" value="2"></td><td><input type="radio" name="priority4" value="3"></td><td><input type="radio" name="priority4" value="4"></td><td><input type="radio" name="priority4" value="5"></td></tr>
+                    <tr><td>Odtworzenie siedlisk nadbrżeżnych i terenów zalewowych</td><td><input type="radio" name="priority5" value="1"></td><td><input type="radio" name="priority5" value="2"></td><td><input type="radio" name="priority5" value="3"></td><td><input type="radio" name="priority5" value="4"></td><td><input type="radio" name="priority5" value="5"></td></tr>
+                    <tr><td>Poprawa transgranicznego zarządzania Odrą</td><td><input type="radio" name="priority6" value="1"></td><td><input type="radio" name="priority6" value="2"></td><td><input type="radio" name="priority6" value="3"></td><td><input type="radio" name="priority6" value="4"></td><td><input type="radio" name="priority6" value="5"></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Q9: Popieram for management actions — revised list
+             Bipolar oppose-support (Guideline 28).
+             "Nie wiem" column (Guideline 7).
+             Redundancy removed: pollution regulations + industrial discharge
+             collapsed into single enforcement item.
+             Shipping item dropped — too specific/politically loaded.
+             Fishing restrictions and stocking added: test natural vs.
+             artificial recovery attitudes; connect to Q11a (future vision)
+             and Q11b (WTP for natural recovery). -->
+        <div class="question">
+            <div class="question-text">Q9. W jakim stopniu popiera lub sprzeciwia się Pan/Pani każdemu z poniższych działań dotyczących Odry?</div>
+            <table class="grid-table">
+                <thead>
+                    <tr>
+                        <th>Działanie</th>
+                        <th>Zdecydowanie sprzeciwiam się</th>
+                        <th>Sprzeciwiam się</th>
+                        <th>Ani tak, ani nie</th>
+                        <th>Popieram</th>
+                        <th>Zdecydowanie popieram</th>
+                        <th class="dk-col">Nie wiem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Surowsze egzekwowanie obowiązujących przepisów ochrony środowiska i ochrony wód wzdłuż Odry</td>
+                        <td><input type="radio" name="support1" value="1"></td>
+                        <td><input type="radio" name="support1" value="2"></td>
+                        <td><input type="radio" name="support1" value="3"></td>
+                        <td><input type="radio" name="support1" value="4"></td>
+                        <td><input type="radio" name="support1" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="support1" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Odtworzenie siedlisk nadbrzeżnych i terenow zalewowych</td>
+                        <td><input type="radio" name="support2" value="1"></td>
+                        <td><input type="radio" name="support2" value="2"></td>
+                        <td><input type="radio" name="support2" value="3"></td>
+                        <td><input type="radio" name="support2" value="4"></td>
+                        <td><input type="radio" name="support2" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="support2" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Wspólny polsko-niemiecki system monitorowania i wczesnego ostrzegania przed zdarzeniami zanieczyszczenia</td>
+                        <td><input type="radio" name="support3" value="1"></td>
+                        <td><input type="radio" name="support3" value="2"></td>
+                        <td><input type="radio" name="support3" value="3"></td>
+                        <td><input type="radio" name="support3" value="4"></td>
+                        <td><input type="radio" name="support3" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="support3" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Tymczasowe ograniczenia połowu ryb w celu naturalnej odbudowy populacji</td>
+                        <td><input type="radio" name="support4" value="1"></td>
+                        <td><input type="radio" name="support4" value="2"></td>
+                        <td><input type="radio" name="support4" value="3"></td>
+                        <td><input type="radio" name="support4" value="4"></td>
+                        <td><input type="radio" name="support4" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="support4" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Zarybienie (przy użyciu ryb wychowanych w wylęgarniach)</td>
+                        <td><input type="radio" name="support5" value="1"></td>
+                        <td><input type="radio" name="support5" value="2"></td>
+                        <td><input type="radio" name="support5" value="3"></td>
+                        <td><input type="radio" name="support5" value="4"></td>
+                        <td><input type="radio" name="support5" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="support5" value="99"></td>
+                    </tr>
+                    <tr>
+                        <td>Harmonizacja przepisów różnych w zakresie rybołówstwa między Niemcami a Polską</td>
+                        <td><input type="radio" name="support6" value="1"></td>
+                        <td><input type="radio" name="support6" value="2"></td>
+                        <td><input type="radio" name="support6" value="3"></td>
+                        <td><input type="radio" name="support6" value="4"></td>
+                        <td><input type="radio" name="support6" value="5"></td>
+                        <td class="dk-col"><input type="radio" name="support6" value="99"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Q9a: Sense of involvement in river management decisions
+             Felt participation measure — directly feeds WP4 workshop objectives.
+             Gap between institutional trust (Q6b) and felt involvement is a
+             governance finding: residents may trust authorities but still feel excluded.
+             Connects to co-production literature (Arnstein 1969 ladder of participation).
+             Unipolar scale (no say → great deal of say). -->
+        <div class="question">
+            <div class="question-text">Q10. W jakim stopniu uważa Pan/Pani, że mieszkańcy tacy jak Pan/Pani mają wpływ na decyzje dotyczące zarządzania Odrą?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" id="involve1" name="involvement" value="1"><label for="involve1">Żadnego wpływu</label></div>
+                <div class="radio-option"><input type="radio" id="involve2" name="involvement" value="2"><label for="involve2">Mały wpływ</label></div>
+                <div class="radio-option"><input type="radio" id="involve3" name="involvement" value="3"><label for="involve3">Pewien wpływ</label></div>
+                <div class="radio-option"><input type="radio" id="involve4" name="involvement" value="4"><label for="involve4">Znaczny wpływ</label></div>
+                <div class="radio-option"><input type="radio" id="involve5" name="involvement" value="5"><label for="involve5">Duży wpływ</label></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 4: ES Condition                                      -->
+    <!-- "Nie wiem" column included (Guideline 7) — respondents may -->
+    <!-- not be able to assess all 21 services.                       -->
+    <!-- Bipolar poor-excellent scale (Guideline 6).                  -->
+    <!-- ============================================================ -->
+    <div id="section4" class="section hidden">
+        <h2>Section 4: Korzyśćs from the Oder River – Current Condition</h2>
+        <p class="section-intro">Jak ocenia Pan/Pani obecny stan następujących aspektów Odry w Państwa regionie?</p>
+        <table class="grid-table">
+            <thead>
+                <tr>
+                    <th>Korzyść</th>
+                    <th>Bardzo zły</th>
+                    <th>Zły</th>
+                    <th>Fair</th>
+                    <th>Dobry</th>
+                    <th>Doskonały</th>
+                    <th class="dk-col">Nie wiem</th>
+                </tr>
+            </thead>
+            <tbody id="conditionTable"></tbody>
+        </table>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 5: Recovery and Future Use                           -->
+    <!-- ============================================================ -->
+    <div id="section5" class="section hidden">
+        <h2>Sekcja 5: Odbudowa i przyszłość</h2>
+        <p class="section-intro">Poniższe pytania dotyczą Państwa postrzeżenia odbudowy Odry oraz oczekiwań na przyszłość.</p>
+
+
+        
+        <div class="question">
+<div class="question-text">Q11. Jak Pan/Pani ocenia, jak bardzo Odra przywróciła się od śnięcia ryb w 2022 roku?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" id="recover1" name="recovery_status" value="1"><label for="recover1">Wcale się nie odzyskała</label></div>
+                <div class="radio-option"><input type="radio" id="recover2" name="recovery_status" value="2"><label for="recover2">Nieznacznie</label></div>
+                <div class="radio-option"><input type="radio" id="recover3" name="recovery_status" value="3"><label for="recover3">Umiarkowanie</label></div>
+                <div class="radio-option"><input type="radio" id="recover4" name="recovery_status" value="4"><label for="recover4">W dużym stopniu</label></div>
+                <div class="radio-option"><input type="radio" id="recover5" name="recovery_status" value="5"><label for="recover5">Całkowicie</label></div>
+                <div class="radio-option"><input type="radio" id="recover_dk" name="recovery_status" value="99"><label for="recover_dk">Nie wiem</label></div>
+            </div>
+        </div>
+
+        <!-- Q10b: Future vision
+             Addresses WP4 objective: "preferences for the future of the Oder"
+             3 options capture key value trade-off (nature vs. balance vs. use). -->
+        <div class="question">
+            <div class="question-text">Q11a. Myśląc o przyszłości Odry, która wizja jest Panu/Pani najbliższa?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" id="vision1" name="future_vision" value="1"><label for="vision1">Rzeka odbudowana ekologicznie i swobodnie płynąca, z minimalną ingerencją człowieka</label></div>
+                <div class="radio-option"><input type="radio" id="vision2" name="future_vision" value="2"><label for="vision2">Rzeka, w której zdrowie ekologiczne i potrzeby człowieka pozostają w równowadze</label></div>
+                <div class="radio-option"><input type="radio" id="vision3" name="future_vision" value="3"><label for="vision3">Priorytet dla zastosowań gospodarczych i rekreacyjnych</label></div>
+                <div class="radio-option"><input type="radio" id="vision_dk" name="future_vision" value="99"><label for="vision_dk">Nie jestem pewien/pewna</label></div>
+            </div>
+        </div>
+
+        <!-- Q10c: Contingent valuation — WTP for fish population recovery
+             Payment card format (preferred over open-ended for postal surveys:
+             reduces protest bids, cleaner ordinal data).
+             "Natural recovery" framing critical — rules out stocking interpretation.
+             Water quality and habitat recovery framing rules out stocking interpretation.
+             One-time payment (not annual) — "pre-2022 levels" implies a restoration
+             endpoint; one-time maps more naturally onto a discrete restoration goal.
+             NOTE: Polish version should include parallel PLN amounts.
+             Scope mismatch with ES ratings (19 services vs. fish) is a known limitation —
+             analyse against ES clusters not composite score. -->
+
+        <!-- Q11: Optimism + signs of life (2 items)
+             Q11a: optimism = attitude (bipolar agree-disagree, Guideline 6)
+             Q12b: signs of ecological recovery = personal observation. Examples removed — fish kill affected fish specifically; bird/plant examples were ecologically inaccurate and unnecessarily anchoring. -->
+        <div class="question" id="q12">
+            <div class="question-text">Q12. Proszę określić, w jakim stopniu zgadza się lub nie zgadza Pan/Pani z każdą z poniższych stwierdzeń dotyczących Odry.</div>
+            <table class="attachment-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Zdecydowanie nie zgadzam się</th>
+                        <th>Nie zgadzam się</th>
+                        <th>Ani tak, ani nie</th>
+                        <th>Zgadzam się</th>
+                        <th>Zdecydowanie zgadzam się</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Jestem optymistą/optymistką co do tego, że Odra w pełni się odzyska za mojego życia</td>
+                        <td><input type="radio" name="optimism" value="1"></td>
+                        <td><input type="radio" name="optimism" value="2"></td>
+                        <td><input type="radio" name="optimism" value="3"></td>
+                        <td><input type="radio" name="optimism" value="4"></td>
+                        <td><input type="radio" name="optimism" value="5"></td>
+                    </tr>
+                    <tr>
+                        <td>Osobiście zauważyłem/am oznaki ekologicznej odbudowy Odry</td>
+                        <td><input type="radio" name="signs_of_life" value="1"></td>
+                        <td><input type="radio" name="signs_of_life" value="2"></td>
+                        <td><input type="radio" name="signs_of_life" value="3"></td>
+                        <td><input type="radio" name="signs_of_life" value="4"></td>
+                        <td><input type="radio" name="signs_of_life" value="5"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Q12a: Species priority — forced single-select
+             Tests whether residents distinguish between use values (catchable fish),
+             stewardship values (native species), and existence values (rare/protected).
+             Single-select forces a priority choice — multi-select would allow
+             everyone to pick everything and produce no differentiation.
+             No species named — avoids steering toward ecologist priorities and
+             social desirability toward "important" species.
+             Connects to Q9 (stocking vs. fishing restrictions) and Q11b (WTP):
+             existence value respondents expected to show higher WTP for
+             natural recovery; use value respondents may be indifferent to stocking. -->
+        <div class="question">
+            <div class="question-text">Q12a. Myśląc o rybach w Odrze, co jest dla Państwa najważniejsze?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" id="fish1" name="fish_priority" value="1"><label for="fish1">To, że w rzece są ryby, niezależnie od gatunku</label></div>
+                <div class="radio-option"><input type="radio" id="fish2" name="fish_priority" value="2"><label for="fish2">To, że w rzece występują rodzime gatunki ryb</label></div>
+                <div class="radio-option"><input type="radio" id="fish3" name="fish_priority" value="3"><label for="fish3">Specjalnie nie myślę o gatunkach ryb</label></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 6: About You                                         -->
+    <!-- Demographics + connection MERGED (Guideline 30: demo at end) -->
+    <!-- Guideline 11: "Wolę nie odpowiadać" for sensitive items        -->
+    <!-- ============================================================ -->
+    <div id="section6" class="section hidden">
+        <h2>Sekcja 6: O Państwie</h2>
+
+        <!-- D1: Year of birth (not age categories)
+             Allows cohort analysis: reunification (1989), EU accession (2004), etc.
+             "Wolę nie odpowiadać" added (Guideline 11). -->
+        <div class="question">
+            <div class="question-text">Q13. W którym roku się Pan/Pani urodził/a?</div>
+            <input type="number" id="birth_year" name="birth_year" min="1900" max="2026" placeholder="e.g., 1985" style="width: 150px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px;">
+            <div class="radio-group" style="margin-top: 10px;">
+                <div class="radio-option"><input type="radio" name="birth_year_skip" value="prefer_not_say"><label>Wolę nie odpowiadać</label></div>
+            </div>
+        </div>
+
+        <div class="question">
+            <div class="question-text">Q14. Jaka jest Państwa płeć?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" name="gender" value="female"><label>Kobieta</label></div>
+                <div class="radio-option"><input type="radio" name="gender" value="male"><label>Mężczyzna</label></div>
+                <div class="radio-option"><input type="radio" name="gender" value="nonbinary"><label>Niebinarne / inna tożsamość</label></div>
+                <div class="radio-option"><input type="radio" name="gender" value="prefer_not_say"><label>Wolę nie odpowiadać</label></div>
+            </div>
+        </div>
+
+        <div class="question">
+            <div class="question-text">Q15. W którym kraju znajduje się Państwa stałe miejsce zamieszkania?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" name="country" value="germany"><label>Niemcy</label></div>
+                <div class="radio-option"><input type="radio" name="country" value="poland"><label>Polska</label></div>
+                <div class="radio-option"><input type="radio" name="country" value="other"><label>Inne: <input type="text" name="country_other" style="margin-left:8px;width:150px;padding:4px;border:1px solid #ccc;border-radius:4px;"></label></div>
+            </div>
+        </div>
+
+        <!-- D4: Education
+             NOTE: German (Berufsausbildung) and Polish education systems
+             differ from each other — translations need native review (TRAPD method).
+             "Wolę nie odpowiadać" added (Guideline 11). -->
+        <div class="question">
+            <div class="question-text">Q16. Jaki jest Państwa najwyższy ukończony poziom wykształcenia?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" name="education" value="1"><label>Brak formalnych kwalifikacji</label></div>
+                <div class="radio-option"><input type="radio" name="education" value="2"><label>Szkoła podstawowa (8 lat)</label></div>
+                <div class="radio-option"><input type="radio" name="education" value="3"><label>Liceum ogólnokształcące / technikum (matura)</label></div>
+                <div class="radio-option"><input type="radio" name="education" value="4"><label>Szkoła branżowa / zasadnicza szkoła zawodowa</label></div>
+                <div class="radio-option"><input type="radio" name="education" value="5"><label>Licencjat / inżynier</label></div>
+                <div class="radio-option"><input type="radio" name="education" value="6"><label>Tytuł magistra (mgr)</label></div>
+                <div class="radio-option"><input type="radio" name="education" value="7"><label>Doktorat lub wyższy</label></div>
+                <div class="radio-option"><input type="radio" name="education" value="prefer_not_say"><label>Wolę nie odpowiadać</label></div>
+            </div>
+        </div>
+
+        <!-- C1: Length of residence
+             Important for place attachment interpretation (longer = stronger expected attachment)
+             and pre-disaster baseline (if < 3 years, likely moved post-disaster). -->
+        <div class="question">
+            <div class="question-text">Q17. Jak długo mieszka Pan/Pani w pobliżu Odry?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" name="residence_length" value="1"><label>Mniej niż 1 rok</label></div>
+                <div class="radio-option"><input type="radio" name="residence_length" value="2"><label>1–3 lata</label></div>
+                <div class="radio-option"><input type="radio" name="residence_length" value="3"><label>4–10 lat</label></div>
+                <div class="radio-option"><input type="radio" name="residence_length" value="4"><label>11–20 lat</label></div>
+                <div class="radio-option"><input type="radio" name="residence_length" value="5"><label>Ponad 20 lat</label></div>
+            </div>
+        </div>
+
+        <!-- C3: Work sector
+             Flags respondents with direct professional stakes in the river.
+             Conflict-of-interest covariate for trust (Q7b) and management
+             support (Q9) analyses. Three broad categories only. -->
+        <div class="question">
+            <div class="question-text">Q18. Czy pracuje Pan/Pani w którejś z następujących dziedzin? (Proszę zaznaczyć wszystkie pasujące odpowiedzi)</div>
+            <div class="checkbox-group">
+                <div class="checkbox-option"><input type="checkbox" name="work_sector" value="environment_water"><label>Ochrona środowiska, gospodarka wodna lub administracja publiczna</label></div>
+                <div class="checkbox-option"><input type="checkbox" name="work_sector" value="industry_agriculture"><label>Przemysł, produkcja lub rolnictwo</label></div>
+                <div class="checkbox-option"><input type="checkbox" name="work_sector" value="none"><label>Żadne z powyższych</label></div>
+            </div>
+        </div>
+        <!-- Q19: Household income — monthly net
+             Monthly net preferred over annual: most respondents know take-home
+             pay immediately; annual gross is known but cross-country comparability
+             is poor due to different tax systems. Monthly net ×12 in analysis.
+             NOTE: Polish version requires PLN equivalent bands (~×4.3 conversion). -->
+        <div class="question">
+            <div class="question-text">Q19. Jakie jest przybliżony miesięczny dochód netto Państwa gospodarstwa domowego ?</div>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" name="income" value="1"><label>Poniżej 3 000 zł</label></div>
+                <div class="radio-option"><input type="radio" name="income" value="2"><label>3 000 zł–4 500 zł</label></div>
+                <div class="radio-option"><input type="radio" name="income" value="3"><label>4 501 zł–6 000 zł</label></div>
+                <div class="radio-option"><input type="radio" name="income" value="4"><label>6 001 zł–8 000 zł</label></div>
+                <div class="radio-option"><input type="radio" name="income" value="5"><label>8 001 zł–10 000 zł</label></div>
+                <div class="radio-option"><input type="radio" name="income" value="6"><label>Ponad 10 000 zł</label></div>
+                <div class="radio-option"><input type="radio" name="income" value="99"><label>Wolę nie odpowiadać</label></div>
+            </div>
+        </div>
+
+        <!-- Q20: Organisation membership
+             Predicts stewardship motivation, ES valuation, and WTP independently
+             of visit frequency. Analytical value for Papers 4 and 5.
+             Multi-select — respondents may belong to multiple organisations. -->
+        <div class="question">
+            <div class="question-text">Q20. Czy jest Pan/Pani członkiem którejś z następujących organizacji? (Proszę zaznaczyć wszystkie pasujące odpowiedzi)</div>
+            <div class="checkbox-group">
+                <div class="checkbox-option"><input type="checkbox" name="org_membership" value="angling"><label>Koła lub klubu wędkarskiego</label></div>
+                <div class="checkbox-option"><input type="checkbox" name="org_membership" value="environmental"><label>Organizacji ekologicznej lub ochrony przyrody</label></div>
+                <div class="checkbox-option"><input type="checkbox" name="org_membership" value="none"><label>Żadne z powyższych</label></div>
+            </div>
+        </div>
+        <div class="question">
+            <div class="question-text">Q21. Jaki jest Państwa kod pocztowy?</div>
+            <input type="text" name="postcode" maxlength="6" placeholder="np. 69-100" style="width:150px; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:16px;">
+        </div>
+    </div>
+
+    <div id="thankYou" class="section hidden">
+        <h2>Dziękujemy!</h2>
+        <div class="intro">
+            <p>Dziękujemy za wypełnienie ankiety. Państwa odpowiedzi są cenne i przyczynią się do odbudowy oraz zrównoważonego zarządzania Odrą.</p>
+            <p>Państwa dane zostały zapisane (w tej wersji demonstracyjnej dane są przechowywane wyłącznie lokalnie w przeglądarce w celach testowych).</p>
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <button id="prevBtn" class="btn-secondary" onclick="changeSection(-1)">Wstecz</button>
+        <button id="nextBtn" class="btn-primary" onclick="changeSection(1)">Dalej</button>
+    </div>
+</div>
+
+<script>
+    // ES Items for IMPORTANCE ratings: 19 items across 4 MA categories
+    // Provisioning (3), Regulating (3), Cultural (10), Non-use (3)
+    // ES15 (artistic inspiration) and ES17 (sense of connection) dropped:
+    // ES15 correlates strongly with ES12 (scenery) and ES16 (heritage);
+    // ES17 redundant with place attachment scale (Q4).
+    const esImportanceItems = [
+        {id: 'ES01', text: 'Wędkarstwo rekreacyjne',                     category: 'Provisioning'},
+        {id: 'ES01b', text: 'Połów ryb na własne potrzeby',              category: 'Provisioning'},
+        {id: 'ES02', text: 'Jakość wody',                               category: 'Provisioning'},
+        {id: 'ES03', text: 'Woda dla rolnictwa',                     category: 'Provisioning'},
+        {id: 'ES04', text: 'Ochrona przeciwpowodziowa',                          category: 'Regulating'},
+        {id: 'ES05', text: 'Regulacja klimatu',                        category: 'Regulating'},
+        {id: 'ES06', text: 'Siedlisko dla ryb i dzikiej przyrody',             category: 'Regulating'},
+        {id: 'ES07', text: 'Pływanie',                                  category: 'Cultural'},
+        {id: 'ES08', text: 'Płynięcie łodzią',                                   category: 'Cultural'},
+        {id: 'ES09', text: 'Spacery i wędrówki',                        category: 'Cultural'},
+        {id: 'ES10', text: 'Jazda na rowerze',                                   category: 'Cultural'},
+        {id: 'ES11', text: 'Obserwacja przyrody',                         category: 'Cultural'},
+        {id: 'ES12', text: 'Piękne krajobrazy',                         category: 'Cultural'},
+        {id: 'ES13', text: 'Edukacja ekologiczna i nauka',      category: 'Cultural'},
+        {id: 'ES14', text: 'Spotkania z rodziną i przyjaciółmi',         category: 'Cultural'},
+        {id: 'ES16', text: 'Tradycje kulturowe i dziedzictwo',          category: 'Cultural'},
+        {id: 'ES18', text: 'Spokój i relaks',                      category: 'Cultural'},
+        {id: 'ES19', text: 'Miejsca pracy i możliwości ekonomiczne',           category: 'Cultural'},
+        {id: 'ES20', text: 'Wiedza o tym, że rzeka jest zdrowa i kwitnie', category: 'Non-use'},
+        {id: 'ES21', text: 'Zachowanie rzeki dla przyszłych pokoleń', category: 'Non-use'}
+    ];
+
+    // ES Items for CONDITION ratings: 15 items — directly resident-observable.
+    // Provisioning/regulating condition (ES02-ES05) excluded: water quality,
+    // flood protection, and climate regulation require technical knowledge
+    // most residents don't have.
+    // ES01 and ES06 retained — fish and wildlife presence/absence is directly
+    // observable, and central to the disaster and recovery narrative.
+    // ES15 and ES17 excluded (dropped from importance above).
+    const esConditionItems = [
+        {id: 'ES01', text: 'Wędkarstwo rekreacyjne',                     category: 'Provisioning'},
+                {id: 'ES02', text: 'Jakość wody',                               category: 'Provisioning'},
+{id: 'ES06', text: 'Siedlisko dla ryb i dzikiej przyrody',             category: 'Regulating'},
+        {id: 'ES07', text: 'Pływanie',                                  category: 'Cultural'},
+        {id: 'ES08', text: 'Płynięcie łodzią',                                   category: 'Cultural'},
+        {id: 'ES09', text: 'Spacery i wędrówki',                        category: 'Cultural'},
+        {id: 'ES10', text: 'Jazda na rowerze',                                   category: 'Cultural'},
+        {id: 'ES11', text: 'Obserwacja przyrody',                         category: 'Cultural'},
+        {id: 'ES12', text: 'Piękne krajobrazy',                         category: 'Cultural'},
+        {id: 'ES13', text: 'Edukacja ekologiczna i nauka',      category: 'Cultural'},
+        {id: 'ES14', text: 'Spotkania z rodziną i przyjaciółmi',         category: 'Cultural'},
+        {id: 'ES16', text: 'Tradycje kulturowe i dziedzictwo',          category: 'Cultural'},
+        {id: 'ES18', text: 'Spokój i relaks',                      category: 'Cultural'},
+        {id: 'ES19', text: 'Miejsca pracy i możliwości ekonomiczne',           category: 'Cultural'},
+        {id: 'ES20', text: 'Wiedza o tym, że rzeka jest zdrowa i kwitnie', category: 'Non-use'},
+        {id: 'ES21', text: 'Zachowanie rzeki dla przyszłych pokoleń', category: 'Non-use'}
+    ];
+
+    let currentSection = 1;
+    const totalSections = 7; // 6 content sections + thank you
+
+    function populateESTables() {
+        const importanceTable = document.getElementById('importanceTable');
+        const conditionTable = document.getElementById('conditionTable');
+        // Importance: 19 items, 5-point unipolar (not at all → extremely important)
+        esImportanceItems.forEach(item => {
+            const impRow = document.createElement('tr');
+            impRow.innerHTML = `<td>${item.text}</td>${[1,2,3,4,5].map(v=>`<td><input type="radio" name="imp_${item.id}" value="${v}"></td>`).join('')}`;
+            importanceTable.appendChild(impRow);
+        });
+        // Condition: 14 items, 5-point bipolar (very poor → excellent) + Nie wiem
+        esConditionItems.forEach(item => {
+            const condRow = document.createElement('tr');
+            condRow.innerHTML = `<td>${item.text}</td>${[1,2,3,4,5].map(v=>`<td><input type="radio" name="cond_${item.id}" value="${v}"></td>`).join('')}<td class="dk-col"><input type="radio" name="cond_${item.id}" value="99"></td>`;
+            conditionTable.appendChild(condRow);
+        });
+    }
+
+    // INSTRUKCJE FILTROWANIA (not implemented in demo — all questions visible for review):
+    // - Q2a: Show only if Q2 ≠ "Wcale"
+    // - Q4a, Q4b, Q6: Show only if Q5 = "Yes" or "Nie jestem pewien/pewna"
+    // - Q4c: Show only if Q2 ≠ "Wcale" AND Q4 = "Yes"
+    // - Q6a: Show only if Q5 = "Yes" or "Nie jestem pewien/pewna"
+    // - Qa (angling identity): Show only if "Fishing" checked in Q2a
+
+    function changeSection(direction) {
+        const sections = document.querySelectorAll('.section');
+        sections[currentSection - 1].classList.add('hidden');
+        currentSection += direction;
+        if (currentSection > totalSections) currentSection = totalSections;
+        if (currentSection < 1) currentSection = 1;
+        sections[currentSection - 1].classList.remove('hidden');
+        updateButtons();
+        updateProgress();
+        window.scrollTo(0, 0);
+    }
+
+    function updateButtons() {
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        currentSection === 1 ? prevBtn.classList.add('hidden') : prevBtn.classList.remove('hidden');
+        if (currentSection === totalSections) {
+            nextBtn.classList.add('hidden');
+        } else if (currentSection === totalSections - 1) {
+            nextBtn.textContent = 'Wyślij';
+        } else {
+            nextBtn.textContent = 'Dalej';
+        }
+    }
+
+    function updateProgress() {
+        const progress = ((currentSection - 1) / (totalSections - 1)) * 100;
+        document.getElementById('progressBar').style.width = progress + '%';
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        populateESTables();
+        updateButtons();
+        updateProgress();
+    });
+</script>
+</body>
+</html>
